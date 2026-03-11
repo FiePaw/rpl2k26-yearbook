@@ -1,0 +1,207 @@
+[
+  {
+    "id": "student_001",
+    "name": "ALMA RADITYA KHALID",
+    "nickname": "ALMA"
+  },
+  {
+    "id": "student_002",
+    "name": "ALYA HANIN NAFISA",
+    "nickname": "ALYA"
+  },
+  {
+    "id": "student_003",
+    "name": "ANANDA GITA UTAMI",
+    "nickname": "ANANDA"
+  },
+  {
+    "id": "student_004",
+    "name": "ARDELIA PUTRI NUR AINI",
+    "nickname": "ARDELIA"
+  },
+  {
+    "id": "student_005",
+    "name": "AISYAH AFIFAH'ADN",
+    "nickname": "AISYAH"
+  },
+  {
+    "id": "student_006",
+    "name": "AISYAH PUTRI RAHMANDANI",
+    "nickname": "AISYAH"
+  },
+  {
+    "id": "student_008",
+    "name": "CHALISTA NAVISHA HANUM",
+    "nickname": "CHALISTA"
+  },
+  {
+    "id": "student_009",
+    "name": "Decha Mutia Dewi",
+    "nickname": "Decha"
+  },
+  {
+    "id": "student_011",
+    "name": "EVI LUTFIANI",
+    "nickname": "EVI"
+  },
+  {
+    "id": "student_012",
+    "name": "HAFRIZA FACHRI AZZEIN",
+    "nickname": "HAFRIZA"
+  },
+  {
+    "id": "student_013",
+    "name": "HABIBI PUTRA ZIATAN ARLY",
+    "nickname": "HABIBI"
+  },
+  {
+    "id": "student_014",
+    "name": "Izaaz Satya Suharyadi",
+    "nickname": "Izaaz"
+  },
+  {
+    "id": "student_015",
+    "name": "JASMINE PUTRI HAPSARI",
+    "nickname": "JASMINE"
+  },
+  {
+    "id": "student_016",
+    "name": "JIHAN SABRINA ATMAJA",
+    "nickname": "JIHAN"
+  },
+  {
+    "id": "student_017",
+    "name": "JULIA ISHMAH AQIILAH",
+    "nickname": "JULIA"
+  },
+  {
+    "id": "student_018",
+    "name": "Kamiil Mulki Handhiko",
+    "nickname": "Kamiil"
+  },
+  {
+    "id": "student_019",
+    "name": "Krisna Bimo Permadi",
+    "nickname": "Krisna"
+  },
+  {
+    "id": "student_020",
+    "name": "LINTAR HADIST AL HAIKAL",
+    "nickname": "LINTAR"
+  },
+  {
+    "id": "student_021",
+    "name": "Lusyana Pasha",
+    "nickname": "Lusyana"
+  },
+  {
+    "id": "student_022",
+    "name": "Lutfiyah Kaniyatul Hasanah",
+    "nickname": "Lutfiyah"
+  },
+  {
+    "id": "student_023",
+    "name": "M. Fajar Audris Jarmili",
+    "nickname": "M."
+  },
+  {
+    "id": "student_024",
+    "name": "Muhammad Yusuf Saputra",
+    "nickname": "Putra"
+  },
+  {
+    "id": "student_025",
+    "name": "NABIL ADITYA DAMARA",
+    "nickname": "NABIL"
+  },
+  {
+    "id": "student_026",
+    "name": "NABILA HANUM PUTRI",
+    "nickname": "NABILA"
+  },
+  {
+    "id": "student_027",
+    "name": "NASZWA NURAINI PUTRI",
+    "nickname": "NASZWA"
+  },
+  {
+    "id": "student_028",
+    "name": "NAHWA ZALFA ZALFIRA",
+    "nickname": "NAHWA"
+  },
+  {
+    "id": "student_029",
+    "name": "NURUL QOMARIYAH",
+    "nickname": "NURUL"
+  },
+  {
+    "id": "student_030",
+    "name": "PUTRI ADZKIA RAHMAWATI",
+    "nickname": "PUTRI"
+  },
+  {
+    "id": "student_031",
+    "name": "RAFIE YULOUANSYAH RIZQI",
+    "nickname": "RAFIE"
+  },
+  {
+    "id": "student_032",
+    "name": "REYHAN IQHBAR BAYHAQI",
+    "nickname": "REYHAN"
+  },
+  {
+    "id": "student_033",
+    "name": "RISKI MAULANA RAMADHANI",
+    "nickname": "RISKI"
+  },
+  {
+    "id": "student_034",
+    "name": "RIZKY FAJAR RAMADHAN",
+    "nickname": "RIZKY"
+  },
+  {
+    "id": "student_035",
+    "name": "Salikhatu Qonitatin Hafiza",
+    "nickname": "Salikhatu"
+  },
+  {
+    "id": "student_036",
+    "name": "SINTIA PUTRI",
+    "nickname": "SINTIA"
+  },
+  {
+    "id": "student_037",
+    "name": "SITI AISMA",
+    "nickname": "SITI"
+  },
+  {
+    "id": "student_038",
+    "name": "TARA AZHAR MAHROJI",
+    "nickname": "TARA"
+  },
+  {
+    "id": "student_039",
+    "name": "WIDYA ARIBAWA",
+    "nickname": "WIDYA"
+  },
+  {
+    "id": "student_040",
+    "name": "WINDA OKTAVIANI",
+    "nickname": "WINDA"
+  },
+  {
+    "id": "student_041",
+    "name": "Yahya Ayyash Al-Khawarizmi",
+    "nickname": "Yahya"
+  },
+  {
+    "id": "student_042",
+    "name": "ZAHRA ALTHAFUNISA",
+    "nickname": "ZAHRA"
+  },
+  {
+    "id": "admin",
+    "name": "Admin",
+    "nickname": "Admin"
+  }
+]

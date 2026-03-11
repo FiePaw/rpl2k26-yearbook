@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beranda - Yearbook RPL 2026</title>
+    <link rel="stylesheet" href="loading.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+    <header class="music-header">
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="header-left">
+            <i class="fas fa-compact-disc spinning-slow"></i>
+            <span class="header-title">RPL Yearbook 2026</span>
+        </div>
+        <nav class="header-nav">
+            <a href="beranda" class="active"><i class="fas fa-home"></i> Home</a>
+            <a href="kolase"><i class="fas fa-images"></i> Memories</a>
+            <a href="wali-kelas"><i class="fas fa-star"></i> Teachers</a>
+            <a href="profile" id="profileLink"><i class="fas fa-user"></i> Profile</a>
+        </nav>
+        <div class="header-right">
+            <button id="themeToggle" class="theme-btn">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button id="userBtn" class="user-btn">
+                <i class="fas fa-user-circle"></i>
+                <span id="userName">Login</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Sidebar Navigation -->
+    <aside class="sidebar-nav" id="sidebarNav">
+        <div class="sidebar-header">
+            <i class="fas fa-compact-disc spinning-slow"></i>
+            <span>RPL Yearbook 2026</span>
+            <button class="sidebar-close" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="beranda" class="sidebar-item active">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="kolase" class="sidebar-item">
+                <i class="fas fa-images"></i>
+                <span>Memories</span>
+            </a>
+            <a href="wali-kelas" class="sidebar-item">
+                <i class="fas fa-star"></i>
+                <span>Teachers</span>
+            </a>
+            <a href="#" id="sidebarProfileLink" class="sidebar-item">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="sidebar-theme-btn" id="sidebarThemeToggle">
+                <i class="fas fa-moon"></i>
+                <span>Dark Mode</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h1><i class="fas fa-music"></i> Our Playlist</h1>
+                <p>Setiap Lagu Punya Cerita, Setiap Lirik Punya Kita.</p>
+            </div>
+
+            <!-- Music Player Interface -->
+            <div class="music-player-container" id="musicPlayer" style="display: none;">
+                <button class="close-player" id="closePlayer">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                
+                <div class="music-player">
+                    <!-- Album Art Section (Left) with "Now Playing" -->
+                    <div class="player-top-section">
+                        <div class="now-playing-badge">
+                            <i class="fas fa-music"></i>
+                            <span>Now Playing</span>
+                        </div>
+                        <div class="album-art-wrapper">
+                            <div class="album-art">
+                                <img id="playerPhoto" src="" alt="Student Photo">
+                                <div class="vinyl-spinning"></div>
+                            </div>
+                        </div>
+                        <!-- Title & Song Name under Photo -->
+                        <div class="artist-info">
+                            <h1 id="playerName">Student Name</h1>
+                            <p id="playerSubtitle">RPL Class of 2026</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Info Section (Right) -->
+                    <div class="player-middle-section">
+                        <!-- Message & Thoughts -->
+                        <div class="message-display-new">
+                            <div class="message-header">
+                                <i class="fas fa-quote-left"></i>
+                                <span>Message & Thoughts</span>
+                            </div>
+                            <div class="message-content" id="playerMessage">
+                                No message available...
+                            </div>
+                        </div>
+                        
+                        <!-- Birthday & Update Info -->
+                        <div class="info-section">
+                            <div class="info-item">
+                                <div class="info-label">Birthday</div>
+                                <div class="info-value" id="playerBirthday">-</div>
+                            </div>
+                            <div class="info-divider"></div>
+                            <div class="info-item">
+                                <div class="info-label">Last Updated</div>
+                                <div class="info-value" id="playerUpdated">-</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Lyrics Karaoke Style -->
+                        <div id="playerLyricsKaraokeContainer" style="display: none; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                            <div class="lyrics-karaoke-header">
+                                <i class="fas fa-music"></i>
+                                <span>Lyrics</span>
+                            </div>
+                            <div id="playerLyricsContent" class="lyrics-karaoke-display"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Controls Section (Bottom) -->
+                    <div class="player-bottom-section">
+                        <div class="progress-section">
+                            <span class="time-display" id="currentTime">0:00</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                                <div class="progress-handle" id="progressHandle"></div>
+                            </div>
+                            <span class="time-display" id="totalTime">3:45</span>
+                        </div>
+                        
+                        <div class="control-buttons">
+                            <button class="control-btn" id="shuffleBtn">
+                                <i class="fas fa-random"></i>
+                            </button>
+                            <button class="control-btn" id="prevBtn">
+                                <i class="fas fa-step-backward"></i>
+                            </button>
+                            <button class="control-btn play-pause" id="playPauseBtn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="control-btn" id="nextBtn">
+                                <i class="fas fa-step-forward"></i>
+                            </button>
+                            <button class="control-btn" id="repeatBtn">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter & Search -->
+            <div class="filter-section">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Mau Cari siapa?">
+                </div>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">
+                        <i class="fas fa-th"></i>
+                        <span>Semua</span>
+                    </button>
+                    <button class="filter-btn" data-filter="hasData">
+                        <i class="fas fa-message"></i>
+                        <span>Yang Berisi</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Students Grid -->
+            <div class="students-grid" id="studentsGrid">
+                <!-- Students will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="music-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <i class="fas fa-headphones"></i>
+                <span>RPL Class of 2026</span>
+            </div>
+            <div class="footer-center">
+                <div class="equalizer">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+            <div class="footer-right">
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Student Detail Modal -->
+    <div id="studentModal" class="modal">
+        <div class="modal-content modal-large">
+            <span class="close">&times;</span>
+            <div class="student-detail">
+                <div class="student-album-cover">
+                    <img id="modalPhoto" src="" alt="Student Photo">
+                    <div class="album-vinyl"></div>
+                </div>
+                <div class="student-info">
+                    <h2 id="modalName">Student Name</h2>
+                    <div class="info-item">
+                        <i class="fas fa-birthday-cake"></i>
+                        <span id="modalBirthday">Birthday</span>
+                    </div>
+                    <div class="message-box">
+                        <i class="fas fa-quote-left"></i>
+                        <p id="modalMessage">Bakalan ada pesan disini...</p>
+                        <i class="fas fa-quote-right"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="loading.js"></script>
+    <script src="popup.js"></script>
+    <script src="enable-scroll.js"></script>
+    <script src="beranda.js"></script>
+    <script src="animations.js"></script>
+</body>
+</html>

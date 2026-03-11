@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Yearbook RPL 2026</title>
+    <link rel="stylesheet" href="loading.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <!-- Anime.js for advanced animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+    <style>
+        /* MOBILE RESPONSIVE - COMPREHENSIVE OPTIMIZATION */
+        
+        /* BASE MOBILE (Max 768px) - Tablet & Mobile */
+        @media (max-width: 768px) {
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            .main-content {
+                padding: 0.5rem !important;
+            }
+
+            .container {
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .profile-container {
+                max-width: 100% !important;
+                padding: 0.5rem !important;
+                margin: 0 !important;
+            }
+
+            /* PROFILE FORM OVERALL */
+            .profile-form {
+                padding: 0.8rem !important;
+                margin-bottom: 1rem !important;
+                border-radius: 8px !important;
+                background: var(--bg-card) !important;
+            }
+
+            .profile-header {
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+
+            .profile-header i {
+                font-size: 1.5rem !important;
+                margin-bottom: 0.3rem !important;
+            }
+
+            .profile-header h1 {
+                font-size: 1.1rem !important;
+                margin: 0.3rem 0 !important;
+                font-weight: 700 !important;
+            }
+
+            .profile-header p {
+                font-size: 0.75rem !important;
+                margin: 0.1rem 0 !important;
+                color: var(--text-secondary) !important;
+            }
+
+            /* FORM GRID LAYOUT */
+            .form-grid {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+                gap: 0.8rem !important;
+                align-items: start !important;
+            }
+
+            /* PHOTO UPLOAD SECTION */
+            .photo-upload-section {
+                margin: 0 auto !important;
+                max-width: 150px !important;
+                width: 100% !important;
+            }
+
+            .photo-preview {
+                width: 130px !important;
+                height: 130px !important;
+                margin: 0 auto 0.6rem !important;
+                border-radius: 6px !important;
+                overflow: hidden !important;
+                border: 2px solid var(--border-color) !important;
+            }
+
+            .photo-preview img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover !important;
+            }
+
+            .upload-overlay {
+                padding: 0.5rem !important;
+                font-size: 0.75rem !important;
+            }
+
+            /* FORM FIELDS */
+            .form-fields {
+                width: 100% !important;
+            }
+
+            .form-group {
+                margin-bottom: 0.6rem !important;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 0.3rem !important;
+            }
+
+            .form-group label {
+                font-size: 0.8rem !important;
+                font-weight: 600 !important;
+                color: var(--text-color) !important;
+                display: block !important;
+            }
+
+            .form-group label i {
+                display: none !important;
+            }
+
+            .form-group input,
+            .form-group textarea,
+            .form-group select {
+                font-size: 15px !important;
+                padding: 0.5rem 0.6rem !important;
+                width: 100% !important;
+                border-radius: 4px !important;
+                border: 1px solid var(--border-color) !important;
+                background: var(--bg-main) !important;
+                color: var(--text-color) !important;
+                line-height: 1.4 !important;
+            }
+
+            .form-group textarea {
+                resize: vertical !important;
+                min-height: 70px !important;
+                font-family: inherit !important;
+            }
+
+            .form-group input[type="date"] {
+                cursor: pointer !important;
+            }
+
+            /* BUTTONS - CRITICAL */
+            .btn-save,
+            .btn-upload,
+            .btn-small {
+                padding: 0.55rem 0.7rem !important;
+                font-size: 0.8rem !important;
+                width: 100% !important;
+                border-radius: 4px !important;
+                border: none !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 0.25rem !important;
+                font-weight: 600 !important;
+                cursor: pointer !important;
+                transition: all 0.2s ease !important;
+                text-align: center !important;
+                white-space: nowrap !important;
+            }
+
+            .btn-save {
+                background: var(--primary-color) !important;
+                color: white !important;
+            }
+
+            .btn-upload {
+                background: var(--primary-color) !important;
+                color: white !important;
+            }
+
+            .btn-small {
+                padding: 0.5rem 0.6rem !important;
+                font-size: 0.75rem !important;
+            }
+
+            .btn-danger {
+                background: #dc3545 !important;
+                color: white !important;
+            }
+
+            /* ADMIN CONTROLS */
+            .admin-controls {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 0.6rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            .admin-controls .form-group {
+                width: 100% !important;
+                margin-bottom: 0 !important;
+            }
+
+            .admin-controls .form-group select {
+                width: 100% !important;
+            }
+
+            .admin-actions {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 0.6rem !important;
+                width: 100% !important;
+                margin-top: 0 !important;
+            }
+
+            .admin-actions button {
+                width: 100% !important;
+            }
+
+            /* PHOTO TYPE BUTTONS */
+            .photo-type-btn {
+                font-size: 0.7rem !important;
+                padding: 0.55rem !important;
+                border-radius: 5px !important;
+                transition: all 0.2s ease !important;
+                border: 2px solid !important;
+                background: var(--bg-card) !important;
+                color: var(--text-color) !important;
+                cursor: pointer !important;
+                font-weight: 600 !important;
+            }
+
+            .photo-type-btn i {
+                font-size: 0.95rem !important;
+                display: block !important;
+                margin-bottom: 0.15rem !important;
+            }
+
+            .photo-type-btn:active {
+                transform: scale(0.95) !important;
+            }
+
+            /* UPLOAD SECTIONS */
+            #uploadVideoGalleryForm {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 0.6rem !important;
+            }
+
+            /* Photo Type Selector Container */
+            div[style*="background: rgba(29, 185, 84, 0.1)"] {
+                padding: 0.6rem !important;
+                margin-bottom: 0.6rem !important;
+                border-radius: 6px !important;
+                border: 2px solid var(--primary-color) !important;
+            }
+
+            div[style*="background: rgba(29, 185, 84, 0.1)"] > label {
+                font-size: 0.75rem !important;
+                margin-bottom: 0.4rem !important;
+            }
+
+            div[style*="background: rgba(29, 185, 84, 0.1)"] > p {
+                font-size: 0.7rem !important;
+                margin: 0.3rem 0 0 0 !important;
+            }
+
+            div[style*="background: rgba(29, 185, 84, 0.1)"] > div {
+                gap: 0.5rem !important;
+            }
+
+            /* Dashed Upload Boxes */
+            div[style*="border: 2px dashed"] {
+                padding: 0.6rem !important;
+                margin-bottom: 0.6rem !important;
+                border-radius: 6px !important;
+            }
+
+            div[style*="border: 2px dashed"] > div:first-child {
+                text-align: center !important;
+                margin-bottom: 0.6rem !important;
+            }
+
+            div[style*="border: 2px dashed"] i[style*="font-size: 2.5rem"] {
+                font-size: 1.8rem !important;
+                margin-bottom: 0.2rem !important;
+            }
+
+            div[style*="border: 2px dashed"] h4 {
+                font-size: 0.8rem !important;
+                margin: 0.2rem 0 !important;
+            }
+
+            div[style*="border: 2px dashed"] p {
+                font-size: 0.65rem !important;
+                margin: 0 !important;
+                line-height: 1.2 !important;
+            }
+
+            /* Upload Status */
+            #galleryUploadStatus {
+                font-size: 0.75rem !important;
+                padding: 0.6rem !important;
+            }
+
+            /* Preview Lists */
+            #galleryVideoPreview,
+            #galleryPhotoPreview {
+                margin-top: 0.5rem !important;
+            }
+
+            #galleryVideoPreviewList,
+            #galleryPhotoPreviewList {
+                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)) !important;
+                gap: 0.3rem !important;
+            }
+
+            /* ADMIN EDIT FORM */
+            #adminEditForm {
+                padding: 0.8rem !important;
+                margin-top: 1rem !important;
+                background: var(--light-bg) !important;
+                border-radius: 8px !important;
+            }
+
+            #adminEditForm h2 {
+                font-size: 0.95rem !important;
+                margin-bottom: 0.8rem !important;
+            }
+
+            /* MANAGE MEMORIES SECTION */
+            div[style*="margin-top: 3rem"][style*="background: var(--light-bg)"] {
+                margin-top: 1rem !important;
+                padding: 0.6rem !important;
+                border-radius: 8px !important;
+            }
+
+            div[style*="margin-top: 3rem"][style*="background: var(--light-bg)"] > h2 {
+                font-size: 0.9rem !important;
+                margin-bottom: 0.6rem !important;
+                font-weight: 700 !important;
+            }
+
+            /* Upload Gallery Card */
+            div[style*="margin-bottom: 3rem"][style*="background: var(--bg-card)"][style*="border: 2px solid var(--primary-color)"] {
+                margin-bottom: 0.8rem !important;
+                padding: 0.6rem !important;
+                border-radius: 6px !important;
+            }
+
+            div[style*="margin-bottom: 3rem"][style*="background: var(--bg-card)"] h3 {
+                font-size: 0.85rem !important;
+                margin-bottom: 0.5rem !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.3rem !important;
+            }
+
+            div[style*="margin-bottom: 3rem"][style*="background: var(--bg-card)"] h3 i {
+                font-size: 0.9rem !important;
+            }
+
+            /* GALLERY GRID */
+            #memoriesListImages,
+            #memoriesListVideos {
+                display: grid !important;
+                grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+                gap: 0.5rem !important;
+            }
+
+            .memory-card {
+                border-radius: 4px !important;
+                overflow: hidden !important;
+                aspect-ratio: 1 !important;
+            }
+
+            /* Gallery Section Container */
+            div[style*="margin-bottom: 2rem"] {
+                margin-bottom: 0.8rem !important;
+            }
+
+            /* Gallery Header with Refresh Button */
+            div[style*="display: flex"][style*="space-between"] {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+                align-items: stretch !important;
+            }
+
+            div[style*="display: flex"][style*="space-between"] h3 {
+                font-size: 0.85rem !important;
+                margin: 0 !important;
+                flex: 1 !important;
+            }
+
+            div[style*="display: flex"][style*="space-between"] button {
+                width: 100% !important;
+                padding: 0.45rem 0.6rem !important;
+                font-size: 0.75rem !important;
+            }
+
+            /* TAB NAVIGATION */
+            #tabImages,
+            #tabVideos {
+                padding: 0.45rem 0.6rem !important;
+                font-size: 0.75rem !important;
+                margin-bottom: 0 !important;
+                border-bottom-width: 2px !important;
+                white-space: nowrap !important;
+            }
+
+            #tabImages i,
+            #tabVideos i {
+                margin-right: 0.2rem !important;
+                font-size: 0.8rem !important;
+            }
+
+            div[style*="border-bottom: 2px solid var(--border-color)"] {
+                gap: 0.3rem !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            /* AUDIO SECTION */
+            .audio-section {
+                margin-bottom: 0.6rem !important;
+            }
+
+            .audio-input-group {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 0.6rem !important;
+            }
+
+            .audio-player-preview {
+                padding: 0.6rem !important;
+                background: var(--light-bg) !important;
+                border-radius: 4px !important;
+            }
+
+            .audio-player-preview audio {
+                width: 100% !important;
+                height: 30px !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            .audio-trim-section {
+                padding: 0.6rem !important;
+                margin-bottom: 0.6rem !important;
+                border-radius: 4px !important;
+            }
+
+            .audio-trim-section h4 {
+                font-size: 0.8rem !important;
+                margin: 0 0 0.4rem 0 !important;
+            }
+
+            .audio-trim-section p {
+                font-size: 0.7rem !important;
+                margin: 0.2rem 0 !important;
+                line-height: 1.2 !important;
+            }
+
+            .audio-timeline {
+                height: 35px !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            #adminAudioCanvas,
+            #studentAudioCanvas {
+                height: 100% !important;
+            }
+
+            /* Audio Time Controls */
+            div[style*="grid-template-columns: 1fr 1fr"] {
+                gap: 0.5rem !important;
+            }
+
+            div[style*="grid-template-columns: 1fr 1fr"] input[type="range"] {
+                margin-bottom: 0.3rem !important;
+            }
+
+            div[style*="grid-template-columns: 1fr 1fr"] input[type="number"] {
+                padding: 0.4rem !important;
+                font-size: 0.7rem !important;
+            }
+
+            /* Audio Tabs */
+            .audio-tabs {
+                display: flex !important;
+                gap: 0.4rem !important;
+                margin-bottom: 0.6rem !important;
+                flex-wrap: wrap !important;
+            }
+
+            .audio-tab-btn {
+                padding: 0.45rem 0.6rem !important;
+                font-size: 0.75rem !important;
+                flex: 1 !important;
+                min-width: 80px !important;
+                border: 1px solid var(--border-color) !important;
+                background: var(--bg-card) !important;
+                color: var(--text-color) !important;
+                cursor: pointer !important;
+                border-radius: 3px !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .audio-tab-content {
+                display: none !important;
+            }
+
+            .audio-tab-content.active {
+                display: block !important;
+            }
+
+            /* INFO BOXES */
+            div[style*="background: linear-gradient(135deg"] {
+                padding: 0.6rem !important;
+                margin-bottom: 0.6rem !important;
+                border-radius: 4px !important;
+                font-size: 0.7rem !important;
+            }
+
+            div[style*="background: linear-gradient(135deg"] p {
+                font-size: 0.7rem !important;
+                margin: 0.2rem 0 !important;
+                line-height: 1.2 !important;
+            }
+
+            div[style*="background: rgba(255, 152, 0"] {
+                padding: 0.6rem !important;
+                margin-bottom: 0.6rem !important;
+            }
+
+            div[style*="background: rgba(255, 152, 0"] p {
+                font-size: 0.7rem !important;
+                margin: 0 !important;
+            }
+
+            div[style*="background: rgba(76, 175, 80"] {
+                padding: 0.6rem !important;
+                margin-bottom: 0.6rem !important;
+            }
+
+            div[style*="background: rgba(76, 175, 80"] p {
+                font-size: 0.7rem !important;
+                margin: 0.2rem 0 !important;
+            }
+
+            /* STUDENTS LIST */
+            #adminStudentsList {
+                max-height: 100% !important;
+                border-radius: 6px !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            #adminStudentsList p {
+                font-size: 0.75rem !important;
+                padding: 0.6rem !important;
+            }
+
+            /* HELP TEXT */
+            .help-text {
+                font-size: 0.7rem !important;
+                margin: 0.3rem 0 !important;
+                color: var(--text-secondary) !important;
+            }
+
+            /* ACTION BUTTONS GRID */
+            div[style*="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem"] {
+                gap: 0.6rem !important;
+            }
+
+            /* Flex button containers */
+            div[style*="display: flex; gap: 0.8rem; flex-wrap: wrap"] {
+                gap: 0.5rem !important;
+            }
+        }
+
+        /* SMALL MOBILE (Max 480px) - Ultra Compact */
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 0.3rem !important;
+            }
+
+            .profile-container {
+                padding: 0.3rem !important;
+            }
+
+            .profile-form {
+                padding: 0.6rem !important;
+                margin-bottom: 0.8rem !important;
+                border-radius: 6px !important;
+            }
+
+            .profile-header h1 {
+                font-size: 0.95rem !important;
+            }
+
+            .profile-header p {
+                font-size: 0.65rem !important;
+            }
+
+            .photo-preview {
+                width: 110px !important;
+                height: 110px !important;
+                margin: 0 auto 0.4rem !important;
+            }
+
+            .photo-upload-section {
+                max-width: 130px !important;
+            }
+
+            .form-group {
+                margin-bottom: 0.5rem !important;
+                gap: 0.2rem !important;
+            }
+
+            .form-group label {
+                font-size: 0.75rem !important;
+            }
+
+            .form-group input,
+            .form-group textarea,
+            .form-group select {
+                font-size: 14px !important;
+                padding: 0.45rem 0.5rem !important;
+                border-radius: 3px !important;
+            }
+
+            .form-group textarea {
+                min-height: 60px !important;
+            }
+
+            .btn-save,
+            .btn-upload {
+                padding: 0.45rem 0.55rem !important;
+                font-size: 0.7rem !important;
+            }
+
+            .btn-small {
+                padding: 0.4rem 0.5rem !important;
+                font-size: 0.65rem !important;
+            }
+
+            .photo-type-btn {
+                font-size: 0.65rem !important;
+                padding: 0.45rem !important;
+            }
+
+            .photo-type-btn i {
+                font-size: 0.85rem !important;
+                margin-bottom: 0.1rem !important;
+            }
+
+            div[style*="background: rgba(29, 185, 84, 0.1)"] {
+                padding: 0.5rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            div[style*="background: rgba(29, 185, 84, 0.1)"] > label {
+                font-size: 0.7rem !important;
+                margin-bottom: 0.3rem !important;
+            }
+
+            div[style*="border: 2px dashed"] {
+                padding: 0.5rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            div[style*="border: 2px dashed"] i[style*="font-size: 2.5rem"] {
+                font-size: 1.5rem !important;
+            }
+
+            div[style*="border: 2px dashed"] h4 {
+                font-size: 0.75rem !important;
+                margin: 0.15rem 0 !important;
+            }
+
+            div[style*="border: 2px dashed"] p {
+                font-size: 0.6rem !important;
+            }
+
+            #adminEditForm {
+                padding: 0.6rem !important;
+            }
+
+            #adminEditForm h2 {
+                font-size: 0.85rem !important;
+                margin-bottom: 0.6rem !important;
+            }
+
+            div[style*="margin-top: 3rem"][style*="background: var(--light-bg)"] {
+                margin-top: 0.8rem !important;
+                padding: 0.5rem !important;
+            }
+
+            div[style*="margin-top: 3rem"][style*="background: var(--light-bg)"] > h2 {
+                font-size: 0.8rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            div[style*="margin-bottom: 3rem"][style*="background: var(--bg-card)"] {
+                margin-bottom: 0.6rem !important;
+                padding: 0.5rem !important;
+            }
+
+            div[style*="margin-bottom: 3rem"][style*="background: var(--bg-card)"] h3 {
+                font-size: 0.75rem !important;
+                margin-bottom: 0.4rem !important;
+            }
+
+            #memoriesListImages,
+            #memoriesListVideos {
+                grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)) !important;
+                gap: 0.4rem !important;
+            }
+
+            #tabImages,
+            #tabVideos {
+                padding: 0.35rem 0.5rem !important;
+                font-size: 0.65rem !important;
+            }
+
+            .audio-trim-section {
+                padding: 0.5rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            .audio-trim-section h4 {
+                font-size: 0.75rem !important;
+                margin: 0 0 0.3rem 0 !important;
+            }
+
+            .audio-trim-section p {
+                font-size: 0.65rem !important;
+                margin: 0.1rem 0 !important;
+            }
+
+            .audio-timeline {
+                height: 25px !important;
+                margin-bottom: 0.3rem !important;
+            }
+
+            .audio-tabs {
+                gap: 0.3rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            .audio-tab-btn {
+                padding: 0.35rem 0.5rem !important;
+                font-size: 0.65rem !important;
+                min-width: 60px !important;
+            }
+
+            div[style*="grid-template-columns: 1fr 1fr"] {
+                gap: 0.4rem !important;
+            }
+
+            div[style*="grid-template-columns: 1fr 1fr"] input[type="number"] {
+                padding: 0.35rem !important;
+                font-size: 0.65rem !important;
+            }
+
+            .admin-actions {
+                gap: 0.5rem !important;
+            }
+
+            #galleryVideoPreviewList,
+            #galleryPhotoPreviewList {
+                grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)) !important;
+                gap: 0.25rem !important;
+            }
+
+            .help-text {
+                font-size: 0.65rem !important;
+                margin: 0.2rem 0 !important;
+            }
+
+            div[style*="display: flex"][style*="space-between"] {
+                gap: 0.4rem !important;
+            }
+
+            div[style*="display: flex"][style*="space-between"] button {
+                padding: 0.4rem 0.5rem !important;
+                font-size: 0.7rem !important;
+            }
+
+            div[style*="background: linear-gradient(135deg"] {
+                padding: 0.5rem !important;
+                margin-bottom: 0.5rem !important;
+                font-size: 0.65rem !important;
+            }
+
+            div[style*="background: linear-gradient(135deg"] p {
+                font-size: 0.65rem !important;
+                margin: 0.1rem 0 !important;
+                line-height: 1.1 !important;
+            }
+        }
+
+        /* TABLET (769px - 1024px) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .profile-container {
+                max-width: 95% !important;
+                padding: 1.2rem !important;
+            }
+
+            .profile-form {
+                padding: 1.2rem !important;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr !important;
+                gap: 1.5rem !important;
+            }
+
+            #memoriesListImages,
+            #memoriesListVideos {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+            }
+
+            .btn-save,
+            .btn-upload {
+                padding: 0.7rem 0.9rem !important;
+                font-size: 0.9rem !important;
+            }
+        }
+
+        /* Ensure responsive media elements */
+        audio,
+        video {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .photo-preview img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Smooth scrolling for touch devices */
+        .sidebar-overlay,
+        #adminStudentsList {
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body>
+    <header class="music-header">
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="header-left">
+            <i class="fas fa-compact-disc spinning-slow"></i>
+            <span class="header-title">RPL Yearbook 2026</span>
+        </div>
+        <nav class="header-nav">
+            <a href="beranda"><i class="fas fa-home"></i> Home</a>
+            <a href="kolase"><i class="fas fa-images"></i> Memories</a>
+            <a href="wali-kelas"><i class="fas fa-star"></i> Teachers</a>
+            <a href="profile" class="active"><i class="fas fa-user"></i> Profile</a>
+            <a href="#" id="adminDashboardLink" style="display: none;" onclick="goToAdminDashboard(event)"><i class="fas fa-tachometer-alt"></i> Admin</a>
+        </nav>
+        <div class="header-right">
+            <button id="themeToggle" class="theme-btn">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button id="logoutBtn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Sidebar Navigation -->
+    <aside class="sidebar-nav" id="sidebarNav">
+        <div class="sidebar-header">
+            <i class="fas fa-compact-disc spinning-slow"></i>
+            <span>RPL Yearbook 2026</span>
+            <button class="sidebar-close" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="beranda" class="sidebar-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="kolase" class="sidebar-item">
+                <i class="fas fa-images"></i>
+                <span>Memories</span>
+            </a>
+            <a href="wali-kelas" class="sidebar-item">
+                <i class="fas fa-star"></i>
+                <span>Teachers</span>
+            </a>
+            <a href="profile" class="sidebar-item active">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+            <a href="#" id="adminDashboardLinkMobile" class="sidebar-item" style="display: none;" onclick="goToAdminDashboard(event)">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Admin Dashboard</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="sidebar-theme-btn" id="sidebarThemeToggle">
+                <i class="fas fa-moon"></i>
+                <span>Dark Mode</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="profile-container">
+                <div class="profile-header">
+                    <i class="fas fa-user-edit"></i>
+                    <h1>Ganti Setelan Profile</h1>
+                    <p>Buat pesan dan kesan yang niat ya!</p>
+                </div>
+
+                <!-- Student Profile Form -->
+                <div id="studentProfile" class="profile-form" style="display:none;">
+                    <form id="studentProfileForm" enctype="multipart/form-data">
+                        <div class="form-grid" style="display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: start;">
+                            <div class="photo-upload-section">
+                                <div class="photo-preview">
+                                    <img id="photoPreview" src="https://via.placeholder.com/300x300?text=Upload+Photo" alt="Preview">
+                                    <div class="upload-overlay">
+                                        <i class="fas fa-camera"></i>
+                                        <span>Click to upload</span>
+                                    </div>
+                                </div>
+                                <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-upload" onclick="document.getElementById('photoInput').click()">
+                                    <i class="fas fa-upload"></i> Upload Photo
+                                </button>
+                            </div>
+
+                            <div class="form-fields">
+                                <div class="form-group">
+                                    <label><i class="fas fa-user"></i> Nama Lengkap</label>
+                                    <input type="text" id="studentFullName" placeholder="Masukkan nama lengkap" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><i class="fas fa-birthday-cake"></i> Tanggal Lahir</label>
+                                    <input type="date" id="studentBirthday" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><i class="fas fa-comment-dots"></i> Kesan & Pesan</label>
+                                    <textarea id="studentMessage" rows="6" placeholder="Tuliskan kesan dan pesan kamu untuk kelas RPL 2026..." required></textarea>
+                                </div>
+
+                                <!-- Audio Section -->
+                                <div class="form-group audio-section">
+                                    <label><i class="fas fa-music"></i> Profile Music</label>
+                                    <div class="audio-input-group">
+                                        <div class="audio-player-preview" id="studentAudioPreview" style="display: none;">
+                                            <audio id="studentAudioPlayer" controls style="width: 100%; margin-bottom: 0.8rem;">
+                                                <source id="studentAudioSource" type="audio/mpeg">
+                                                Your browser does not support the audio element.
+                                            </audio>
+                                            
+                                            <!-- Auto-Generated Lyrics Section (REPLACES Audio Trim) -->
+                                            <div id="studentLyricsSection" style="display: none; background: var(--light-bg); padding: 1rem; border-radius: 0.5rem; margin-bottom: 0.8rem;">
+                                                <!-- Header -->
+                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                                    <h3 style="margin: 0; color: var(--text-color);">
+                                                        <i class="fas fa-music"></i> Song Lyrics
+                                                    </h3>
+                                                    <span id="lyricsStatus" style="font-size: 0.85em; color: #666;">
+                                                        <!-- "Generated from: Qwen • Updated: 2024-01-15" -->
+                                                    </span>
+                                                </div>
+
+                                                <!-- Lyrics Textarea -->
+                                                <textarea 
+                                                    id="studentLyricsTextarea"
+                                                    placeholder="Click 'Generate Lyrics' to fetch lyrics using AI...  Or manually edit lyrics here..."
+                                                    style="
+                                                        width: 100%;
+                                                        height: 300px;
+                                                        padding: 10px;
+                                                        border: 1px solid #ddd;
+                                                        border-radius: 4px;
+                                                        font-family: monospace;
+                                                        font-size: 14px;
+                                                        margin: 0 0 1rem 0;
+                                                        resize: vertical;
+                                                    "
+                                                ></textarea>
+
+                                                <!-- Info: character count + auto-save status -->
+                                                <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #999; margin-bottom: 1rem;">
+                                                    <span id="lyricsCharCount">0 characters</span>
+                                                    <span id="autosaveStatus"></span> <!-- "Auto-saved ✓" -->
+                                                </div>
+
+                                                <!-- Song Info Inputs (for accurate lyrics generation) -->
+                                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem;">
+                                                    <div>
+                                                        <label style="display: block; font-size: 0.9em; color: #666; margin-bottom: 5px;">
+                                                            <i class="fas fa-user"></i> Artist Name
+                                                        </label>
+                                                        <input 
+                                                            id="lyricsArtistInput"
+                                                            type="text"
+                                                            placeholder="Enter artist name"
+                                                            style="
+                                                                width: 100%;
+                                                                padding: 8px;
+                                                                border: 1px solid #ddd;
+                                                                border-radius: 4px;
+                                                                font-size: 14px;
+                                                                box-sizing: border-box;
+                                                            "
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label style="display: block; font-size: 0.9em; color: #666; margin-bottom: 5px;">
+                                                            <i class="fas fa-music"></i> Song Title
+                                                        </label>
+                                                        <input 
+                                                            id="lyricsSongTitleInput"
+                                                            type="text"
+                                                            placeholder="Enter song title"
+                                                            style="
+                                                                width: 100%;
+                                                                padding: 8px;
+                                                                border: 1px solid #ddd;
+                                                                border-radius: 4px;
+                                                                font-size: 14px;
+                                                                box-sizing: border-box;
+                                                            "
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <!-- Action Buttons -->
+                                                <div style="display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap;">
+                                                    <button 
+                                                        id="generateLyricsBtn"
+                                                        type="button"
+                                                        onclick="generateStudentLyrics()"
+                                                        style="padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; flex: 1; min-width: 150px;"
+                                                    >
+                                                        <i class="fas fa-wand-magic-sparkles"></i> Generate Lyrics
+                                                    </button>
+
+                                                    <button 
+                                                        id="regenerateLyricsBtn"
+                                                        type="button"
+                                                        onclick="regenerateStudentLyrics()"
+                                                        style="padding: 8px 15px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; flex: 1; min-width: 150px; display: none;"
+                                                    >
+                                                        <i class="fas fa-sync-alt"></i> Regenerate
+                                                    </button>
+
+                                                    <button 
+                                                        id="saveLyricsBtn"
+                                                        type="button"
+                                                        onclick="saveStudentLyrics()"
+                                                        style="padding: 8px 15px; background: #FF9800; color: white; border: none; border-radius: 4px; cursor: pointer; flex: 1; min-width: 150px; display: none;"
+                                                    >
+                                                        <i class="fas fa-save"></i> Save Lyrics
+                                                    </button>
+
+                                                    <button 
+                                                        id="clearLyricsBtn"
+                                                        type="button"
+                                                        onclick="clearStudentLyrics()"
+                                                        style="padding: 8px 15px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; flex: 1; min-width: 150px; display: none;"
+                                                    >
+                                                        <i class="fas fa-trash"></i> Clear
+                                                    </button>
+                                                </div>
+
+                                                <!-- Loading indicator -->
+                                                <div id="lyricsLoadingIndicator" style="display: none; margin-bottom: 1rem;">
+                                                    <div style="display: flex; align-items: center; gap: 8px; padding: 1rem; background: rgba(33, 150, 243, 0.1); border-radius: 4px; border-left: 3px solid #2196F3;">
+                                                        <div style="width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #2196F3; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                                                        <span style="color: #2196F3;">Generating lyrics...</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Error message container -->
+                                                <div id="lyricsErrorContainer" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #ffebee; color: #c62828; border-radius: 4px; border-left: 3px solid #f44336;">
+                                                    <!-- Error message will be inserted here -->
+                                                </div>
+                                            </div>
+
+                                            <!-- Spin animation for loading -->
+                                            <style>
+                                                @keyframes spin {
+                                                    0% { transform: rotate(0deg); }
+                                                    100% { transform: rotate(360deg); }
+                                                }
+                                            </style>
+                                            
+                                            <button type="button" class="btn-small btn-danger" onclick="removeStudentAudio()">
+                                                <i class="fas fa-trash"></i> Ganti Lagu
+                                            </button>
+                                        </div>
+                                        
+                                        <div id="studentAudioInput" class="audio-input-options">
+                                            <!-- Info Box for Best Practices -->
+                                            <div style="background: linear-gradient(135deg, rgba(29, 185, 84, 0.1), rgba(76, 175, 80, 0.1)); border-left: 4px solid var(--primary-color); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                                                <p style="margin: 0 0 0.5rem 0; color: var(--primary-color); font-weight: 600; font-size: 0.9rem;">
+                                                    <i class="fas fa-lightbulb"></i> Ingfoo ingfoooo!:
+                                                </p>
+                                                <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5;">
+                                                    Lagu yang di cut/trim bakalan punya proses pembuatan lirik lebih lama<br>
+                                                </p>
+                                            </div>
+
+                                            <div class="audio-tabs">
+                                                <button type="button" class="audio-tab-btn active" data-tab="upload" onclick="switchStudentAudioTab(event)">
+                                                    <i class="fas fa-upload"></i> Upload MP3
+                                                </button>
+                                                <button type="button" class="audio-tab-btn" data-tab="download" onclick="switchStudentAudioTab(event)">
+                                                    <i class="fas fa-download"></i> Download dari Link
+                                                </button>
+                                            </div>
+
+                                            <!-- Upload Tab -->
+                                            <div class="audio-tab-content active">
+                                                <input type="file" id="studentAudioFile" accept=".mp3,audio/mpeg" style="display:none;">
+                                                <button type="button" class="btn-upload" onclick="document.getElementById('studentAudioFile').click()">
+                                                    <i class="fas fa-upload"></i> Choose MP3 File
+                                                </button>
+                                                <p class="help-text">Max file size: 50MB</p>
+                                                <div id="studentAudioFilePreview" style="display: none; margin-top: 0.8rem;">
+                                                    <small>Selected: <span id="studentAudioFileName"></span></small>
+                                                </div>
+                                            </div>
+
+                                            <!-- Download Tab -->
+                                            <div class="audio-tab-content">
+                                                <input type="text" id="studentAudioUrl" placeholder="Taro sini URL Tiktok/Spotify song nya" class="form-input-url">
+                                                <button type="button" class="btn-upload" id="downloadAudioBtn" onclick="downloadStudentAudio()">
+                                                    <i class="fas fa-download"></i> Download Audio
+                                                </button>
+                                                <div id="studentDownloadStatus" style="display: none; margin-top: 0.8rem;"></div>
+                                                
+                                                <!-- Available Audio Files -->
+                                                <div id="studentAudioFilesList" style="margin-top: 1.2rem;">
+                                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem;">
+                                                        <h5 style="margin: 0; color: var(--text-color); font-size: 0.95rem;">
+                                                            <i class="fas fa-music"></i> Ini daftar lagu yang udah pernah di Download:
+                                                        </h5>
+                                                        <button type="button" class="btn-small" onclick="refreshStudentAudioList()" style="background: var(--primary-color); color: white; border: none; padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                                            <i class="fas fa-sync-alt"></i> Refresh
+                                                        </button>
+                                                    </div>
+                                                    <div id="studentAudioFilesContainer" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.8rem;">
+                                                        <p style="color: var(--text-muted); font-size: 0.9rem;"><i class="fas fa-spinner fa-spin"></i> Loading audio files...</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn-save">
+                                    <i class="fas fa-save"></i> Jangan lupa Klik Aku ya! (Save Changes)
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Teacher Profile Form -->
+                <div id="teacherProfile" class="profile-form" style="display:none;">
+                    <form id="teacherProfileForm" enctype="multipart/form-data">
+                        <div class="form-grid" style="display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: start;">
+                            <div class="photo-upload-section">
+                                <div class="photo-preview">
+                                    <img id="teacherPhotoPreview" src="https://via.placeholder.com/300x300?text=Upload+Photo" alt="Preview">
+                                    <div class="upload-overlay">
+                                        <i class="fas fa-camera"></i>
+                                        <span>Click to upload</span>
+                                    </div>
+                                </div>
+                                <input type="file" id="teacherPhotoInput" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-upload" onclick="document.getElementById('teacherPhotoInput').click()">
+                                    <i class="fas fa-upload"></i> Upload Photo
+                                </button>
+                            </div>
+
+                            <div class="form-fields">
+                                <div class="form-group">
+                                    <label><i class="fas fa-chalkboard-teacher"></i> Nama Lengkap</label>
+                                    <input type="text" id="teacherFullName" placeholder="Masukkan nama lengkap" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><i class="fas fa-comment-dots"></i> Pesan untuk Murid</label>
+                                    <textarea id="teacherMessage" rows="8" placeholder="Tuliskan pesan untuk murid-murid RPL 2026..." required></textarea>
+                                </div>
+
+                                <button type="submit" class="btn-save">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Admin Dashboard Redirect -->
+                <div id="adminProfile" class="profile-form" style="display:none;">
+                    <div class="profile-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <h1>Admin Dashboard</h1>
+                        <p>Control center untuk mengelola yearbook</p>
+                    </div>
+
+                    <div style="text-align: center; padding: 3rem 1rem;">
+                        <div style="background: linear-gradient(135deg, var(--primary-color), rgba(76, 175, 80, 0.6)); padding: 2rem; border-radius: 15px; color: white; margin-bottom: 2rem;">
+                            <i class="fas fa-chart-line" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+                            <h2 style="margin: 1rem 0;">Welcome to Admin Dashboard</h2>
+                            <p style="margin: 0 0 2rem 0; opacity: 0.95;">
+                                Monitor real-time statistics, track user access, dan kelola data yearbook dengan mudah
+                            </p>
+                            <a href="admin-dashboard" style="display: inline-block; background: white; color: var(--primary-color); padding: 0.8rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                <i class="fas fa-arrow-right"></i> Go to Dashboard
+                            </a>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem;">
+                            <div style="background: var(--light-bg); padding: 1.5rem; border-radius: 10px; border-left: 4px solid #4CAF50;">
+                                <i class="fas fa-eye" style="font-size: 2rem; color: #4CAF50; display: block; margin-bottom: 0.5rem;"></i>
+                                <h3 style="margin: 0.5rem 0; color: var(--text-color);">Total Visits</h3>
+                                <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">Monitor profil yang paling banyak dikunjungi</p>
+                            </div>
+
+                            <div style="background: var(--light-bg); padding: 1.5rem; border-radius: 10px; border-left: 4px solid #2196F3;">
+                                <i class="fas fa-globe" style="font-size: 2rem; color: #2196F3; display: block; margin-bottom: 0.5rem;"></i>
+                                <h3 style="margin: 0.5rem 0; color: var(--text-color);">Realtime IP Access</h3>
+                                <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">Pantau akses IP secara real-time dengan refresh otomatis</p>
+                            </div>
+
+                            <div style="background: var(--light-bg); padding: 1.5rem; border-radius: 10px; border-left: 4px solid #FF9800;">
+                                <i class="fas fa-edit" style="font-size: 2rem; color: #FF9800; display: block; margin-bottom: 0.5rem;"></i>
+                                <h3 style="margin: 0.5rem 0; color: var(--text-color);">Profile Updates</h3>
+                                <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">Lacak berapa kali profil telah diperbarui</p>
+                            </div>
+
+                            <div style="background: var(--light-bg); padding: 1.5rem; border-radius: 10px; border-left: 4px solid #F44336;">
+                                <i class="fas fa-history" style="font-size: 2rem; color: #F44336; display: block; margin-bottom: 0.5rem;"></i>
+                                <h3 style="margin: 0.5rem 0; color: var(--text-color);">Login History</h3>
+                                <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">Lihat riwayat login dari semua pengguna</p>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 2rem; padding: 1rem; background: rgba(76, 175, 80, 0.1); border-radius: 8px; border-left: 4px solid var(--primary-color);">
+                            <p style="margin: 0; color: var(--text-color); font-size: 0.9rem;">
+                                <i class="fas fa-info-circle"></i> Dashboard di-update otomatis setiap 5 detik untuk monitoring real-time
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="music-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <i class="fas fa-headphones"></i>
+                <span>RPL Class of 2026</span>
+            </div>
+            <div class="footer-center">
+                <div class="equalizer">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+            <div class="footer-right">
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="loading.js"></script>
+    <script src="popup.js"></script>
+    <script src="enable-scroll.js"></script>
+    <script src="whisper-transcriber.js"></script>
+    <script src="lyrics-karaoke.js"></script>
+    <script src="profile.js"></script>
+    <script src="animations.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "teacher_001",
+    "name": "Ihya Ulumuddin, S.Kom",
+    "nickname": "Pak Ihya",
+    "grade": "grade10"
+  },
+  {
+    "id": "teacher_002",
+    "name": "Baihaqi Rahmansyah, S.Kom",
+    "nickname": "Pak Baihaqi",
+    "grade": "grade11"
+  },
+  {
+    "id": "teacher_003",
+    "name": "Muhammad Muharrom, M.Kom",
+    "nickname": "Pak Muharrom",
+    "grade": "grade12"
+  }
+]

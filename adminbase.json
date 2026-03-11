@@ -1,0 +1,519 @@
+{
+  "profileStats": [
+    {
+      "id": "student_001",
+      "name": "ALMA RADITYA KHALID",
+      "visits": 141,
+      "updates": 8,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_002",
+      "name": "ALYA HANIN NAFISA",
+      "visits": 11,
+      "updates": 4,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_031",
+      "name": "RAFIE YULOUANSYAH RIZQI",
+      "visits": 7,
+      "updates": 1,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_018",
+      "name": "Kamiil Mulki Handhiko",
+      "visits": 3,
+      "updates": 2,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_020",
+      "name": "LINTAR HADIST AL HAIKAL",
+      "visits": 3,
+      "updates": 2,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_024",
+      "name": "Muhammad Yusuf Saputra",
+      "visits": 3,
+      "updates": 1,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_032",
+      "name": "REYHAN IQHBAR BAYHAQI",
+      "visits": 3,
+      "updates": 2,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_034",
+      "name": "RIZKY FAJAR RAMADHAN",
+      "visits": 3,
+      "updates": 1,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_038",
+      "name": "TARA AZHAR MAHROJI",
+      "visits": 3,
+      "updates": 2,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_012",
+      "name": "HAFRIZA FACHRI AZZEIN",
+      "visits": 2,
+      "updates": 1,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_013",
+      "name": "HABIBI PUTRA ZIATAN ARLY",
+      "visits": 2,
+      "updates": 1,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_019",
+      "name": "Krisna Bimo Permadi",
+      "visits": 2,
+      "updates": 1,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_023",
+      "name": "M. Fajar Audris Jarmili",
+      "visits": 2,
+      "updates": 1,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_025",
+      "name": "NABIL ADITYA DAMARA",
+      "visits": 2,
+      "updates": 1,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_041",
+      "name": "Yahya Ayyash Al-Khawarizmi",
+      "visits": 2,
+      "updates": 1,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_003",
+      "name": "ANANDA GITA UTAMI",
+      "visits": 1,
+      "updates": 1,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_004",
+      "name": "ARDELIA PUTRI NUR AINI",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_005",
+      "name": "AISYAH AFIFAH'ADN",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_006",
+      "name": "AISYAH PUTRI RAHMANDANI",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_008",
+      "name": "CHALISTA NAVISHA HANUM",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_009",
+      "name": "Decha Mutia Dewi",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_011",
+      "name": "EVI LUTFIANI",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_014",
+      "name": "Izaaz Satya Suharyadi",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_015",
+      "name": "JASMINE PUTRI HAPSARI",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_016",
+      "name": "JIHAN SABRINA ATMAJA",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_017",
+      "name": "JULIA ISHMAH AQIILAH",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_021",
+      "name": "Lusyana Pasha",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_022",
+      "name": "Lutfiyah Kaniyatul Hasanah",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_026",
+      "name": "NABILA HANUM PUTRI",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_027",
+      "name": "NASZWA NURAINI PUTRI",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_028",
+      "name": "NAHWA ZALFA ZALFIRA",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_029",
+      "name": "NURUL QOMARIYAH",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_030",
+      "name": "PUTRI ADZKIA RAHMAWATI",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_033",
+      "name": "RISKI MAULANA RAMADHANI",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_035",
+      "name": "Salikhatu Qonitatin Hafiza",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_036",
+      "name": "SINTIA PUTRI",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_037",
+      "name": "SITI AISMA",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_039",
+      "name": "WIDYA ARIBAWA",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_040",
+      "name": "WINDA OKTAVIANI",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_042",
+      "name": "ZAHRA ALTHAFUNISA",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "admin",
+      "name": "Admin",
+      "visits": 0,
+      "updates": 0,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    }
+  ],
+  "topProfiles": [
+    {
+      "id": "student_001",
+      "name": "ALMA RADITYA KHALID",
+      "visits": 141,
+      "updates": 8,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_002",
+      "name": "ALYA HANIN NAFISA",
+      "visits": 11,
+      "updates": 4,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_031",
+      "name": "RAFIE YULOUANSYAH RIZQI",
+      "visits": 7,
+      "updates": 1,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_018",
+      "name": "Kamiil Mulki Handhiko",
+      "visits": 3,
+      "updates": 2,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    },
+    {
+      "id": "student_020",
+      "name": "LINTAR HADIST AL HAIKAL",
+      "visits": 3,
+      "updates": 2,
+      "lastVisit": "2026-03-11T21:36:26.982Z"
+    }
+  ],
+  "loginHistory": [
+    {
+      "userId": "student_001",
+      "type": "student",
+      "name": "ALMA RADITYA KHALID",
+      "timestamp": "2025-11-23T17:12:44.585Z"
+    },
+    {
+      "userId": "student_002",
+      "type": "student",
+      "name": "ALYA HANIN NAFISA",
+      "timestamp": "2025-11-24T07:59:36.271Z"
+    },
+    {
+      "userId": "student_002",
+      "type": "student",
+      "name": "ALYA HANIN NAFISA",
+      "timestamp": "2025-11-29T09:11:20.923Z"
+    },
+    {
+      "userId": "student_031",
+      "type": "student",
+      "name": "RAFIE YULOUANSYAH RIZQI",
+      "timestamp": "2025-11-29T16:59:38.221Z"
+    },
+    {
+      "userId": "student_001",
+      "type": "student",
+      "name": "ALMA RADITYA KHALID",
+      "timestamp": "2025-11-29T18:00:13.668Z"
+    },
+    {
+      "userId": "student_002",
+      "type": "student",
+      "name": "ALYA HANIN NAFISA",
+      "timestamp": "2025-11-29T18:05:21.350Z"
+    },
+    {
+      "userId": "student_012",
+      "type": "student",
+      "name": "HAFRIZA FACHRI AZZEIN",
+      "timestamp": "2025-11-29T18:14:02.606Z"
+    },
+    {
+      "userId": "student_013",
+      "type": "student",
+      "name": "HABIBI PUTRA ZIATAN ARLY",
+      "timestamp": "2025-11-29T18:26:30.246Z"
+    },
+    {
+      "userId": "student_018",
+      "type": "student",
+      "name": "Kamiil Mulki Handhiko",
+      "timestamp": "2025-11-29T18:30:22.531Z"
+    },
+    {
+      "userId": "student_019",
+      "type": "student",
+      "name": "Krisna Bimo Permadi",
+      "timestamp": "2025-11-29T18:34:04.172Z"
+    },
+    {
+      "userId": "student_020",
+      "type": "student",
+      "name": "LINTAR HADIST AL HAIKAL",
+      "timestamp": "2025-11-29T18:38:26.142Z"
+    },
+    {
+      "userId": "student_023",
+      "type": "student",
+      "name": "M. Fajar Audris Jarmili",
+      "timestamp": "2025-11-29T18:41:18.146Z"
+    },
+    {
+      "userId": "student_024",
+      "type": "student",
+      "name": "Muhammad Yusuf Saputra",
+      "timestamp": "2025-11-29T18:42:55.249Z"
+    },
+    {
+      "userId": "student_024",
+      "type": "student",
+      "name": "Muhammad Yusuf Saputra",
+      "timestamp": "2025-11-29T18:45:30.436Z"
+    },
+    {
+      "userId": "student_025",
+      "type": "student",
+      "name": "NABIL ADITYA DAMARA",
+      "timestamp": "2025-11-29T18:48:51.189Z"
+    },
+    {
+      "userId": "student_032",
+      "type": "student",
+      "name": "REYHAN IQHBAR BAYHAQI",
+      "timestamp": "2025-11-29T18:50:13.769Z"
+    },
+    {
+      "userId": "student_034",
+      "type": "student",
+      "name": "RIZKY FAJAR RAMADHAN",
+      "timestamp": "2025-11-29T18:57:25.548Z"
+    },
+    {
+      "userId": "student_038",
+      "type": "student",
+      "name": "TARA AZHAR MAHROJI",
+      "timestamp": "2025-11-29T19:04:54.136Z"
+    },
+    {
+      "userId": "student_041",
+      "type": "student",
+      "name": "Yahya Ayyash Al-Khawarizmi",
+      "timestamp": "2025-11-29T19:08:45.253Z"
+    },
+    {
+      "userId": "student_031",
+      "type": "student",
+      "name": "RAFIE YULOUANSYAH RIZQI",
+      "timestamp": "2025-11-29T19:13:24.962Z"
+    },
+    {
+      "userId": "student_001",
+      "type": "student",
+      "name": "ALMA RADITYA KHALID",
+      "timestamp": "2026-03-08T16:27:10.423Z"
+    },
+    {
+      "userId": "student_001",
+      "type": "student",
+      "name": "ALMA RADITYA KHALID",
+      "timestamp": "2026-03-11T12:58:40.456Z"
+    }
+  ],
+  "accessTimeline": {
+    "12": 24,
+    "13": 32,
+    "14": 19,
+    "16": 52,
+    "17": 6,
+    "19": 2,
+    "20": 17,
+    "22": 135,
+    "00": 123,
+    "04": 7,
+    "03": 1,
+    "09": 1
+  },
+  "pageVisits": {
+    "student_001": 141,
+    "student_002": 11,
+    "student_003": 1,
+    "student_031": 7,
+    "student_012": 2,
+    "student_013": 2,
+    "student_018": 3,
+    "student_019": 2,
+    "student_020": 3,
+    "student_023": 2,
+    "student_024": 3,
+    "student_025": 2,
+    "student_032": 3,
+    "student_034": 3,
+    "student_038": 3,
+    "student_041": 2
+  },
+  "profileUpdates": {
+    "student_002": 4,
+    "student_003": 1,
+    "student_001": 8,
+    "student_012": 1,
+    "student_013": 1,
+    "student_018": 2,
+    "student_019": 1,
+    "student_020": 2,
+    "student_023": 1,
+    "student_024": 1,
+    "student_025": 1,
+    "student_032": 2,
+    "student_034": 1,
+    "student_038": 2,
+    "student_041": 1,
+    "student_031": 1
+  },
+  "summary": {
+    "totalVisits": 190,
+    "totalUpdates": 30,
+    "uniqueIPs": 0,
+    "totalLogins": 22,
+    "lastUpdated": "2026-03-11T21:36:26.982Z"
+  }
+}

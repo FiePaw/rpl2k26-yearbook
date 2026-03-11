@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #1DB954;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1ed760;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Yearbook Connection Test</h1>
+    
+    <div class="test-box">
+        <h2>Server Status</h2>
+        <button onclick="testServer()">Test Server Connection</button>
+        <div id="serverStatus"></div>
+    </div>
+
+    <div class="test-box">
+        <h2>API Endpoints</h2>
+        <button onclick="testStudentsAPI()">Test Students API</button>
+        <button onclick="testTeachersAPI()">Test Teachers API</button>
+        <div id="apiStatus"></div>
+    </div>
+
+    <div class="test-box">
+        <h2>Browser Info</h2>
+        <div id="browserInfo"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://47.130.190.120:3000';
+
+        // Display browser info
+        document.getElementById('browserInfo').innerHTML = `
+            <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+            <p><strong>Current URL:</strong> ${window.location.href}</p>
+        `;
+
+        async function testServer() {
+            const statusDiv = document.getElementById('serverStatus');
+            statusDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                const response = await fetch(`${API_URL}/`);
+                if (response.ok) {
+                    statusDiv.innerHTML = '<p class="success">✅ Server is running!</p>';
+                } else {
+                    statusDiv.innerHTML = `<p class="error">❌ Server responded with status: ${response.status}</p>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <p class="error">❌ Cannot connect to server</p>
+                    <p>Error: ${error.message}</p>
+                    <p><strong>Make sure:</strong></p>
+                    <ul>
+                        <li>Server is running: <code>npm start</code></li>
+                        <li>Server is on port 3000</li>
+                        <li>No ad blocker is blocking 47.130.190.120</li>
+                    </ul>
+                `;
+            }
+        }
+
+        async function testStudentsAPI() {
+            const statusDiv = document.getElementById('apiStatus');
+            statusDiv.innerHTML = '<p>Testing Students API...</p>';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/students/names`);
+                const data = await response.json();
+                statusDiv.innerHTML = `
+                    <p class="success">✅ Students API working!</p>
+                    <p>Found ${data.length} students</p>
+                    <details>
+                        <summary>View Data</summary>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <p class="error">❌ Students API failed</p>
+                    <p>Error: ${error.message}</p>
+                `;
+            }
+        }
+
+        async function testTeachersAPI() {
+            const statusDiv = document.getElementById('apiStatus');
+            statusDiv.innerHTML = '<p>Testing Teachers API...</p>';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/teachers/names`);
+                const data = await response.json();
+                statusDiv.innerHTML = `
+                    <p class="success">✅ Teachers API working!</p>
+                    <p>Found ${data.length} teachers</p>
+                    <details>
+                        <summary>View Data</summary>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <p class="error">❌ Teachers API failed</p>
+                    <p>Error: ${error.message}</p>
+                `;
+            }
+        }
+
+        // Auto test on load
+        window.onload = () => {
+            testServer();
+        };
+    </script>
+</body>
+</html>

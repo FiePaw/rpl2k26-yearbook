@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Diagnostic - Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 { color: #667eea; margin-bottom: 1rem; }
+        h2 { color: #764ba2; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.2rem; }
+        .video-test {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            background: #f9f9f9;
+        }
+        .video-player {
+            background: #000;
+            width: 100%;
+            max-width: 600px;
+            margin: 1rem auto;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .controls {
+            margin-top: 1rem;
+            text-align: center;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+        .status {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status.error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+        .status.success {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+        input[type="text"] {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .info-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Video Diagnostic Tool</h1>
+        
+        <div class="info-box">
+            <strong>ℹ️ Informasi:</strong> Halaman ini untuk test apakah video codec dan browser support H.264/AAC video playback.
+        </div>
+
+        <!-- API Videos Test -->
+        <div class="video-test">
+            <h2>1️⃣ Get Videos from API</h2>
+            <button onclick="fetchVideos()">Fetch Video List dari /api/gallery/videos</button>
+            <div id="videoListStatus" class="status"></div>
+        </div>
+
+        <!-- Direct Video URL Test -->
+        <div class="video-test">
+            <h2>2️⃣ Test Direct Video URL</h2>
+            <input type="text" id="videoUrl" placeholder="Enter video URL (e.g., /OurGallery/123_video.mp4)" value="/OurGallery/">
+            <button onclick="testVideoUrl()">Test URL</button>
+            <div class="video-player">
+                <video id="testVideo" controls style="width: 100%; background: #000;">
+                    Your browser does not support HTML5 video.
+                </video>
+            </div>
+            <div class="controls">
+                <button onclick="document.getElementById('testVideo').play()">▶ Play</button>
+                <button onclick="document.getElementById('testVideo').pause()">⏸ Pause</button>
+                <button onclick="document.getElementById('testVideo').currentTime = 0">⏮ Reset</button>
+            </div>
+            <div id="videoStatus" class="status"></div>
+        </div>
+
+        <!-- Video Properties Inspect -->
+        <div class="video-test">
+            <h2>3️⃣ Video Element Properties</h2>
+            <button onclick="inspectVideo()">Inspect Video Element</button>
+            <div id="inspectStatus" class="status"></div>
+        </div>
+
+        <!-- Browser Codec Support Test -->
+        <div class="video-test">
+            <h2>4️⃣ Browser Codec Support</h2>
+            <button onclick="testCodecSupport()">Test Codec Support</button>
+            <div id="codecStatus" class="status"></div>
+        </div>
+
+        <!-- HLS/Streaming Test -->
+        <div class="video-test">
+            <h2>5️⃣ Test Kolase.js Video Load</h2>
+            <button onclick="testKolaseVideos()">Load Videos from Kolase</button>
+            <div id="kolaseStatus" class="status"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://47.130.190.120:3000';
+        
+        function log(msg, status = 'info') {
+            console.log(`[${status.toUpperCase()}] ${msg}`);
+        }
+
+        function updateStatus(elementId, html, isError = false) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = html;
+            el.className = `status ${isError ? 'error' : 'success'}`;
+        }
+
+        async function fetchVideos() {
+            log('Fetching videos from API...', 'info');
+            const statusEl = document.getElementById('videoListStatus');
+            statusEl.innerHTML = '<p>Loading...</p>';
+            statusEl.className = 'status';
+
+            try {
+                const response = await fetch(`${API_URL}/api/gallery/videos`);
+                const data = await response.json();
+
+                if (data.success && data.videos.length > 0) {
+                    let html = `<p><strong>✅ Found ${data.count} video(s)</strong></p><pre>`;
+                    data.videos.forEach((v, i) => {
+                        html += `\nVideo ${i + 1}:\n`;
+                        html += `  Name: ${v.name}\n`;
+                        html += `  URL: ${v.url}\n`;
+                        if (v.optimizedVersions) {
+                            html += `  Optimized: YES\n`;
+                            Object.entries(v.optimizedVersions).forEach(([q, url]) => {
+                                html += `    ${q}: ${url}\n`;
+                            });
+                        } else {
+                            html += `  Optimized: NO\n`;
+                        }
+                    });
+                    html += '</pre>';
+                    updateStatus('videoListStatus', html, false);
+                    
+                    // Auto-populate first video URL
+                    if (data.videos[0].optimizedVersions) {
+                        document.getElementById('videoUrl').value = data.videos[0].optimizedVersions.auto || data.videos[0].optimizedVersions['720p'] || data.videos[0].url;
+                    } else {
+                        document.getElementById('videoUrl').value = data.videos[0].url;
+                    }
+                } else {
+                    updateStatus('videoListStatus', '<p>❌ No videos found</p>', true);
+                }
+            } catch (error) {
+                updateStatus('videoListStatus', `<p>❌ Error: ${error.message}</p>`, true);
+            }
+        }
+
+        function testVideoUrl() {
+            const url = document.getElementById('videoUrl').value;
+            if (!url) {
+                updateStatus('videoStatus', '<p>❌ Please enter video URL</p>', true);
+                return;
+            }
+
+            const video = document.getElementById('testVideo');
+            const fullUrl = url.startsWith('http') ? url : `${API_URL}${url}`;
+            
+            log(`Testing video URL: ${fullUrl}`, 'info');
+            video.src = fullUrl;
+            
+            let statusHtml = `<p>Testing: ${fullUrl}</p>`;
+            
+            video.addEventListener('loadstart', function onLoadStart() {
+                statusHtml += '<p>✅ loadstart event fired</p>';
+                document.getElementById('videoStatus').innerHTML = statusHtml;
+                video.removeEventListener('loadstart', onLoadStart);
+            });
+
+            video.addEventListener('loadedmetadata', function onMetadata() {
+                statusHtml += `<p>✅ loadedmetadata - Duration: ${this.duration}s</p>`;
+                document.getElementById('videoStatus').innerHTML = statusHtml;
+                video.removeEventListener('loadedmetadata', onMetadata);
+            });
+
+            video.addEventListener('canplay', function onCanplay() {
+                statusHtml += '<p>✅ canplay event - Video ready!</p>';
+                document.getElementById('videoStatus').innerHTML = statusHtml;
+                video.removeEventListener('canplay', onCanplay);
+            });
+
+            video.addEventListener('error', function onError() {
+                const errorMsg = this.error ? `${this.error.code}: ${this.error.message}` : 'Unknown error';
+                statusHtml += `<p>❌ Video error: ${errorMsg}</p>`;
+                document.getElementById('videoStatus').innerHTML = statusHtml;
+                document.getElementById('videoStatus').className = 'status error';
+                video.removeEventListener('error', onError);
+            });
+
+            video.load();
+            updateStatus('videoStatus', statusHtml, false);
+        }
+
+        function inspectVideo() {
+            const video = document.getElementById('testVideo');
+            let html = '<pre>';
+            html += `src: ${video.src}\n`;
+            html += `paused: ${video.paused}\n`;
+            html += `duration: ${video.duration}\n`;
+            html += `currentTime: ${video.currentTime}\n`;
+            html += `readyState: ${video.readyState} (0=NOTHING, 1=METADATA, 2=CURRENTDATA, 3=FUTURE, 4=ENOUGH)\n`;
+            html += `networkState: ${video.networkState} (0=EMPTY, 1=IDLE, 2=LOADING, 3=NO_SOURCE)\n`;
+            html += `muted: ${video.muted}\n`;
+            html += `volume: ${video.volume}\n`;
+            html += `buffered: ${video.buffered.length} range(s)\n`;
+            if (video.buffered.length > 0) {
+                for (let i = 0; i < video.buffered.length; i++) {
+                    html += `  Range ${i}: ${video.buffered.start(i)} - ${video.buffered.end(i)}\n`;
+                }
+            }
+            html += '\nError info:\n';
+            if (video.error) {
+                html += `  Code: ${video.error.code}\n`;
+                html += `  Message: ${video.error.message}\n`;
+            } else {
+                html += '  No errors\n';
+            }
+            html += '</pre>';
+            updateStatus('inspectStatus', html, false);
+        }
+
+        function testCodecSupport() {
+            const video = document.createElement('video');
+            let html = '<pre>';
+            
+            const tests = [
+                { codec: 'video/mp4', expected: 'H.264' },
+                { codec: 'video/mp4; codecs="avc1.42E01E"', expected: 'H.264 (avc1)' },
+                { codec: 'video/mp4; codecs="avc1.64002A"', expected: 'H.264 High' },
+                { codec: 'audio/mp4; codecs="mp4a.40.2"', expected: 'AAC' },
+                { codec: 'video/webm', expected: 'WebM' },
+            ];
+
+            tests.forEach(test => {
+                const support = video.canPlayType(test.codec);
+                const icon = support === 'probably' ? '✅' : support === 'maybe' ? '⚠️' : '❌';
+                html += `${icon} ${test.expected}: ${support}\n`;
+            });
+
+            html += '\n🎬 Browser: ' + navigator.userAgent.split('(')[1].split(')')[0];
+            html += '</pre>';
+            updateStatus('codecStatus', html, false);
+        }
+
+        function testKolaseVideos() {
+            const statusEl = document.getElementById('kolaseStatus');
+            statusEl.innerHTML = '<p>Loading kolase.js videos...</p>';
+            statusEl.className = 'status';
+
+            // Check if kolase.js has videoFiles
+            if (typeof videoFiles !== 'undefined') {
+                let html = `<p>✅ videoFiles array found: ${videoFiles.length} videos</p><pre>`;
+                videoFiles.forEach((v, i) => {
+                    html += `Video ${i}: ${v.name || v.filename}\n`;
+                    html += `  url: ${v.url}\n`;
+                    if (v.optimizedVersions) {
+                        html += `  optimized: ${Object.keys(v.optimizedVersions).join(', ')}\n`;
+                    }
+                });
+                html += '</pre>';
+                statusEl.innerHTML = html;
+                statusEl.className = 'status success';
+            } else {
+                statusEl.innerHTML = '<p>❌ videoFiles not found - Load kolase.html first or wait for page initialization</p>';
+                statusEl.className = 'status error';
+            }
+        }
+
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            log('Diagnostic page loaded', 'info');
+            fetchVideos();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memories - Yearbook RPL 2026</title>
+    <link rel="stylesheet" href="loading.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <!-- Anime.js for advanced animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+    <style>
+        /* Video fade-out animation for carousel transition */
+        @keyframes videoFadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+        
+        .video-fade-out {
+            animation: videoFadeOut 2s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <header class="music-header">
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="header-left">
+            <i class="fas fa-compact-disc spinning-slow"></i>
+            <span class="header-title">RPL Yearbook 2026</span>
+        </div>
+        <nav class="header-nav">
+            <a href="beranda"><i class="fas fa-home"></i> Home</a>
+            <a href="kolase" class="active"><i class="fas fa-images"></i> Memories</a>
+            <a href="wali-kelas"><i class="fas fa-star"></i> Teachers</a>
+            <a href="#" id="profileLink"><i class="fas fa-user"></i> Profile</a>
+        </nav>
+        <div class="header-right">
+            <button id="themeToggle" class="theme-btn">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button id="userBtn" class="user-btn">
+                <i class="fas fa-user-circle"></i>
+                <span id="userName">Login</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Sidebar Navigation -->
+    <aside class="sidebar-nav" id="sidebarNav">
+        <div class="sidebar-header">
+            <i class="fas fa-compact-disc spinning-slow"></i>
+            <span>RPL Yearbook 2026</span>
+            <button class="sidebar-close" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="beranda" class="sidebar-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="kolase" class="sidebar-item active">
+                <i class="fas fa-images"></i>
+                <span>Memories</span>
+            </a>
+            <a href="wali-kelas" class="sidebar-item">
+                <i class="fas fa-star"></i>
+                <span>Teachers</span>
+            </a>
+            <a href="#" id="sidebarProfileLink" class="sidebar-item">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="sidebar-theme-btn" id="sidebarThemeToggle">
+                <i class="fas fa-moon"></i>
+                <span>Dark Mode</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h1><i class="fas fa-photo-video"></i> Our Memories</h1>
+                <p>Captured moments that define our journey</p>
+            </div>
+
+            <!-- Photo Type Filter Buttons -->
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; flex-wrap: wrap;">
+                <button class="photo-filter-btn active" data-filter="all" onclick="filterGalleryByType('all')" style="padding: 0.8rem 1.5rem; border: 2px solid var(--primary-color); background: var(--primary-color); color: white; border-radius: 25px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">
+                    <i class="fas fa-images"></i> All Photos
+                </button>
+                <button class="photo-filter-btn" data-filter="girl" onclick="filterGalleryByType('girl')" style="padding: 0.8rem 1.5rem; border: 2px solid #FF6B6B; background: white; color: #FF6B6B; border-radius: 25px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">
+                    <i class="fas fa-user-circle"></i> Girl RPL
+                </button>
+                <button class="photo-filter-btn" data-filter="boy" onclick="filterGalleryByType('boy')" style="padding: 0.8rem 1.5rem; border: 2px solid #00bcd4; background: white; color: #00bcd4; border-radius: 25px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">
+                    <i class="fas fa-user-circle"></i> Boy RPL
+                </button>
+                <button class="photo-filter-btn" data-filter="walas" onclick="filterGalleryByType('walas')" style="padding: 0.8rem 1.5rem; border: 2px solid #FFC107; background: white; color: #FFC107; border-radius: 25px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">
+                    <i class="fas fa-users"></i> With Teacher
+                </button>
+            </div>
+
+            <div class="memories-container" id="memoriesContainer">
+                <!-- Gallery images will be loaded here dynamically -->
+            </div>
+
+            <!-- Video Gallery Slider - Spotify Style -->
+            <div class="video-gallery-section">
+                <h2><i class="fas fa-film"></i> Our Videos</h2>
+                
+                <!-- Spotify-Style Video Player -->
+                <div class="spotify-video-player">
+                    <!-- Video Container with overlay controls -->
+                    <div class="video-player-wrapper" id="videoCarousel">
+                        <div id="videoContainer" class="video-player-container"></div>
+                        
+                        <!-- Overlay Controls (shown on hover) -->
+                        <div class="video-overlay-controls">
+                            <!-- Play/Pause Button (Center) -->
+                            <button class="video-play-btn" id="overlayPlayBtn" title="Play/Pause">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            
+                            <!-- Top Bar Info -->
+                            <div class="video-player-top-bar">
+                                <div class="video-title-info">
+                                    <h3 id="videoTitle">Our Videos</h3>
+                                    <p id="videoCounter">1 / 10</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bottom Control Bar -->
+                        <div class="video-player-controls">
+                            <!-- Progress Bar -->
+                            <div class="video-progress-section">
+                                <span class="video-time" id="videoCurrentTime">0:00</span>
+                                <div class="video-progress-bar">
+                                    <div class="video-progress-fill" id="videoProgress"></div>
+                                    <div class="video-progress-handle"></div>
+                                </div>
+                                <span class="video-time" id="videoDuration">0:00</span>
+                            </div>
+                            
+                            <!-- Control Buttons -->
+                            <div class="video-control-buttons">
+                                <!-- Previous Button -->
+                                <button class="video-control-btn" id="prevBtn" onclick="prevVideo()" title="Previous video">
+                                    <i class="fas fa-step-backward"></i>
+                                </button>
+                                
+                                <!-- Play/Pause Button -->
+                                <button class="video-control-btn play-pause" id="playPauseBtn" title="Play/Pause">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                
+                                <!-- Next Button -->
+                                <button class="video-control-btn" id="nextBtn" onclick="nextVideo()" title="Next video">
+                                    <i class="fas fa-step-forward"></i>
+                                </button>
+                                
+                                <!-- Spacer -->
+                                <div style="flex: 1;"></div>
+                                
+                                <!-- Volume Control -->
+                                <div class="video-volume-control">
+                                    <button class="video-control-btn volume-btn" id="volumeBtn" title="Mute">
+                                        <i class="fas fa-volume-up"></i>
+                                    </button>
+                                    <input type="range" class="video-volume-slider" id="volumeSlider" min="0" max="100" value="100" title="Volume">
+                                </div>
+                                
+                                <!-- Fullscreen Button -->
+                                <button class="video-control-btn" id="fullscreenBtn" title="Fullscreen">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Image Popup Modal -->
+    <div id="imagePopupModal" class="image-popup-modal" style="display: none;">
+        <div class="image-popup-overlay" onclick="closeImagePopup()"></div>
+        <div class="image-popup-container">
+            <!-- Close Button -->
+            <button class="image-popup-close" onclick="closeImagePopup()" title="Close (Esc)">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <!-- Navigation Buttons -->
+            <button class="image-popup-nav image-popup-prev" onclick="previousImagePopup()" title="Previous (←)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="image-popup-nav image-popup-next" onclick="nextImagePopup()" title="Next (→)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+
+            <!-- Image Container -->
+            <div class="image-popup-content">
+                <img id="popupImage" src="" alt="Full size image" class="image-popup-img">
+                <div id="popupImageInfo" class="image-popup-info">
+                    <p><strong id="popupImageTitle">Image Title</strong></p>
+                    <p id="popupImageCounter" class="image-popup-counter">1 of 1</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="music-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <i class="fas fa-headphones"></i>
+                <span>RPL Class of 2026</span>
+            </div>
+            <div class="footer-center">
+                <div class="equalizer">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+            <div class="footer-right">
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="loading.js"></script>
+    <script src="popup.js"></script>
+    <script src="enable-scroll.js"></script>
+    <script src="common.js"></script>
+    <script src="animations.js"></script>
+    <script src="kolase.js"></script>
+</body>
+</html>

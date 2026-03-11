@@ -1,0 +1,312 @@
+/* ========== LOADING SCREEN STYLES ========== */
+
+:root {
+    /* JANGAN OTAK ATIK KALO GAK ADA BACKUP! */
+    --loading-duration: 2.5s;             /* Total animation duration - 3000ms */
+    --logo-animation-duration: 2.5s;    /* Logo zoom fade duration */
+    --text-animation-duration: 2.8s;    /* Text fade duration */
+    --wobble-start: 1.5s;             /* When wobble starts - 2800ms */
+    --wobble-duration: 1s;          /* Wobble animation duration - 400ms */
+    --overlay-fade: 0s;             /* Overlay fade when closing - 200ms */
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--overlay-fade) ease, visibility var(--overlay-fade) ease;
+    will-change: opacity, visibility;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+[data-theme="light"] .loading-overlay {
+    background: #FFFFFF;
+}
+
+.loading-overlay {
+    background: #121212;
+}
+
+.loading-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-logo {
+    width: 380px;
+    height: 380px;
+    animation: loadingZoomFade var(--logo-animation-duration) ease-in-out;
+    object-fit: contain;
+    margin-bottom: 30px;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+.loading-text {
+    font-size: 38px;
+    font-weight: bold;
+    color: #dbd7d7;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    animation: loadingTextFade var(--text-animation-duration) ease-in-out;
+    margin-top: 20px;
+    transform: translateZ(0);
+    will-change: opacity, transform;
+    backface-visibility: hidden;
+}
+
+[data-theme="light"] .loading-text {
+    color: #121212;
+}
+
+@keyframes loadingZoomFade {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    15% {
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+    25% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    75% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    85% {
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+}
+
+@keyframes loadingTextFade {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    40% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    85% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+@keyframes glitchLightning {
+    0% {
+        text-shadow: 
+            0 0 10px rgba(0, 255, 255, 0),
+            0 0 20px rgba(0, 255, 255, 0),
+            0 0 30px rgba(0, 255, 255, 0),
+            -2px 0 10px rgba(255, 0, 255, 0);
+        letter-spacing: 8px;
+    }
+    10% {
+        text-shadow: 
+            0 0 10px rgba(0, 255, 255, 0.3),
+            0 0 20px rgba(0, 255, 255, 0.1),
+            0 0 30px rgba(100, 200, 255, 0),
+            -2px 0 10px rgba(255, 0, 255, 0);
+        letter-spacing: 8px;
+    }
+    20% {
+        text-shadow: 
+            -3px 0 20px rgba(255, 255, 255, 0.8),
+            2px 2px 10px rgba(229, 241, 250, 0.722),
+            0 0 40px rgba(172, 178, 182, 0.4),
+            -2px -2px 10px rgba(123, 120, 123, 0.3);
+        letter-spacing: 12px;
+    }
+    30% {
+        text-shadow: 
+            0 0 10px rgba(0, 255, 255, 0.3),
+            0 0 20px rgba(0, 255, 255, 0.1),
+            0 0 30px rgba(100, 200, 255, 0),
+            -2px 0 10px rgba(255, 0, 255, 0);
+        letter-spacing: 8px;
+    }
+    40% {
+        text-shadow: 
+            3px -3px 20px rgba(252, 252, 252, 0.7),
+        -2px 3px 10px rgba(174, 176, 178, 0.7),
+            0 0 35px rgba(130, 131, 131, 0.5),
+            3px 0 15px rgba(98, 97, 98, 0.4);
+        letter-spacing: 11px;
+    }
+    50% {
+        text-shadow: 
+            0 0 10px rgba(0, 255, 255, 0.2),
+            0 0 20px rgba(0, 255, 255, 0.1),
+            0 0 30px rgba(100, 200, 255, 0),
+            -2px 0 10px rgba(255, 0, 255, 0);
+        letter-spacing: 8px;
+    }
+    60% {
+        text-shadow: 
+            -2px 2px 20px rgba(255, 255, 255, 0.75),
+            2px -2px 10px rgba(170, 166, 166, 0.65),
+            0 0 40px rgba(144, 146, 147, 0.45),
+            -3px 1px 12px rgba(72, 70, 72, 0.35);
+        letter-spacing: 10px;
+    }
+    70% {
+        text-shadow: 
+            0 0 15px rgba(252, 252, 252, 0.4),
+            0 0 25px rgba(176, 181, 183, 0.2),
+            0 0 35px rgba(100, 200, 255, 0.1),
+            0 0 10px rgba(255, 0, 255, 0);
+        letter-spacing: 8px;
+    }
+    80% {
+        text-shadow: 
+            2px -2px 25px rgba(254, 255, 255, 0.85),
+            -3px 2px 12px rgba(196, 199, 202, 0.75),
+            0 0 45px rgba(111, 114, 116, 0.5),
+            2px 2px 15px rgba(57, 55, 57, 0.4);
+        letter-spacing: 12px;
+    }
+    90% {
+        text-shadow: 
+            0 0 12px rgba(0, 255, 255, 0.3),
+            0 0 22px rgba(0, 200, 255, 0.15),
+            0 0 32px rgba(100, 200, 255, 0),
+            0 0 8px rgba(255, 0, 255, 0);
+        letter-spacing: 8px;
+    }
+    100% {
+        text-shadow: 
+            0 0 10px rgba(0, 255, 255, 0),
+            0 0 20px rgba(0, 255, 255, 0),
+            0 0 30px rgba(0, 255, 255, 0),
+            -2px 0 10px rgba(255, 0, 255, 0);
+        letter-spacing: 8px;
+    }
+}
+
+@keyframes glitchWobble {
+    0% {
+        transform: scale(1) rotateZ(0deg) translateX(0);
+        opacity: 1;
+    }
+    15% {
+        transform: scale(1.03) rotateZ(-1deg) translateX(-2px);
+        opacity: 0.95;
+    }
+    30% {
+        transform: scale(0.97) rotateZ(1.5deg) translateX(3px);
+        opacity: 0.92;
+    }
+    45% {
+        transform: scale(1.02) rotateZ(-0.5deg) translateX(-1px);
+        opacity: 0.94;
+    }
+    60% {
+        transform: scale(0.98) rotateZ(1deg) translateX(2px);
+        opacity: 0.93;
+    }
+    75% {
+        transform: scale(1.01) rotateZ(-0.8deg) translateX(-1.5px);
+        opacity: 0.95;
+    }
+    85% {
+        transform: scale(1) rotateZ(0.5deg) translateX(0);
+        opacity: 0.97;
+    }
+    100% {
+        transform: scale(1) rotateZ(0deg) translateX(0);
+        opacity: 0;
+    }
+}
+
+.loading-text.glitch {
+    animation: loadingTextFade var(--text-animation-duration) ease-in-out, glitchLightning var(--text-animation-duration) ease-in-out, glitchWobble var(--wobble-duration) ease-in-out var(--wobble-start) forwards;
+}
+
+@media (max-width: 768px) {
+    .loading-logo {
+        width: 400px;
+        height: 400px;
+    }
+    
+    .loading-text {
+        font-size: 36px;
+        letter-spacing: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .loading-logo {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .loading-text {
+        font-size: 28px;
+        letter-spacing: 4px;
+        margin-top: 15px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .loading-logo,
+    .loading-text {
+        animation: none;
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .loading-overlay {
+        transition: none;
+    }
+    
+    .loading-text.glitch {
+        animation: none !important;
+    }
+}

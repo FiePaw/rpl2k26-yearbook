@@ -1,0 +1,387 @@
+/**
+ * Custom Popup Styles
+ * Styling untuk custom modal popup yang menyesuaikan dengan tema
+ */
+
+/* Popup Container */
+.custom-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    animation: popupFadeIn 0.3s ease-out;
+}
+
+.custom-popup.show {
+    animation: popupShow 0.3s ease-out forwards;
+}
+
+@keyframes popupFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes popupShow {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Overlay */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    cursor: pointer;
+    opacity: 0;
+}
+
+/* Container */
+.popup-container {
+    position: relative;
+    background: var(--bg-secondary, #ffffff);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    max-width: 450px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: popupSlideIn 0.3s ease-out;
+    border: 1px solid var(--border-color, #e0e0e0);
+    z-index: 2;
+}
+
+[data-theme="dark"] .popup-container {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+}
+
+[data-theme="light"] .popup-container {
+    background: #ffffff;
+    border-color: #e0e0e0;
+}
+
+@keyframes popupSlideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Header */
+.popup-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+    color: var(--text-primary, #000000);
+}
+
+[data-theme="dark"] .popup-header {
+    border-bottom-color: #3d3d3d;
+    color: #ffffff;
+}
+
+[data-theme="light"] .popup-header {
+    border-bottom-color: #e0e0e0;
+    color: #000000;
+}
+
+.popup-header i {
+    font-size: 24px;
+    width: 28px;
+    text-align: center;
+}
+
+/* Icon Colors */
+.custom-popup-info .popup-header i {
+    color: #3b82f6;
+}
+
+.custom-popup-success .popup-header i {
+    color: #10b981;
+}
+
+.custom-popup-error .popup-header i {
+    color: #ef4444;
+}
+
+.custom-popup-warning .popup-header i {
+    color: #f59e0b;
+}
+
+.custom-popup-confirm .popup-header i {
+    color: #8b5cf6;
+}
+
+/* Title */
+.popup-title {
+    font-size: 18px;
+    font-weight: 600;
+    flex: 1;
+}
+
+/* Close Button */
+.popup-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--text-secondary, #666666);
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.popup-close:hover {
+    background-color: var(--hover-bg, #f0f0f0);
+    color: var(--text-primary, #000000);
+}
+
+[data-theme="dark"] .popup-close:hover {
+    background-color: #3d3d3d;
+}
+
+/* Content */
+.popup-content {
+    padding: 20px;
+    color: var(--text-primary, #000000);
+}
+
+[data-theme="dark"] .popup-content {
+    color: #e0e0e0;
+}
+
+[data-theme="light"] .popup-content {
+    color: #333333;
+}
+
+.popup-content p {
+    margin: 0;
+    line-height: 1.5;
+    font-size: 15px;
+    word-wrap: break-word;
+}
+
+/* Footer */
+.popup-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 20px;
+    border-top: 1px solid var(--border-color, #e0e0e0);
+    background-color: var(--bg-tertiary, #f5f5f5);
+}
+
+[data-theme="dark"] .popup-footer {
+    border-top-color: #3d3d3d;
+    background-color: #1f1f1f;
+}
+
+[data-theme="light"] .popup-footer {
+    border-top-color: #e0e0e0;
+    background-color: #f9f9f9;
+}
+
+/* Buttons */
+.popup-btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 80px;
+}
+
+.popup-btn-ok,
+.popup-btn-confirm {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.popup-btn-ok:hover,
+.popup-btn-confirm:hover {
+    background-color: #2563eb;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.popup-btn-ok:active,
+.popup-btn-confirm:active {
+    transform: scale(0.98);
+}
+
+.popup-btn-cancel {
+    background-color: var(--bg-secondary, #ffffff);
+    color: var(--text-primary, #000000);
+    border: 1px solid var(--border-color, #e0e0e0);
+}
+
+[data-theme="dark"] .popup-btn-cancel {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border-color: #3d3d3d;
+}
+
+[data-theme="light"] .popup-btn-cancel {
+    background-color: #f5f5f5;
+    color: #333333;
+    border-color: #e0e0e0;
+}
+
+.popup-btn-cancel:hover {
+    background-color: var(--hover-bg, #f0f0f0);
+}
+
+[data-theme="dark"] .popup-btn-cancel:hover {
+    background-color: #3d3d3d;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .popup-container {
+        width: 95%;
+        max-width: 380px;
+    }
+
+    .popup-header {
+        padding: 16px;
+    }
+
+    .popup-content {
+        padding: 16px;
+    }
+
+    .popup-footer {
+        flex-direction: column-reverse;
+        padding: 16px;
+    }
+
+    .popup-btn {
+        width: 100%;
+    }
+
+    .popup-header i {
+        font-size: 20px;
+    }
+
+    .popup-title {
+        font-size: 16px;
+    }
+
+    .popup-content p {
+        font-size: 14px;
+    }
+}
+
+/* Custom popup specific colors for types */
+
+/* Success variant */
+.custom-popup-success .popup-btn-ok,
+.custom-popup-success .popup-btn-confirm {
+    background-color: #10b981;
+}
+
+.custom-popup-success .popup-btn-ok:hover,
+.custom-popup-success .popup-btn-confirm:hover {
+    background-color: #059669;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* Error variant */
+.custom-popup-error .popup-btn-ok,
+.custom-popup-error .popup-btn-confirm {
+    background-color: #ef4444;
+}
+
+.custom-popup-error .popup-btn-ok:hover,
+.custom-popup-error .popup-btn-confirm:hover {
+    background-color: #dc2626;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Warning variant */
+.custom-popup-warning .popup-btn-ok,
+.custom-popup-warning .popup-btn-confirm {
+    background-color: #f59e0b;
+}
+
+.custom-popup-warning .popup-btn-ok:hover,
+.custom-popup-warning .popup-btn-confirm:hover {
+    background-color: #d97706;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+/* Confirm variant */
+.custom-popup-confirm .popup-btn-ok,
+.custom-popup-confirm .popup-btn-confirm {
+    background-color: #8b5cf6;
+}
+
+.custom-popup-confirm .popup-btn-ok:hover,
+.custom-popup-confirm .popup-btn-confirm:hover {
+    background-color: #7c3aed;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+/* Scrollbar styling */
+.popup-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.popup-container::-webkit-scrollbar-track {
+    background: var(--bg-secondary, #ffffff);
+}
+
+[data-theme="dark"] .popup-container::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+.popup-container::-webkit-scrollbar-thumb {
+    background: var(--border-color, #d0d0d0);
+    border-radius: 4px;
+}
+
+.popup-container::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary, #a0a0a0);
+}
+
+[data-theme="dark"] .popup-container::-webkit-scrollbar-thumb {
+    background: #3d3d3d;
+}
+
+[data-theme="dark"] .popup-container::-webkit-scrollbar-thumb:hover {
+    background: #4d4d4d;
+}

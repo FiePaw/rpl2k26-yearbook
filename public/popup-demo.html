@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Popup System Demo - Yearbook RPL 2026</title>
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: var(--bg-color, #ffffff);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .demo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--bg-secondary, #f5f5f5);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--text-primary, #000000);
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-secondary, #666666);
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .demo-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .demo-btn-info {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .demo-btn-info:hover {
+            background-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .demo-btn-success {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .demo-btn-success:hover {
+            background-color: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .demo-btn-error {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .demo-btn-error:hover {
+            background-color: #dc2626;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .demo-btn-warning {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .demo-btn-warning:hover {
+            background-color: #d97706;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+        }
+
+        .demo-btn-confirm {
+            background-color: #8b5cf6;
+            color: white;
+        }
+
+        .demo-btn-confirm:hover {
+            background-color: #7c3aed;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .demo-section {
+            margin-bottom: 40px;
+        }
+
+        .demo-section h2 {
+            color: var(--text-primary, #000000);
+            font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color, #e0e0e0);
+        }
+
+        .code-block {
+            background: var(--code-bg, #1e1e1e);
+            color: var(--code-text, #d4d4d4);
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary-color, #3b82f6);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            color: var(--text-primary, #000000);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feature-card {
+            background: var(--bg-color, #ffffff);
+            border: 1px solid var(--border-color, #e0e0e0);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .feature-card i {
+            font-size: 24px;
+            color: var(--primary-color, #3b82f6);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .feature-card span {
+            font-size: 12px;
+            color: var(--text-secondary, #666666);
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .demo-container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+            }
+
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        [data-theme="dark"] .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        [data-theme="light"] .code-block {
+            background: #f5f5f5;
+            color: #333333;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle" title="Toggle Dark/Light Mode">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <div class="demo-container">
+        <h1><i class="fas fa-bell"></i> Popup System Demo</h1>
+        <p class="subtitle">Percobaan semua tipe popup yang tersedia di Yearbook RPL 2026</p>
+
+        <!-- Info Box -->
+        <div class="info-box">
+            <i class="fas fa-info-circle"></i> Klik tombol di bawah untuk melihat berbagai jenis popup. Popup akan menyesuaikan dengan tema yang aktif (dark/light mode).
+        </div>
+
+        <!-- Tipe Popup Section -->
+        <div class="demo-section">
+            <h2><i class="fas fa-palette"></i> Tipe-Tipe Popup</h2>
+            
+            <div class="demo-grid">
+                <button class="demo-btn demo-btn-info" onclick="testInfo()">
+                    <i class="fas fa-info-circle"></i> Info Popup
+                </button>
+                <button class="demo-btn demo-btn-success" onclick="testSuccess()">
+                    <i class="fas fa-check-circle"></i> Success Popup
+                </button>
+                <button class="demo-btn demo-btn-error" onclick="testError()">
+                    <i class="fas fa-times-circle"></i> Error Popup
+                </button>
+                <button class="demo-btn demo-btn-warning" onclick="testWarning()">
+                    <i class="fas fa-exclamation-triangle"></i> Warning Popup
+                </button>
+                <button class="demo-btn demo-btn-confirm" onclick="testConfirm()">
+                    <i class="fas fa-question-circle"></i> Confirm Popup
+                </button>
+            </div>
+
+            <!-- Kode Contoh -->
+            <div class="code-block">// Contoh penggunaan:\npopup.info('Ini adalah popup info');\npopup.success('Operasi berhasil!');\npopup.error('Terjadi kesalahan!');\npopup.warning('Perhatian!');\npopup.confirm('Yakin?', (confirmed) => { console.log(confirmed); });</div>
+        </div>
+
+        <!-- Real-World Examples Section -->
+        <div class="demo-section">
+            <h2><i class="fas fa-computer"></i> Contoh Kasus Nyata</h2>
+            
+            <div class="demo-grid">
+                <button class="demo-btn demo-btn-success" onclick="testProfileSave()">
+                    <i class="fas fa-user-check"></i> Profile Saved
+                </button>
+                <button class="demo-btn demo-btn-error" onclick="testLoginFailed()">
+                    <i class="fas fa-sign-in-alt"></i> Login Failed
+                </button>
+                <button class="demo-btn demo-btn-warning" onclick="testAudioTrim()">
+                    <i class="fas fa-scissors"></i> Audio Trim
+                </button>
+                <button class="demo-btn demo-btn-info" onclick="testAudioDownload()">
+                    <i class="fas fa-download"></i> Downloading
+                </button>
+                <button class="demo-btn demo-btn-confirm" onclick="testLogout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout Confirm
+                </button>
+            </div>
+        </div>
+
+        <!-- Fitur Section -->
+        <div class="demo-section">
+            <h2><i class="fas fa-star"></i> Fitur Unggulan</h2>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Responsive Design<br>(Desktop & Mobile)</span>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-adjust"></i>
+                    <span>Dark/Light Mode<br>Support</span>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-bolt"></i>
+                    <span>Smooth Animations<br>& Transitions</span>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-universal-access"></i>
+                    <span>Accessibility<br>Friendly</span>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-keyboard"></i>
+                    <span>Keyboard<br>Navigation</span>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-cogs"></i>
+                    <span>Zero<br>Dependencies</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Section -->
+        <div class="demo-section">
+            <h2><i class="fas fa-book"></i> Dokumentasi</h2>
+            <p>Untuk dokumentasi lengkap, buka file <code>POPUP_SYSTEM_DOCS.md</code></p>
+            
+            <div class="code-block">
+// File yang ditambahkan:
+- popup.js      // Sistem popup utama
+- popup.css     // Styling dan animasi
+- POPUP_SYSTEM_DOCS.md  // Dokumentasi lengkap
+
+// Files yang diupdate:
+- index.html, profile.html, beranda.html, kolase.html, wali-kelas.html
+  ↓ Ditambahkan link popup.css dan popup.js
+
+- profile.js    // 12 alert diganti dengan popup
+- landing.js    // 8 alert diganti dengan popup
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="popup.js"></script>
+    <script>
+        // Theme Toggle
+        function initTheme() {
+            const themeToggle = document.getElementById('themeToggle');
+            const currentTheme = localStorage.getItem('theme') || 'dark';
+            
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            updateThemeIcon(currentTheme);
+            
+            themeToggle.addEventListener('click', () => {
+                const theme = document.documentElement.getAttribute('data-theme');
+                const newTheme = theme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
+            });
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = document.querySelector('#themeToggle i');
+            icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        // Test Functions
+        function testInfo() {
+            popup.info('Ini adalah popup informasi. Berisi pesan biasa atau pemberitahuan.');
+        }
+
+        function testSuccess() {
+            popup.success('Selamat! Operasi berhasil dilakukan dengan sempurna.');
+        }
+
+        function testError() {
+            popup.error('Maaf! Terjadi kesalahan. Silakan coba lagi.');
+        }
+
+        function testWarning() {
+            popup.warning('Perhatian! Pastikan semua data sudah diisi dengan benar.');
+        }
+
+        function testConfirm() {
+            popup.confirm('Apakah Anda yakin ingin melanjutkan?', (confirmed) => {
+                if (confirmed) {
+                    popup.success('Anda telah mengkonfirmasi aksi ini.');
+                } else {
+                    popup.info('Aksi dibatalkan.');
+                }
+            });
+        }
+
+        // Real-world examples
+        function testProfileSave() {
+            popup.success('✅ Profile Anda telah berhasil disimpan!');
+        }
+
+        function testLoginFailed() {
+            popup.error('❌ Email atau password salah. Silakan coba lagi.');
+        }
+
+        function testAudioTrim() {
+            popup.warning('⚠️ Start time harus lebih kecil dari end time!');
+        }
+
+        function testAudioDownload() {
+            popup.info('📥 Sedang mengunduh audio dari Spotify... Mohon tunggu sebentar.');
+        }
+
+        function testLogout() {
+            popup.confirm('Anda yakin ingin logout?', (confirmed) => {
+                if (confirmed) {
+                    popup.success('Anda telah logout. Sampai jumpa!');
+                }
+            });
+        }
+
+        // Initialize
+        initTheme();
+    </script>
+</body>
+</html>

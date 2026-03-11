@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Video Carousel Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        .carousel-container { max-width: 900px; margin: 0 auto; }
+        #videoCarousel { position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 10px; overflow: hidden; }
+        #videoContainer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; }
+        video.active { opacity: 1; transition: opacity 0.4s ease-out; }
+        #console { background: #222; padding: 10px; margin-top: 20px; border-radius: 5px; font-family: monospace; max-height: 300px; overflow-y: auto; }
+        .log { padding: 5px; margin: 3px 0; border-left: 3px solid #1DB954; padding-left: 10px; }
+        .error { border-left-color: #FF6B6B; }
+        .warning { border-left-color: #FFD93D; }
+    </style>
+</head>
+<body>
+    <div class="carousel-container">
+        <h1>Simple Video Carousel Test</h1>
+        
+        <div id="videoCarousel" style="position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 10px; overflow: hidden;">
+            <div id="videoContainer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+        </div>
+        
+        <div id="info" style="margin-top: 20px; text-align: center;">
+            <p id="videoInfo">Loading...</p>
+            <button onclick="prevVideo()">← Previous</button>
+            <button onclick="nextVideo()">Next →</button>
+        </div>
+        
+        <div id="console"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://47.130.190.120:3000';
+        let videos = [];
+        let currentIndex = 0;
+        
+        function log(msg, type = 'info') {
+            console.log(msg);
+            const consoleEl = document.getElementById('console');
+            const logEl = document.createElement('div');
+            logEl.className = 'log ' + type;
+            logEl.textContent = msg;
+            consoleEl.appendChild(logEl);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+        
+        async function init() {
+            log('🚀 Initializing carousel...');
+            
+            try {
+                log('📡 Fetching videos from API...');
+                const response = await fetch(`${API_URL}/api/gallery/videos`);
+                log(`API Response: ${response.status} ${response.statusText}`);
+                
+                const data = await response.json();
+                log(`Received ${data.count} videos`);
+                
+                if (data.success && data.videos && data.videos.length > 0) {
+                    videos = data.videos;
+                    log(`✅ Loaded ${videos.length} videos`);
+                    
+                    // Create video elements
+                    const container = document.getElementById('videoContainer');
+                    videos.forEach((video, index) => {
+                        const videoEl = document.createElement('video');
+                        videoEl.id = `video-${index}`;
+                        videoEl.muted = true;
+                        videoEl.controls = false;
+                        videoEl.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0;';
+                        
+                        // Use optimized version if available
+                        const url = video.optimizedVersions?.auto || video.optimizedVersions?.['720p'] || video.url;
+                        videoEl.src = url;
+                        
+                        if (index === 0) {
+                            videoEl.style.opacity = '1';
+                            videoEl.autoplay = true;
+                        }
+                        
+                        container.appendChild(videoEl);
+                        log(`Added video ${index}: ${video.name}`);
+                    });
+                    
+                    log('✅ Carousel ready!');
+                    updateInfo();
+                } else {
+                    log('❌ No videos found', 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                log(error.stack, 'error');
+            }
+        }
+        
+        function showVideo(index) {
+            const container = document.getElementById('videoContainer');
+            const videoEls = container.querySelectorAll('video');
+            
+            videoEls.forEach((el, idx) => {
+                el.style.opacity = idx === index ? '1' : '0';
+                if (idx === index) {
+                    el.play().catch(e => log(`Play error: ${e.message}`, 'warning'));
+                } else {
+                    el.pause();
+                }
+            });
+            
+            currentIndex = index;
+            updateInfo();
+        }
+        
+        function nextVideo() {
+            showVideo((currentIndex + 1) % videos.length);
+        }
+        
+        function prevVideo() {
+            showVideo((currentIndex - 1 + videos.length) % videos.length);
+        }
+        
+        function updateInfo() {
+            document.getElementById('videoInfo').textContent = `Video ${currentIndex + 1} of ${videos.length}: ${videos[currentIndex]?.name}`;
+        }
+        
+        // Start on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

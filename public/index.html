@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yearbook RPL 2026 - Music Edition</title>
+    <link rel="stylesheet" href="loading.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+    <!-- Header -->
+    <header class="landing-header">
+        <div class="header-container">
+            <div class="header-logo">
+                <i class="fas fa-compact-disc"></i>
+                <span>YEARBOOK RPL 2026</span>
+            </div>
+            <button class="header-login-btn" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i>
+                Login
+            </button>
+        </div>
+    </header>
+
+    <div class="landing-page">
+        <div class="landing-left">
+            <div class="landing-content">
+                <h1 class="landing-title" id="rotatingTitle">
+                    <span class="title-text">Bukan Sekadar Baris Logika,<span class="highlight"><br>Tapi Cerita Tentang Kita.</span></span>
+                </h1>
+                <div class="cta-buttons">
+                    <button class="btn-primary" onclick="window.location.href='beranda'">
+                        <span>Beranda</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="landing-cards-right">
+            <div class="student-cards-container" id="studentCardsContainer">
+                <!-- Cards will be loaded dynamically here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-container">
+            <a href="https://www.instagram.com/rplgeneration2k26?igsh=eWlxbDJ1OGhoaW8x" target="_blank" rel="noopener noreferrer" class="footer-content">
+                <i class="fab fa-instagram"></i>
+                <span>RPL GENERATION 2k26</span>
+            </a>
+        </div>
+    </footer>
+
+    <!-- Modal Login -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-header">
+                <i class="fas fa-headphones"></i>
+                <h2>Choose Your Track</h2>
+            </div>
+            <div class="login-tabs">
+                <button class="tab-btn active" data-tab="student">
+                    <i class="fas fa-user-graduate"></i> Student
+                </button>
+                <button class="tab-btn" data-tab="teacher">
+                    <i class="fas fa-chalkboard-teacher"></i> Teacher
+                </button>
+                <button class="tab-btn" data-tab="admin">
+                    <i class="fas fa-shield-alt"></i> Admin
+                </button>
+            </div>
+            
+            <!-- Student Login Form -->
+            <div id="studentTab" class="tab-content active">
+                <form id="studentLoginForm">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Pilih Nama</label>
+                        <select id="studentName" required>
+                            <option value="">Select your name...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Password</label>
+                        <input type="password" id="studentPassword" placeholder="NamaAwal" required>
+                    </div>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </form>
+            </div>
+
+            <!-- Teacher Login Form -->
+            <div id="teacherTab" class="tab-content">
+                <form id="teacherLoginForm">
+                    <div class="form-group">
+                        <label><i class="fas fa-chalkboard-teacher"></i> Pilih Nama</label>
+                        <select id="teacherName" required>
+                            <option value="">Select your name...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Password</label>
+                        <input type="password" id="teacherPassword" placeholder="RPL2k26" required>
+                    </div>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </form>
+            </div>
+
+            <!-- Admin Login Form -->
+            <div id="adminTab" class="tab-content">
+                <form id="adminLoginForm">
+                    <div class="form-group">
+                        <label><i class="fas fa-shield-alt"></i> Admin ID</label>
+                        <input type="text" id="adminId" placeholder="Enter admin ID" required value="admin">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Password</label>
+                        <input type="password" id="adminPassword" placeholder="Enter admin password" required>
+                    </div>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="loading.js"></script>
+    <script src="popup.js"></script>
+    <script src="landing.js"></script>
+</body>
+</html>

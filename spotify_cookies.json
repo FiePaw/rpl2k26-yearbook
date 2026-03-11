@@ -1,0 +1,80 @@
+[
+    {
+        "domain": ".spotify.com",
+        "expirationDate": 1778782067.281503,
+        "hostOnly": false,
+        "httpOnly": false,
+        "name": "sp_t",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": null,
+        "value": "b5a400192d1d7b69d7cba1a3c49300a5"
+    },
+    {
+        "domain": ".spotify.com",
+        "expirationDate": 1766681163.321442,
+        "hostOnly": false,
+        "httpOnly": true,
+        "name": "sp_dc",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": null,
+        "value": "AQAa1Ebettmc7qCudCzph6I-IOQSQkcnurtPdnLXg4ndYwis6zMkJZMyltrqR2MV6iX7A3teof_4_2IssEGA9k_W1X0TnVB_y4kQrXmymLaL9tCskMOsddBuT1jGXOBgPLB3lCXeUG9GdbDb9vwAgBIEX4B7wPg3H4Xnj-r4U11LIcyoPuZnjLygm4DXWNErPayPyrFRCwT8PgVdTRo"
+    },
+    {
+        "domain": ".spotify.com",
+        "expirationDate": 1764255072.416723,
+        "hostOnly": false,
+        "httpOnly": false,
+        "name": "sp_gaid",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": null,
+        "value": "0088fc457d99f05cdeea6bcefe36361f1e2929675e52d0b413f20b"
+    },
+    {
+        "domain": ".spotify.com",
+        "expirationDate": 1766681163.321644,
+        "hostOnly": false,
+        "httpOnly": false,
+        "name": "sp_key",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": null,
+        "value": "25397b04-6528-457b-a80c-18763747436f"
+    },
+    {
+        "domain": ".spotify.com",
+        "expirationDate": 1763245940.973794,
+        "hostOnly": false,
+        "httpOnly": true,
+        "name": "sp_landing",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": null,
+        "value": "https%3A%2F%2Fopen.spotify.com%2Fplaylist%2F2ZUMNcW5ldNM2LAM3t4196%3Fsp_cid%3Db5a400192d1d7b69d7cba1a3c49300a5%26device%3Ddesktop"
+    },
+    {
+        "domain": ".spotify.com",
+        "expirationDate": 1774623071.471107,
+        "hostOnly": false,
+        "httpOnly": true,
+        "name": "sp_m",
+        "path": "/",
+        "sameSite": "lax",
+        "secure": true,
+        "session": false,
+        "storeId": null,
+        "value": "id-id"
+    }
+]

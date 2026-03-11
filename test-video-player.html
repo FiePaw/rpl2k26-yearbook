@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Video Player - Test</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            margin: 0;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-box {
+            background: #f5f7fa;
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 5px;
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+        }
+        
+        .test-section h2 {
+            color: #764ba2;
+            font-size: 1.2rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background: #f9fafb;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-area i {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+        
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .test-result {
+            background: #f0f4ff;
+            border: 1px solid #667eea;
+            border-radius: 5px;
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .success {
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        
+        .loading {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin: 0.25rem;
+        }
+        
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-error {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        th {
+            background: #f3f4f6;
+            font-weight: bold;
+            color: #374151;
+        }
+        
+        pre {
+            background: #1f2937;
+            color: #10b981;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><i class="fas fa-video"></i> Smart Video Player - Test & Demo</h1>
+        
+        <div class="info-box">
+            <strong>📝 Info:</strong> Halaman ini digunakan untuk test Smart Video Player implementation dengan H.264/AAC optimization dan adaptive bitrate streaming.
+        </div>
+        
+        <!-- API Health Test -->
+        <div class="test-section">
+            <h2><i class="fas fa-server"></i> Server Health Check</h2>
+            <button onclick="testServerHealth()">
+                <i class="fas fa-heartbeat"></i> Check Server Health
+            </button>
+            <div id="healthResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <!-- Video Upload Test -->
+        <div class="test-section">
+            <h2><i class="fas fa-cloud-upload-alt"></i> Video Upload & Optimization</h2>
+            
+            <div class="upload-area" onclick="document.getElementById('videoFile').click()">
+                <i class="fas fa-film"></i>
+                <p><strong>Click atau drag video di sini</strong></p>
+                <p style="font-size: 0.9rem; color: #666;">Supported: MP4, WebM, MOV (Max 500MB)</p>
+            </div>
+            <input type="file" id="videoFile" accept="video/*" onchange="uploadVideo(event)">
+            
+            <div id="uploadResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <!-- Video List Test -->
+        <div class="test-section">
+            <h2><i class="fas fa-list"></i> Gallery Videos List</h2>
+            <button onclick="listVideos()">
+                <i class="fas fa-sync-alt"></i> Refresh Video List
+            </button>
+            <div id="videoListResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <!-- Bandwidth Simulator -->
+        <div class="test-section">
+            <h2><i class="fas fa-wifi"></i> Bandwidth Simulation</h2>
+            <p>Test quality selection berdasarkan estimated bandwidth:</p>
+            <button onclick="simulateBandwidth(0.8)">Simulate 0.8 Mbps (3G)</button>
+            <button onclick="simulateBandwidth(2.0)">Simulate 2.0 Mbps (4G)</button>
+            <button onclick="simulateBandwidth(5.0)">Simulate 5.0 Mbps (WiFi)</button>
+            <button onclick="simulateBandwidth(10.0)">Simulate 10 Mbps (WiFi Good)</button>
+            <div id="bandwidthResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <!-- Quality Info -->
+        <div class="test-section">
+            <h2><i class="fas fa-info-circle"></i> Quality Presets</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Quality</th>
+                        <th>Resolution</th>
+                        <th>Bitrate</th>
+                        <th>Use Case</th>
+                        <th>Recommended Bandwidth</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="status-badge status-success">auto</span></td>
+                        <td>1280x720</td>
+                        <td>2500 kbps</td>
+                        <td>Desktop/WiFi Bagus</td>
+                        <td>5+ Mbps</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-success">720p</span></td>
+                        <td>1280x720</td>
+                        <td>2500 kbps</td>
+                        <td>High Quality</td>
+                        <td>2.5-5 Mbps</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-warning">480p</span></td>
+                        <td>854x480</td>
+                        <td>1500 kbps</td>
+                        <td>Standard Mobile</td>
+                        <td>1.5-2.5 Mbps</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-warning">360p</span></td>
+                        <td>640x360</td>
+                        <td>800 kbps</td>
+                        <td>Poor Connection</td>
+                        <td>&lt; 1.5 Mbps</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- File Size Comparison -->
+        <div class="test-section">
+            <h2><i class="fas fa-file-video"></i> File Size Optimization</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Quality</th>
+                        <th>Expected Size (per minute)</th>
+                        <th>10-min Video</th>
+                        <th>Download Time (10Mbps)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Original</strong></td>
+                        <td>~60 MB</td>
+                        <td>600 MB</td>
+                        <td>8 minutes</td>
+                    </tr>
+                    <tr>
+                        <td>720p (auto)</td>
+                        <td>~15 MB</td>
+                        <td>150 MB</td>
+                        <td>2 minutes</td>
+                    </tr>
+                    <tr>
+                        <td>480p</td>
+                        <td>~9 MB</td>
+                        <td>90 MB</td>
+                        <td>1.2 minutes</td>
+                    </tr>
+                    <tr>
+                        <td>360p</td>
+                        <td>~4 MB</td>
+                        <td>40 MB</td>
+                        <td>32 seconds</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- FFmpeg Info -->
+        <div class="test-section">
+            <h2><i class="fas fa-tools"></i> FFmpeg Encoding Parameters</h2>
+            <p>Video codec: H.264 (libx264)</p>
+            <p>Audio codec: AAC @ 128kbps</p>
+            <p>Encoding Preset: Medium (balance antara speed dan quality)</p>
+            <p>Quality Level (CRF): 23 (default good balance)</p>
+            
+            <h3>Contoh Command:</h3>
+            <pre>ffmpeg -i input.mp4 \
+  -c:v libx264 \
+  -preset medium \
+  -crf 23 \
+  -scale=1280:720 \
+  -movflags +faststart \
+  -c:a aac -b:a 128k \
+  output_720p.mp4</pre>
+        </div>
+        
+        <!-- Test Results Log -->
+        <div class="test-section">
+            <h2><i class="fas fa-terminal"></i> Test Results Log</h2>
+            <button onclick="clearLog()"><i class="fas fa-trash"></i> Clear Log</button>
+            <div id="testLog" class="test-result" style="display: none; white-space: pre-wrap; font-family: monospace; font-size: 0.85rem;">
+                <!-- Test logs will appear here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://47.130.190.120:3000';
+        let testLog = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const log = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            testLog.push(log);
+            updateTestLog();
+            console.log(log);
+        }
+        
+        function updateTestLog() {
+            const logDiv = document.getElementById('testLog');
+            logDiv.textContent = testLog.join('\n');
+            logDiv.style.display = 'block';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            testLog = [];
+            document.getElementById('testLog').style.display = 'none';
+        }
+        
+        function showResult(elementId, html, isError = false) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = html;
+            element.style.display = 'block';
+            element.style.color = isError ? '#ef4444' : '#374151';
+        }
+        
+        async function testServerHealth() {
+            log('Testing server health...', 'info');
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.innerHTML = '<span class="loading"><i class="fas fa-spinner"></i> Checking...</span>';
+            resultDiv.style.display = 'block';
+            
+            try {
+                const start = performance.now();
+                const response = await fetch(`${API_URL}/api/health`, { method: 'HEAD' });
+                const end = performance.now();
+                const latency = end - start;
+                
+                if (response.ok) {
+                    log(`✅ Server healthy! Latency: ${latency.toFixed(0)}ms`, 'success');
+                    showResult('healthResult', `
+                        <div class="success">✅ Server is healthy!</div>
+                        <p>Latency: ${latency.toFixed(0)}ms</p>
+                        <p>Estimated Bandwidth: ${((1000 / latency) * 2.5).toFixed(2)} Mbps</p>
+                    `);
+                } else {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ Server health check failed: ${error.message}`, 'error');
+                showResult('healthResult', `
+                    <div class="error">❌ Server check failed</div>
+                    <p>${error.message}</p>
+                    <p>Make sure server is running on http://47.130.190.120:3000</p>
+                `, true);
+            }
+        }
+        
+        async function uploadVideo(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            log(`Uploading video: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, 'info');
+            
+            const resultDiv = document.getElementById('uploadResult');
+            resultDiv.innerHTML = '<span class="loading"><i class="fas fa-spinner"></i> Uploading and optimizing...</span>';
+            resultDiv.style.display = 'block';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch(`${API_URL}/api/gallery/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`✅ Video uploaded successfully: ${data.filename}`, 'success');
+                    
+                    let optimizedHtml = '<div class="success">✅ Video uploaded and optimized!</div>';
+                    optimizedHtml += `<p><strong>Filename:</strong> ${data.originalName}</p>`;
+                    optimizedHtml += `<p><strong>Size:</strong> ${(data.size / 1024 / 1024).toFixed(2)} MB</p>`;
+                    
+                    if (data.optimized) {
+                        log('Video optimization completed', 'success');
+                        optimizedHtml += '<h4>Optimized Versions:</h4>';
+                        optimizedHtml += '<ul>';
+                        Object.entries(data.optimizedVersions).forEach(([quality, url]) => {
+                            optimizedHtml += `<li><strong>${quality}:</strong> ${url}</li>`;
+                        });
+                        optimizedHtml += '</ul>';
+                    }
+                    
+                    showResult('uploadResult', optimizedHtml);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                log(`❌ Upload failed: ${error.message}`, 'error');
+                showResult('uploadResult', `
+                    <div class="error">❌ Upload failed</div>
+                    <p>${error.message}</p>
+                `, true);
+            }
+        }
+        
+        async function listVideos() {
+            log('Fetching video list...', 'info');
+            const resultDiv = document.getElementById('videoListResult');
+            resultDiv.innerHTML = '<span class="loading"><i class="fas fa-spinner"></i> Loading...</span>';
+            resultDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/gallery/videos`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`✅ Found ${data.count} video(s)`, 'success');
+                    
+                    let html = `<p><strong>Total Videos:</strong> ${data.count}</p>`;
+                    
+                    if (data.count === 0) {
+                        html += '<p style="color: #666;">No videos uploaded yet. Upload a video to get started!</p>';
+                    } else {
+                        html += '<table><thead><tr><th>Name</th><th>Size</th><th>Uploaded</th><th>Optimized</th></tr></thead><tbody>';
+                        
+                        data.videos.forEach(video => {
+                            const size = (video.size / 1024 / 1024).toFixed(2);
+                            const optimized = video.optimizedVersions ? '✅ Yes' : '❌ No';
+                            const date = new Date(video.uploadedAt).toLocaleDateString();
+                            
+                            html += `<tr>
+                                <td>${video.name}</td>
+                                <td>${size} MB</td>
+                                <td>${date}</td>
+                                <td>${optimized}</td>
+                            </tr>`;
+                        });
+                        
+                        html += '</tbody></table>';
+                    }
+                    
+                    showResult('videoListResult', html);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                log(`❌ Fetch failed: ${error.message}`, 'error');
+                showResult('videoListResult', `
+                    <div class="error">❌ Failed to fetch videos</div>
+                    <p>${error.message}</p>
+                `, true);
+            }
+        }
+        
+        function simulateBandwidth(mbps) {
+            log(`Simulating bandwidth: ${mbps} Mbps`, 'info');
+            
+            let quality = 'auto';
+            let recommendation = '';
+            
+            if (mbps < 1.5) {
+                quality = '360p';
+                recommendation = 'Poor connection - Use lowest quality';
+            } else if (mbps < 2.5) {
+                quality = '480p';
+                recommendation = 'Mobile 4G - Use standard quality';
+            } else if (mbps < 5) {
+                quality = '720p';
+                recommendation = 'WiFi standard - Use high quality';
+            } else {
+                quality = 'auto';
+                recommendation = 'WiFi good - Use highest quality';
+            }
+            
+            log(`Recommended quality: ${quality} (${recommendation})`, 'success');
+            
+            let html = `
+                <p><strong>Simulated Bandwidth:</strong> ${mbps} Mbps</p>
+                <p><strong>Recommended Quality:</strong> <span class="status-badge status-success">${quality}</span></p>
+                <p><strong>Reason:</strong> ${recommendation}</p>
+            `;
+            
+            showResult('bandwidthResult', html);
+        }
+        
+        // Test on page load
+        window.addEventListener('load', () => {
+            log('Smart Video Player Test Page Loaded', 'info');
+            testServerHealth();
+        });
+    </script>
+</body>
+</html>
