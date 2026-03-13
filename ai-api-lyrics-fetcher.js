@@ -4,7 +4,7 @@
  * AI API: http://16.79.192.14:5500
  */
 
-const AIScraperClient = require('./AIAPI/client');
+const AIScraperClient = require('./AIAPI');
 const fs = require('fs').promises;
 const path = require('path');
 
