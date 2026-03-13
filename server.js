@@ -13,6 +13,7 @@ const TikTokDownloader = require('./tiktok-downloader');
 const VideoOptimizer = require('./videoOptimizer');
 const LyricsScraper = require('./lyrics-scraper');
 const AIAPILyricsFetcher = require('./ai-api-lyrics-fetcher');
+const MusicDownloader = require('./music-downloader');
 
 const app = express();
 const PORT = 5000;
@@ -21,9 +22,11 @@ const PORT = 5000;
 const videoOptimizer = new VideoOptimizer();
 const lyricsScraper = new LyricsScraper();
 const lyricsFetcher = new AIAPILyricsFetcher();
+const musicDownloader = new MusicDownloader('profile_music', 'metadata_cache');
 
 // Log AI API Lyrics integration
 console.log(`📚 Lyrics Scraper initialized with AI API (Qwen + OpenAI)`);
+console.log(`🎵 Music Downloader initialized with Metadata Cache (Spotify oEmbed + YouTube)`);
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -715,85 +718,77 @@ app.get('/api/spotify/check', async (req, res) => {
     }
 });
 
-// Download Spotify track
+// Download Spotify track (NEW: Menggunakan MusicDownloader dengan caching)
 app.post('/api/spotify/download', async (req, res) => {
     const { spotifyUrl, cookieFile } = req.body;
     
     if (!spotifyUrl) {
-        return res.status(400).json({ success: false, error: 'Spotify URL is required' });
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Spotify URL is required' 
+        });
     }
     
     try {
-        const downloader = new SpotifyDownloader('profile_music');
-        
-        // Check if spotdl is installed
-        const isInstalled = await downloader.checkSpotdlInstalled();
-        if (!isInstalled) {
-            return res.status(400).json({
+        // Check rate limit status
+        const rateLimitStatus = musicDownloader.getRateLimitStatus();
+        if (rateLimitStatus.isRateLimited) {
+            return res.status(429).json({
                 success: false,
-                error: 'spotdl is not installed',
-                instruction: 'Install with: pip install spotdl'
+                error: 'Rate limited',
+                message: rateLimitStatus.lastError,
+                waitTimeSeconds: rateLimitStatus.waitTimeSeconds,
+                isRateLimit: true
             });
         }
+
+        // Download menggunakan MusicDownloader (dengan caching dan smart platform detection)
+        const result = await musicDownloader.download(spotifyUrl);
         
-        // Validate Spotify URL
-        if (!spotifyUrl.includes('spotify.com')) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid Spotify URL'
-            });
-        }
-        
-        // Check if it's a playlist or track
-        const isPlaylist = spotifyUrl.includes('/playlist/');
-        const isTrack = spotifyUrl.includes('/track/');
-        
-        if (!isPlaylist && !isTrack) {
-            return res.status(400).json({
-                success: false,
-                error: 'URL must be a Spotify track or playlist'
-            });
-        }
-        
-        try {
-            let result;
-            if (isPlaylist) {
-                result = await downloader.downloadPlaylist(spotifyUrl, cookieFile);
-            } else {
-                result = await downloader.downloadTrack(spotifyUrl, cookieFile);
+        if (!result.success) {
+            // Check if it's a setup error (Python/yt-dlp not found)
+            if (result.isSetupError) {
+                return res.status(503).json({
+                    success: false,
+                    error: 'Setup Error',
+                    message: result.message,
+                    isSetupError: true
+                });
             }
-            
-            // Get list of downloaded tracks
-            const tracks = await downloader.getDownloadedTracks();
-            
-            // Use latestFile from download result, not from filesystem order
-            // result.latestFile is the file that was just downloaded
-            const latestFile = result.latestFile || (tracks.length > 0 ? tracks[0] : null);
-            
-            res.json({
-                success: true,
-                message: result.message,
-                outputDir: result.outputDir,
-                latestFile: latestFile ? {
-                    filename: latestFile.filename || latestFile,
-                    url: `/profile_music/${latestFile.filename || latestFile}`
-                } : null,
-                tracks: tracks.map(t => ({
-                    filename: t.filename,
-                    url: `/profile_music/${t.filename}`
-                }))
-            });
-        } catch (downloadError) {
-            console.error('Download error:', downloadError);
-            res.status(500).json({
+
+            return res.status(500).json({
                 success: false,
                 error: 'Download failed',
-                details: downloadError.message
+                details: result.message,
+                isRateLimit: result.isRateLimit
             });
         }
+
+        // Get list of downloaded tracks
+        const tracks = await musicDownloader.getDownloadedFiles();
+
+        res.json({
+            success: true,
+            message: result.message || 'Download berhasil',
+            outputDir: 'profile_music',
+            source: result.source,
+            latestFile: result.fileName ? {
+                filename: result.fileName,
+                url: `/profile_music/${result.fileName}`
+            } : null,
+            tracks: tracks.map(filename => ({
+                filename: filename,
+                url: `/profile_music/${filename}`
+            }))
+        });
+
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ success: false, error: error.message });
+        console.error('Download error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Download failed',
+            details: error.message
+        });
     }
 });
 
@@ -2332,7 +2327,83 @@ function readJSONSync(filePath) {
 // Fallback untuk route yang tidak ditemukan - redirect ke home
 app.use((req, res) => {
     // Log 404 request
-    console.log(`⚠️ 404 Not Found: ${req.method} ${req.path}`);
+// ============================================
+// CACHE & RATE LIMIT ENDPOINTS (Music Downloader)
+// ============================================
+
+/**
+ * GET /api/cache/stats - Get metadata cache statistics
+ * Shows how many tracks are cached and total cache size
+ */
+app.get('/api/cache/stats', async (req, res) => {
+    try {
+        const stats = await musicDownloader.getCacheStats();
+        res.json({
+            success: true,
+            cache: stats,
+            message: `${stats.totalTracks} tracks cached (${stats.totalSizeMB} MB)`
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get cache stats',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/cache/clear - Clear all metadata cache
+ * WARNING: This will clear all cached metadata
+ */
+app.post('/api/cache/clear', async (req, res) => {
+    try {
+        const result = await musicDownloader.clearCache();
+        if (result) {
+            res.json({
+                success: true,
+                message: 'Cache cleared successfully'
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: 'Failed to clear cache'
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to clear cache',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/rate-limit/status - Get rate limit status
+ * Check jika sedang rate limited dan berapa lama harus tunggu
+ */
+app.get('/api/rate-limit/status', async (req, res) => {
+    try {
+        const status = musicDownloader.getRateLimitStatus();
+        res.json({
+            success: true,
+            rateLimit: status
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get rate limit status',
+            details: error.message
+        });
+    }
+});
+
+// ============================================
+// LEGACY SDK ROUTES (Keep for backward compatibility)
+// ============================================
+
+
     
     // Jika adalah request untuk file/resource (bukan HTML), return 404
     if (req.path.includes('.') || req.path.startsWith('/api/')) {
