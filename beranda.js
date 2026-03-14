@@ -13,6 +13,7 @@ let lyricsAbortController = null; // Abort controller untuk cancel old lyric req
 let lastLoadedAudioFile = null; // Prevent duplicate audio loads
 let audioCleanupTimeout = null; // Track cleanup timeout
 let userManuallyPaused = false; // Track if user intentionally paused (prevent auto-advance on play error)
+let navigationCooldownActive = false; // Prevent navigation spam (next/prev button cooldown)
 
 // ========== PARALLEL LOADING STRATEGY ==========
 // Start loading students IMMEDIATELY without waiting for loading screen
@@ -336,6 +337,12 @@ function initMusicPlayer() {
 
     // Navigation - Previous
     prevBtn.addEventListener('click', () => {
+        // Check cooldown - prevent spam
+        if (navigationCooldownActive) {
+            console.log('⏸️ Navigation on cooldown, please wait...');
+            return;
+        }
+        
         const currentIndex = allStudents.findIndex(s => s.id === currentStudentId);
         let prevIndex = (currentIndex - 1 + allStudents.length) % allStudents.length;
         
@@ -345,11 +352,20 @@ function initMusicPlayer() {
         console.log(`⬅️ Playing previous: ${prevStudent.name} (index ${prevIndex})`);
         currentStudentId = prevStudent.id;
         
+        // Set cooldown for next/prev button
+        setNavigationCooldown(500);
+        
         playStudent(prevIndex);
     });
 
     // Navigation - Next
     nextBtn.addEventListener('click', () => {
+        // Check cooldown - prevent spam
+        if (navigationCooldownActive) {
+            console.log('⏸️ Navigation on cooldown, please wait...');
+            return;
+        }
+        
         const currentIndex = allStudents.findIndex(s => s.id === currentStudentId);
         let nextIndex = (currentIndex + 1) % allStudents.length;
         
@@ -358,6 +374,9 @@ function initMusicPlayer() {
         
         console.log(`➡️ Playing next: ${nextStudent.name} (index ${nextIndex})`);
         currentStudentId = nextStudent.id;
+        
+        // Set cooldown for next/prev button
+        setNavigationCooldown(500);
         
         playStudent(nextIndex);
     });
@@ -459,6 +478,16 @@ function playStudent(index) {
     
     // Wait for transition to complete before updating content
     updatePlayerTimeoutId = setTimeout(() => {
+        // Trigger fade animation on photo by forcing reflow
+        const albumArt = document.querySelector('.album-art');
+        if (albumArt) {
+            // Reset animation by removing and re-adding it
+            albumArt.style.animation = 'none';
+            // Force reflow to restart animation
+            void albumArt.offsetWidth;
+            albumArt.style.animation = 'albumFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
+        }
+        
         document.getElementById('playerPhoto').src = photoUrl;
         document.getElementById('playerName').textContent = student.name;
         document.getElementById('playerBirthday').textContent = student.birthday || 'Not set';
@@ -532,11 +561,20 @@ function stopMusic() {
     currentProgress = 0;
     updateProgress();
     
-    // Stop audio playback
+    // Stop audio playback and cleanup
     if (audioElement) {
         audioElement.pause();
         audioElement.currentTime = 0;
+        audioElement.src = '';
+        // Remove event listeners
+        audioElement.onended = null;
+        audioElement.onerror = null;
+        audioElement.onloadedmetadata = null;
+        audioElement.ontimeupdate = null;
     }
+    
+    // Reset cache
+    lastLoadedAudioFile = null;
     
     const playPauseBtn = document.getElementById('playPauseBtn');
     playPauseBtn.querySelector('i').className = 'fas fa-play';
@@ -603,6 +641,34 @@ function updatePlayPauseButton() {
     console.log(`🎯 Play-Pause button updated: ${isPlaying ? 'PAUSE' : 'PLAY'}`);
 }
 
+// Helper: Set navigation cooldown to prevent spam on next/prev buttons
+function setNavigationCooldown(duration = 500) {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    
+    // Disable buttons
+    navigationCooldownActive = true;
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    
+    // Add visual feedback with opacity/pointer-events
+    if (prevBtn) prevBtn.style.opacity = '0.5';
+    if (nextBtn) nextBtn.style.opacity = '0.5';
+    
+    // Re-enable after duration
+    setTimeout(() => {
+        navigationCooldownActive = false;
+        if (prevBtn) {
+            prevBtn.disabled = false;
+            prevBtn.style.opacity = '1';
+        }
+        if (nextBtn) {
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+        }
+    }, duration);
+}
+
 // ========== AUDIO PLAYBACK ==========
 let audioElement = null;
 
@@ -634,15 +700,6 @@ function playProfileAudio(audioFile, trimData = {}, studentName = '') {
         isPlaying = false;
         stopProgress();
         updatePlayPauseButton();
-        return;
-    }
-    
-    // Prevent duplicate loads (optimization)
-    if (lastLoadedAudioFile === audioFile) {
-        console.log('⏭️ Audio already loaded, resuming...');
-        if (audioElement) {
-            audioElement.play().catch(e => console.log('Resume audio error:', e));
-        }
         return;
     }
     
