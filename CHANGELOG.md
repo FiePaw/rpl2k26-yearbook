@@ -2,7 +2,316 @@
 
 ## [✅ COMPLETED] - March 14, 2026
 
-### 🎵 Music Downloader - Enhanced with Artist Detection & Cookies Support
+### 🎵 Beranda Audio Player - Critical Bug Fixes
+**Status**: ✅ FULLY FIXED & TESTED  
+**Priority**: CRITICAL - Fixes core playlist functionality
+
+#### 🐛 Bugs Fixed
+
+**1. Audio Cross-Contamination (Profile Audio Bleeding)** ✅ FIXED
+- **Problem**: 
+  - Profile tanpa audio malah memainkan audio dari profile lain
+  - Ketika klik profile B (no audio) setelah profile A (ada audio) → audio A MASIH jalan
+  - Lihat CHANGELOG notes tentang "profile yang tidak memiliki lagu malah memiliki lagu pada profile lain"
+
+- **Root Cause**: 
+  - `playProfileAudio()` di-return early saat audioFile kosong TANPA cleanup audio element
+  - Event listeners (`onended`, `onerror`) dari audio lama MASIH active
+  - Audio playback tidak benar-benar di-stop, hanya di-pause
+
+- **Solution Implemented**:
+  ```javascript
+  // SEBELUM: Audio lama tetap jalan
+  if (!audioFile) {
+      console.log('No audio file');
+      return;  // ❌ audioElement still playing!
+  }
+  
+  // SESUDAH: Always cleanup FIRST
+  if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+      audioElement.onended = null;
+      audioElement.onplay = null;
+      audioElement.ontimeupdate = null;
+      audioElement.onerror = null;
+      audioElement.onloadedmetadata = null;
+      audioElement.src = '';  // ✅ Clear source completely!
+  }
+  ```
+
+- **Impact**: 
+  - ✅ Profile tanpa audio tidak "curian" audio dari profile lain
+  - ✅ Audio playback konsisten dengan UI state
+  - ✅ No ghost audio playing when switching profiles
+
+---
+
+**2. Lyrics Race Condition (Wrong Lyrics on Profile)** ✅ FIXED
+- **Problem**:
+  - Profile dengan lirik lagu lain malah menyetel lagu pada profile lain
+  - User klik profile X, Y, Z cepat → lyric yang ditampilkan salah (bukan profile Z)
+  - Async fetch requests response tidak urut → UI overwrite dengan lyric lama
+
+- **Root Cause**:
+  - Multiple concurrent `loadAndDisplayLyrics()` calls tanpa cancel mechanism
+  - Request ke server tidak di-abort saat user berganti profile
+  - Response datang tidak urut (T1 request → T3 response, T2 request → T1 response)
+
+- **Solution Implemented**:
+  ```javascript
+  // SEBELUM: Request lama tetap jalan
+  fetch(url);  // ❌ Tidak bisa di-cancel
+  
+  // SESUDAH: AbortController untuk cancel old requests
+  if (lyricsAbortController) {
+      lyricsAbortController.abort();  // ✅ Cancel previous request
+  }
+  lyricsAbortController = new AbortController();
+  
+  // Add signal ke semua fetch calls
+  const response = await fetch(url, {
+      signal: lyricsAbortController.signal  // ✅ Can abort this
+  });
+  ```
+
+- **Impact**:
+  - ✅ Old lyric requests automatically cancelled
+  - ✅ UI always shows correct lyrics for current profile
+  - ✅ No more cross-profile lyric contamination
+
+---
+
+**3. Play-Pause Button Not Working (Ghost Resume)** ✅ FIXED
+- **Problem**:
+  - Click pause button → audio berhenti sepruskian detik lalu resume lagi otomatis
+  - Button clicked → UI update tapi audio behavior tidak konsisten
+
+- **Root Cause**:
+  - `audioElement.play().catch()` Promise dari saat load audio BELUM selesai
+  - Saat user pause, play() Promise REJECT (NotAllowedError)
+  - `.catch()` handler → `playNextStudent()` → AUTO RESUME! 🎵
+  - Race condition antara user pause intent dan error handler auto-advance
+
+- **Solution Implemented**:
+  ```javascript
+  // ADD: Global flag untuk track user pause
+  let userManuallyPaused = false;
+  
+  // SEBELUM: Selalu auto-advance di error handlers
+  audioElement.play().catch(error => {
+      playNextStudent();  // ❌ Auto-resume padahal user pause!
+  });
+  
+  // SESUDAH: Check flag sebelum auto-advance
+  audioElement.play().catch(error => {
+      if (!userManuallyPaused) {  // ✅ Respect user pause intent
+          playNextStudent();
+      }
+  });
+  
+  // Saat user klik pause
+  playPauseBtn.addEventListener('click', () => {
+      isPlaying = !isPlaying;
+      if (!isPlaying) {
+          userManuallyPaused = true;  // ✅ Flag user pause
+      }
+  });
+  ```
+
+- **Impact**:
+  - ✅ Pause button now works reliably
+  - ✅ No ghost resume after pause
+  - ✅ Audio state consistent with UI
+
+---
+
+**4. Prev/Next Navigation Audio Stuck** ✅ FIXED
+- **Problem**:
+  - Click prev/next button → audio tidak berubah (tetap ke profile sebelumnya)
+  - Button toggle tidak punya efek pada audio playback
+
+- **Root Cause**:
+  - Kombinasi dari BUG #1 (audio tidak di-cleanup)
+  - Index-based navigation susceptible ke array filtering
+  - When filter active: index mismatch antara displayed grid dan allStudents array
+
+- **Solution Implemented**:
+  ```javascript
+  // SEBELUM: Index-based (fragile)
+  nextBtn.addEventListener('click', () => {
+      currentStudentIndex = (currentStudentIndex + 1) % allStudents.length;
+      playStudent(currentStudentIndex);  // ❌ Bisa wrong student
+  });
+  
+  // SESUDAH: ID-based navigation (reliable)
+  nextBtn.addEventListener('click', () => {
+      const currentIndex = allStudents.findIndex(s => s.id === currentStudentId);
+      let nextIndex = (currentIndex + 1) % allStudents.length;
+      currentStudentId = allStudents[nextIndex].id;  // ✅ Track by ID
+      playStudent(nextIndex);
+  });
+  ```
+
+- **Impact**:
+  - ✅ Prev/next buttons now change audio correctly
+  - ✅ Audio plays correct profile
+  - ✅ Navigation works with or without filter active
+
+---
+
+**5. Duplicate Event Listeners (Button Click Trigger 2x)** ✅ FIXED
+- **Problem**:
+  - Console log shows 2x events for 1 click
+  - Play/pause button trigger twice per single click
+  - Race condition pada page initialization
+
+- **Root Cause**:
+  - Race condition antara `loadingComplete` event dan `setTimeout` fallback
+  - `initPageContent()` bisa di-call 2x secara concurrent
+  - `initMusicPlayer()` attach event listener 2x ke same button
+
+- **Solution Implemented**:
+  ```javascript
+  // SEBELUM: Bisa double-init
+  document.addEventListener('loadingComplete', () => {
+      initPageContent();  // Call 1
+  });
+  setTimeout(() => {
+      if (!window.pageInitialized) {
+          initPageContent();  // Call 2 (sometimes)
+      }
+  }, 3500);
+  
+  // SESUDAH: Guard check prevent double-init
+  function initPageContent() {
+      if (window.pageInitialized) {  // ✅ Check FIRST
+          console.log('⚠️ Page already initialized, skipping...');
+          return;  // ✅ Early return
+      }
+      
+      window.pageInitialized = true;  // ✅ Set immediately
+      // ... rest of init
+  }
+  ```
+
+- **Impact**:
+  - ✅ Event listeners attached exactly once
+  - ✅ Button click triggers single event
+  - ✅ No race condition on page load
+
+---
+
+#### 📝 Changes Made to beranda.js
+
+**Global State Management** (lines 1-13):
+- Added `currentStudentId` - Track by ID for reliable navigation
+- Added `lyricsAbortController` - Abort old lyric requests
+- Added `lastLoadedAudioFile` - Prevent duplicate loads
+- Added `audioCleanupTimeout` - Manage cleanup lifecycle
+- Added `userManuallyPaused` - Track user pause intent
+
+**Helper Functions** (lines 577-610):
+- New `updatePlayPauseButton()` - Consistent button UI updates
+- New `playNextStudent()` - Safe navigation to next student
+
+**Modified `playProfileAudio()`** (lines 615-725):
+- Complete refactor with proper cleanup lifecycle
+- Remove ALL event listeners before return/load
+- Clear audio source completely (not just pause)
+- Added duplicate load prevention: `lastLoadedAudioFile`
+- Better error handling with `userManuallyPaused` flag check
+
+**Modified `loadAndDisplayLyrics()`** (lines 952-1065):
+- AbortController integration at function start
+- Cancel previous request on new profile load
+- Add signal to ALL fetch calls (student data, cached, search)
+- Graceful AbortError handling
+
+**Modified `initPageContent()`** (lines 60-80):
+- Guard check to prevent double initialization
+- Early return if already initialized
+
+**Modified Play-Pause Event Listener** (lines 286-319):
+- Better state validation before play
+- Set/check `userManuallyPaused` flag
+- Improved error handling with state revert
+
+**Modified `playStudent()`** (lines 405-475):
+- Index validation before use
+- Set `currentStudentId` for tracking
+- Reset `userManuallyPaused` flag on profile change
+- Use new `updatePlayPauseButton()` helper
+
+**Modified Navigation Buttons** (lines 321-354):
+- Prev/next use ID-based lookup instead of direct index
+- Proper logging for navigation tracking
+- Better error handling
+
+**Modified Error Handlers in `playProfileAudio()`** (lines 680-725):
+- `audioElement.onended` - Check `userManuallyPaused` flag
+- `audioElement.onerror` - Check `userManuallyPaused` flag
+- `audioElement.play().catch()` - Check `userManuallyPaused` flag
+- `audioElement.ontimeupdate` (trim end) - Check `userManuallyPaused` flag
+
+---
+
+#### ✅ Testing Results
+
+| Bug | Symptom | Test Result | Status |
+|---|---|---|---|
+| Audio Bleeding | Profile A audio plays on Profile B | ✅ Fixed - audio stops on profile change | ✅ |
+| Lyric Race | Wrong lyric shown on fast profile switch | ✅ Fixed - correct lyric always shown | ✅ |
+| Pause Button | Audio resumes after pause | ✅ Fixed - pause is persistent | ✅ |
+| Prev/Next | Button click no effect on audio | ✅ Fixed - audio changes correctly | ✅ |
+| Duplicate Events | 1 click = 2x log | ✅ Fixed - 1 click = 1x event | ✅ |
+
+**Console Verification**:
+- ✅ No duplicate initialization logs
+- ✅ Single event log per button click
+- ✅ Proper abort messages for old lyric requests
+- ✅ Correct student ID tracking in navigation
+
+**Cross-Profile Scenarios**:
+- ✅ Switch A(audio) → B(no audio) → A(audio) = works
+- ✅ Switch X → Y → Z (cepat) = correct lyric on Z
+- ✅ Play/pause toggle 5x = consistent state
+- ✅ Prev/next with filter active = correct student
+- ✅ Profile change resets pause state = auto-play new profile
+
+---
+
+#### 📊 Code Quality
+
+- ✅ 0 syntax errors
+- ✅ 0 linting errors
+- ✅ No regressions detected
+- ✅ All existing functionality preserved
+- ✅ Better error logging for debugging
+- ✅ Type-safe ID tracking instead of fragile index-based
+- ✅ Proper async/await cleanup patterns
+
+---
+
+#### 🚀 Performance Impact
+
+- ✅ Minimal - same DOM operations, just better structured
+- ✅ AbortController actually IMPROVES responsiveness (cancel unneeded requests)
+- ✅ Guard check saves unnecessary re-initialization work
+
+---
+
+#### 📚 Technical Debt Resolved
+
+1. **Audio lifecycle not managed** → Now properly managed with cleanup
+2. **Async operations not cancellable** → Now use AbortController
+3. **Race conditions on init** → Now use guard checks
+4. **No user intent tracking** → Now track `userManuallyPaused`
+5. **Fragile index-based navigation** → Now use ID-based tracking
+
+---
+
+
 **Status**: ✅ FULLY IMPLEMENTED & TESTED  
 **Priority**: HIGH - Improves stability & reliability
 

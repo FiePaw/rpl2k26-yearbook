@@ -2,12 +2,17 @@
 const API_URL = 'https://rpl2k26.site';
 let allStudents = [];
 let currentStudentIndex = 0;
+let currentStudentId = null; // Track by ID instead of index (more reliable)
 let isPlaying = false;
 let progressInterval = null;
 let currentProgress = 0;
 let totalDuration = 30; // Default 30 seconds
 let updatePlayerTimeoutId = null; // Track timeout untuk update player content
 let studentsPreloaded = false; // Track if students already loaded
+let lyricsAbortController = null; // Abort controller untuk cancel old lyric requests
+let lastLoadedAudioFile = null; // Prevent duplicate audio loads
+let audioCleanupTimeout = null; // Track cleanup timeout
+let userManuallyPaused = false; // Track if user intentionally paused (prevent auto-advance on play error)
 
 // ========== PARALLEL LOADING STRATEGY ==========
 // Start loading students IMMEDIATELY without waiting for loading screen
@@ -53,7 +58,17 @@ setTimeout(() => {
 }, 3500);
 
 function initPageContent() {
+    // CRITICAL: Set flag IMMEDIATELY to prevent race condition
+    // (flag di-set SEBELUM guard check)
+    if (window.pageInitialized) {
+        console.log('⚠️ Page already initialized, skipping duplicate initialization...');
+        return;
+    }
+    
+    // Set flag FIRST to block concurrent calls
     window.pageInitialized = true;
+    console.log('🚀 Initializing page content (one-time only)...');
+    
     checkLoginStatus();
     initTheme();
     // Only load students if not preloaded in parallel
@@ -279,34 +294,72 @@ function initMusicPlayer() {
 
     // Play/Pause
     playPauseBtn.addEventListener('click', () => {
+        console.log(`🎵 Play-Pause clicked. Current state: ${isPlaying ? 'PLAYING' : 'PAUSED'}`);
+        
+        // Toggle play state
         isPlaying = !isPlaying;
-        const icon = playPauseBtn.querySelector('i');
-        icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+        
+        // Update button icon immediately
+        updatePlayPauseButton();
         
         if (isPlaying) {
-            startProgress();
-            // Resume audio if exists
+            // RESET FLAG: User wants to play, so auto-advance is OK if error happens
+            userManuallyPaused = false;
+            
+            // Try to play audio
             if (audioElement && audioElement.src) {
-                audioElement.play().catch(e => console.log('Audio play error:', e));
+                console.log(`▶️ Resuming audio playback`);
+                audioElement.play().catch(error => {
+                    console.error('❌ Error playing audio:', error);
+                    // Revert state if play fails
+                    isPlaying = false;
+                    updatePlayPauseButton();
+                });
+                startProgress();
+            } else {
+                console.warn('⚠️ No audio loaded, cannot play');
+                isPlaying = false;
+                updatePlayPauseButton();
             }
         } else {
-            stopProgress();
-            // Pause audio if exists
+            // SET FLAG: User intentionally paused - don't auto-advance if play() error occurs
+            userManuallyPaused = true;
+            
+            // Pause audio
+            console.log(`⏸️ Pausing audio playback (user manual pause)`);
             if (audioElement) {
                 audioElement.pause();
             }
+            stopProgress();
         }
     });
 
-    // Navigation
+    // Navigation - Previous
     prevBtn.addEventListener('click', () => {
-        currentStudentIndex = (currentStudentIndex - 1 + allStudents.length) % allStudents.length;
-        playStudent(currentStudentIndex);
+        const currentIndex = allStudents.findIndex(s => s.id === currentStudentId);
+        let prevIndex = (currentIndex - 1 + allStudents.length) % allStudents.length;
+        
+        currentStudentIndex = prevIndex;
+        const prevStudent = allStudents[prevIndex];
+        
+        console.log(`⬅️ Playing previous: ${prevStudent.name} (index ${prevIndex})`);
+        currentStudentId = prevStudent.id;
+        
+        playStudent(prevIndex);
     });
 
+    // Navigation - Next
     nextBtn.addEventListener('click', () => {
-        currentStudentIndex = (currentStudentIndex + 1) % allStudents.length;
-        playStudent(currentStudentIndex);
+        const currentIndex = allStudents.findIndex(s => s.id === currentStudentId);
+        let nextIndex = (currentIndex + 1) % allStudents.length;
+        
+        currentStudentIndex = nextIndex;
+        const nextStudent = allStudents[nextIndex];
+        
+        console.log(`➡️ Playing next: ${nextStudent.name} (index ${nextIndex})`);
+        currentStudentId = nextStudent.id;
+        
+        playStudent(nextIndex);
     });
 
     // Shuffle
@@ -362,8 +415,24 @@ function initMusicPlayer() {
 
 // Show music player with student data
 function playStudent(index) {
+    // Validate index
+    if (index < 0 || index >= allStudents.length) {
+        console.error(`❌ Invalid student index: ${index}`);
+        return;
+    }
+    
     currentStudentIndex = index;
     const student = allStudents[index];
+    
+    // Track by ID for better navigation
+    currentStudentId = student.id;
+    
+    // RESET: When switching profile, user manually paused flag should reset
+    // (user clicked on new profile, so they want to play)
+    userManuallyPaused = false;
+    
+    console.log(`🎯 Playing student: ${student.name} (ID: ${student.id}, Index: ${index})`);
+    
     const playerContainer = document.getElementById('musicPlayer');
     const photoUrl = student.photo || 'https://via.placeholder.com/400x400?text=' + encodeURIComponent(student.name);
 
@@ -404,9 +473,8 @@ function playStudent(index) {
     isPlaying = true;
     currentProgress = 0;
     
-    // Reset play button
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    playPauseBtn.querySelector('i').className = 'fas fa-pause';
+    // Update play-pause button
+    updatePlayPauseButton();
     
     // Load dan tampilkan lyrics jika ada
     loadAndDisplayLyrics(student.id);
@@ -522,33 +590,73 @@ function updateVolume(percent) {
     }
 }
 
+// Helper: Update play-pause button UI based on current state
+function updatePlayPauseButton() {
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    if (!playPauseBtn) return;
+    
+    const icon = playPauseBtn.querySelector('i');
+    if (!icon) return;
+    
+    // Update icon based on playing state
+    icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+    console.log(`🎯 Play-Pause button updated: ${isPlaying ? 'PAUSE' : 'PLAY'}`);
+}
+
 // ========== AUDIO PLAYBACK ==========
 let audioElement = null;
 
-// Play profile audio
+// Play profile audio with proper lifecycle management
 function playProfileAudio(audioFile, trimData = {}, studentName = '') {
-    // Stop current audio if playing
+    // CRITICAL FIX: Always cleanup previous audio regardless of conditions
     if (audioElement) {
         audioElement.pause();
         audioElement.currentTime = 0;
+        // Remove ALL event listeners to prevent lingering events
         audioElement.onended = null;
         audioElement.onplay = null;
         audioElement.ontimeupdate = null;
+        audioElement.onerror = null;
+        audioElement.onloadedmetadata = null;
+        audioElement.src = '';
     }
     
+    // Clear previous timeout if exists
+    if (audioCleanupTimeout) {
+        clearTimeout(audioCleanupTimeout);
+        audioCleanupTimeout = null;
+    }
+    
+    // If no audio file, exit cleanly
     if (!audioFile) {
-        console.log('No audio file for this student');
+        console.log(`ℹ️ No audio file for student: ${studentName || 'Unknown'}`);
+        lastLoadedAudioFile = null;
+        isPlaying = false;
+        stopProgress();
+        updatePlayPauseButton();
+        return;
+    }
+    
+    // Prevent duplicate loads (optimization)
+    if (lastLoadedAudioFile === audioFile) {
+        console.log('⏭️ Audio already loaded, resuming...');
+        if (audioElement) {
+            audioElement.play().catch(e => console.log('Resume audio error:', e));
+        }
         return;
     }
     
     // Create or get audio element
     if (!audioElement) {
         audioElement = new Audio();
+        audioElement.volume = 0.7;
     }
+    
+    // Update last loaded file
+    lastLoadedAudioFile = audioFile;
     
     // Set audio source
     audioElement.src = audioFile;
-    audioElement.volume = 0.7;
     
     // Handle trim times
     const trimStart = trimData.start || 0;
@@ -556,16 +664,20 @@ function playProfileAudio(audioFile, trimData = {}, studentName = '') {
     
     // Set start time when audio is ready
     audioElement.onloadedmetadata = function() {
+        console.log(`✅ Audio metadata loaded: ${studentName}`);
+        
         // Set total duration based on actual audio duration or trim end
         if (trimEnd) {
             totalDuration = Math.ceil(trimEnd - trimStart);
         } else {
             totalDuration = Math.ceil(audioElement.duration - trimStart);
         }
+        
         // Ensure minimum 30 seconds
         if (totalDuration < 30) {
             totalDuration = 30;
         }
+        
         // Reset progress bar
         currentProgress = 0;
         updateProgress();
@@ -578,28 +690,69 @@ function playProfileAudio(audioFile, trimData = {}, studentName = '') {
     // Check for trim end time during playback
     audioElement.ontimeupdate = function() {
         if (trimEnd && audioElement.currentTime >= trimEnd) {
+            console.log(`⏹️ Trim end reached`);
             audioElement.pause();
-            // Move to next student after trim ends
-            currentStudentIndex = (currentStudentIndex + 1) % allStudents.length;
-            playStudent(currentStudentIndex);
+            // Only auto-advance if NOT manually paused
+            if (!userManuallyPaused) {
+                playNextStudent();
+            }
         }
     };
     
-    // Handle error events - if file not found, skip to next
+    audioElement.onended = function() {
+        console.log(`🎵 Audio ended, moving to next student`);
+        // Only auto-advance if NOT manually paused
+        if (!userManuallyPaused) {
+            playNextStudent();
+        } else {
+            console.log('⏸️ Audio ended but user manually paused, not auto-advancing');
+        }
+    };
+    
+    // Handle error events - if file not found, skip to next (but NOT if user paused)
     audioElement.onerror = function() {
-        console.error('Error loading audio file:', audioFile);
-        // Move to next student if audio fails
-        currentStudentIndex = (currentStudentIndex + 1) % allStudents.length;
-        playStudent(currentStudentIndex);
+        console.error(`❌ Error loading audio file: ${audioFile}`);
+        // Only auto-advance if NOT manually paused
+        if (!userManuallyPaused) {
+            playNextStudent();
+        } else {
+            console.log('⏸️ Audio error but user manually paused, not auto-advancing');
+        }
     };
     
     // Play audio
     audioElement.play().catch(error => {
-        console.error('Error playing audio:', error);
-        // Move to next student if playback fails
-        currentStudentIndex = (currentStudentIndex + 1) % allStudents.length;
-        playStudent(currentStudentIndex);
+        console.error('❌ Error playing audio:', error.name);
+        // Only auto-advance if NOT manually paused
+        if (!userManuallyPaused) {
+            console.log('🔀 Auto-advancing to next due to play error');
+            playNextStudent();
+        } else {
+            console.log('⏸️ Play error but user manually paused, not auto-advancing');
+            isPlaying = false;
+            updatePlayPauseButton();
+        }
     });
+}
+
+// Helper function: Move to next student safely using ID
+function playNextStudent() {
+    // Find current student in filtered array or all students
+    let nextIndex = currentStudentIndex + 1;
+    
+    // Safely wrap around
+    if (nextIndex >= allStudents.length) {
+        nextIndex = 0;
+    }
+    
+    currentStudentIndex = nextIndex;
+    const nextStudent = allStudents[nextIndex];
+    
+    if (nextStudent) {
+        console.log(`➡️ Playing next: ${nextStudent.name} (index ${nextIndex})`);
+        currentStudentId = nextStudent.id;
+        playStudent(nextIndex);
+    }
 }
 
 // Setup event listeners
@@ -898,11 +1051,20 @@ async function loadAndDisplayLyrics(studentId) {
     try {
         console.log('🎵 Loading lyrics for student:', studentId);
         
+        // ABORT OLD REQUESTS: Cancel previous lyric fetch if any
+        if (lyricsAbortController) {
+            console.log('❌ Cancelling previous lyrics request');
+            lyricsAbortController.abort();
+        }
+        
+        // Create new abort controller for this request
+        lyricsAbortController = new AbortController();
+        
         const lyricsContainer = document.getElementById('playerLyricsKaraokeContainer');
         const lyricsContent = document.getElementById('playerLyricsContent');
         
         if (!lyricsContainer) {
-            console.warn('Lyrics container not found');
+            console.warn('⚠️ Lyrics container not found');
             return;
         }
 
@@ -923,7 +1085,9 @@ async function loadAndDisplayLyrics(studentId) {
         console.log('📚 Checking student data for saved lyrics:', studentDataUrl);
         
         try {
-            const studentResponse = await fetch(studentDataUrl);
+            const studentResponse = await fetch(studentDataUrl, {
+                signal: lyricsAbortController.signal
+            });
             
             if (studentResponse.ok) {
                 const studentData = await studentResponse.json();
@@ -950,6 +1114,10 @@ async function loadAndDisplayLyrics(studentId) {
                 }
             }
         } catch (studentError) {
+            if (studentError.name === 'AbortError') {
+                console.log('⚠️ Student data fetch was cancelled (new request made)');
+                return;
+            }
             console.warn('⚠️ Could not load student data:', studentError.message);
         }
 
@@ -958,7 +1126,9 @@ async function loadAndDisplayLyrics(studentId) {
         console.log('📡 Checking for cached lyrics:', cachedUrl);
         
         try {
-            const cachedResponse = await fetch(cachedUrl);
+            const cachedResponse = await fetch(cachedUrl, {
+                signal: lyricsAbortController.signal
+            });
             
             if (cachedResponse.ok) {
                 const cachedData = await cachedResponse.json();
@@ -973,6 +1143,10 @@ async function loadAndDisplayLyrics(studentId) {
                 }
             }
         } catch (cachedError) {
+            if (cachedError.name === 'AbortError') {
+                console.log('⚠️ Cached lyrics fetch was cancelled (new request made)');
+                return;
+            }
             console.warn('⚠️ Could not load cached lyrics:', cachedError.message);
         }
 
@@ -981,7 +1155,7 @@ async function loadAndDisplayLyrics(studentId) {
         const student = allStudents.find(s => s.id === studentId);
         
         if (!student) {
-            console.warn('Student not found:', studentId);
+            console.warn('⚠️ Student not found:', studentId);
             lyricsContainer.style.display = 'none';
             return;
         }
@@ -1010,7 +1184,7 @@ async function loadAndDisplayLyrics(studentId) {
 
         console.log(`🔍 Searching for: "${songTitle}" by "${artistName}"`);
 
-        // Call search endpoint using AZLyric
+        // Call search endpoint using AZLyric with abort signal
         const searchResponse = await fetch(`${API_URL}/api/lyrics/search`, {
             method: 'POST',
             headers: {
@@ -1019,7 +1193,8 @@ async function loadAndDisplayLyrics(studentId) {
             body: JSON.stringify({
                 title: songTitle,
                 artist: artistName
-            })
+            }),
+            signal: lyricsAbortController.signal
         });
 
         if (!searchResponse.ok) {
@@ -1027,7 +1202,7 @@ async function loadAndDisplayLyrics(studentId) {
         }
 
         const searchData = await searchResponse.json();
-        console.log('📦 Received data:', searchData);
+        console.log('📦 Received lyrics from AZLyric:', searchData);
 
         if (searchData.success && searchData.segments && searchData.segments.length > 0) {
             console.log(`✅ Found ${searchData.segments.length} lyrics segments`);
@@ -1050,10 +1225,13 @@ async function loadAndDisplayLyrics(studentId) {
         }
 
     } catch (error) {
-        console.error('❌ Error loading lyrics:', error);
-        const lyricsContainer = document.getElementById('playerLyricsKaraokeContainer');
-        if (lyricsContainer) {
-            lyricsContainer.style.display = 'none';
+        // Only handle non-abort errors
+        if (error.name !== 'AbortError') {
+            console.error('❌ Error loading lyrics:', error);
+            const lyricsContainer = document.getElementById('playerLyricsKaraokeContainer');
+            if (lyricsContainer) {
+                lyricsContainer.style.display = 'none';
+            }
         }
     }
 }
