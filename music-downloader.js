@@ -78,9 +78,10 @@ class MusicDownloader {
     /**
      * Download lagu dari URL (smart platform detection)
      * @param {string} url - Spotify/YouTube/YouTube Music URL
+     * @param {string} artist - Optional artist name untuk Spotify (untuk search yang lebih akurat)
      * @returns {Promise<object>} { success, fileName, filePath, source, message }
      */
-    async download(url) {
+    async download(url, artist = null) {
         try {
             if (!url) {
                 throw new Error('URL harus disediakan');
@@ -91,7 +92,7 @@ class MusicDownloader {
                 throw new Error('URL tidak valid. Gunakan Spotify, YouTube, atau YouTube Music link');
             }
 
-            console.log(`🎵 Download request: ${url}`);
+            console.log(`🎵 Download request: ${url}${artist ? ` (artist: ${artist})` : ''}`);
 
             // Check rate limit status
             if (this.rateLimitHandler.isRateLimited()) {
@@ -109,7 +110,7 @@ class MusicDownloader {
             let result = null;
 
             if (isSpotify) {
-                result = await this.downloadFromSpotify(url);
+                result = await this.downloadFromSpotify(url, artist);
             } else if (isYoutube) {
                 result = await this.downloadFromYoutube(url);
             } else if (isYoutubeMusic) {
@@ -167,9 +168,10 @@ class MusicDownloader {
     /**
      * Download dari Spotify (fetch metadata + search YouTube)
      * @param {string} spotifyUrl - Spotify URL
+     * @param {string} artist - Optional artist name untuk search yang lebih akurat
      * @returns {Promise<object>} Download result
      */
-    async downloadFromSpotify(spotifyUrl) {
+    async downloadFromSpotify(spotifyUrl, artist = null) {
         const trackId = this.extractSpotifyTrackId(spotifyUrl);
         if (!trackId) {
             throw new Error('URL Spotify tidak valid');
@@ -191,23 +193,54 @@ class MusicDownloader {
             }
         }
 
-        // Prepare search query
-        let searchQuery = metadata?.title || `spotify:track:${trackId}`;
-        console.log(`🔎 Searching YouTube: "${searchQuery}"`);
-
-        // Download dari YouTube menggunakan metadata
-        await this.downloadWithYtdlp(`ytsearch1:${searchQuery}`, this.outputDir);
+        // Prepare search queries dengan fallback strategies
+        const title = metadata?.title || `spotify:track:${trackId}`;
+        const searchStrategies = [];
         
-        const fileName = await this.getDownloadedFileName(this.outputDir);
-        const filePath = path.join(this.outputDir, fileName);
+        // Strategy 1: Artist + Title (jika artist disediakan)
+        if (artist && title) {
+            searchStrategies.push(`${artist} - ${title}`);
+            console.log(`🎤 Using provided artist: "${artist}"`);
+        }
+        
+        // Strategy 2: Just Title
+        searchStrategies.push(title);
+        
+        // Strategy 3: Fallback Spotify track ID
+        if (!artist) {
+            searchStrategies.push(`spotify:track:${trackId}`);
+        }
 
-        return {
-            success: true,
-            fileName: fileName,
-            filePath: filePath,
-            source: 'spotify-via-youtube',
-            message: `Downloaded dari Spotify (metadata: ${metadata?.title || 'unknown'})`
-        };
+        console.log(`🔎 Search strategies: ${searchStrategies.join(' | ')}`);
+
+        // Try each search strategy
+        let downloading = false;
+        for (const searchQuery of searchStrategies) {
+            try {
+                console.log(`📥 Attempting download with: "${searchQuery}"`);
+                await this.downloadWithYtdlp(`ytsearch1:${searchQuery}`, this.outputDir);
+                
+                const fileName = await this.getDownloadedFileName(this.outputDir);
+                if (fileName) {
+                    const filePath = path.join(this.outputDir, fileName);
+                    console.log(`✅ Download berhasil dengan query: "${searchQuery}"`);
+                    
+                    return {
+                        success: true,
+                        fileName: fileName,
+                        filePath: filePath,
+                        source: 'spotify-via-youtube',
+                        message: `Downloaded dari Spotify: ${title}${artist ? ` (artist: ${artist})` : ''}`
+                    };
+                }
+            } catch (err) {
+                console.log(`⚠️ Strategy gagal: "${searchQuery}" - ${err.message}`);
+                continue;
+            }
+        }
+
+        // Jika semua strategy gagal
+        throw new Error(`Tidak bisa download lagu ini dari YouTube dengan strategies: ${searchStrategies.join(', ')}`);
     }
 
     /**
@@ -269,25 +302,49 @@ class MusicDownloader {
     }
 
     /**
-     * Download menggunakan yt-dlp CLI
-     * @param {string} url - URL untuk download (bisa YouTube atau ytsearch:)
-     * @param {string} outputPath - Output directory
+     * Detect available JavaScript runtimes (Node, Deno, Bun)
+     * untuk YouTube signature solving
+     * @returns {Promise<string|null>} Runtime command atau null
+     */
+    async getJavaScriptRuntime() {
+        const { execSync } = require('child_process');
+        const runtimes = ['deno', 'node', 'bun'];
+
+        for (const runtime of runtimes) {
+            try {
+                execSync(`${runtime} --version`, { 
+                    stdio: 'pipe',
+                    timeout: 2000 
+                });
+                console.log(`✅ Found JavaScript runtime: ${runtime}`);
+                return runtime;
+            } catch (error) {
+                continue;
+            }
+        }
+
+        console.log('⚠️ No JavaScript runtime found!');
+        console.log('   Install one to enable YouTube signature solving:');
+        console.log('   - Deno:   https://deno.land/');
+        console.log('   - Node:   https://nodejs.org/');
+        console.log('   - Bun:    https://bun.sh/');
+        
+        return null;
+    }
+
+    /**
+     * List available formats untuk debugging
+     * @param {string} url - URL untuk di-check
      * @returns {Promise<void>}
      */
-    async downloadWithYtdlp(url, outputPath) {
-        return new Promise(async (resolve, reject) => {
+    async listAvailableFormats(url) {
+        return new Promise((resolve, reject) => {
             try {
-                // Get Python command (auto-detect python/python3)
-                const pythonCmd = await this.getPythonCommand();
+                console.log(`\n📋 Listing available formats for: ${url}`);
                 
-                const ytdlp = spawn(pythonCmd, [
-                    '-m', 'yt_dlp',
-                    '--no-update',
-                    '-x',
-                    '--audio-format', 'mp3',
-                    '--audio-quality', '192',
-                    '--no-warnings',
-                    '-o', path.join(outputPath, '%(title)s.%(ext)s'),
+                const ytdlp = spawn('yt-dlp', [
+                    '--list-formats',
+                    '--cookies', path.join(__dirname, 'youtube_cookies.txt'),
                     url
                 ]);
 
@@ -295,26 +352,158 @@ class MusicDownloader {
                 let stderr = '';
 
                 ytdlp.stdout.on('data', (data) => {
-                    stdout += data.toString();
+                    const output = data.toString();
+                    stdout += output;
+                    console.log(output);
                 });
 
                 ytdlp.stderr.on('data', (data) => {
-                    stderr += data.toString();
+                    const output = data.toString();
+                    stderr += output;
+                    console.log(output);
+                });
+
+                ytdlp.on('close', (code) => {
+                    console.log(`\n✅ Format listing completed (exit code: ${code})\n`);
+                    resolve(stdout);
+                });
+
+                ytdlp.on('error', (err) => {
+                    console.error('❌ Error listing formats:', err.message);
+                    reject(err);
+                });
+            } catch (error) {
+                console.error('❌ Error:', error.message);
+                reject(error);
+            }
+        });
+    }
+
+    /**
+     * Download menggunakan yt-dlp CLI langsung dengan JavaScript runtime untuk signature solving
+     * @param {string} url - URL untuk download (bisa YouTube atau ytsearch:)
+     * @param {string} outputPath - Output directory
+     * @returns {Promise<void>}
+     */
+    async downloadWithYtdlp(url, outputPath) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Path to cookies file
+                const cookiePath = path.join(__dirname, 'youtube_cookies.txt');
+                const cookieExists = fsSync.existsSync(cookiePath);
+                
+                console.log(`🍪 Cookies file: ${cookiePath}`);
+                console.log(`🍪 Cookies exist: ${cookieExists ? 'YES ✅' : 'NO ❌'}`);
+                
+                if (cookieExists) {
+                    console.log('🔐 Using YouTube cookies to bypass bot detection & region locks');
+                } else {
+                    console.log('⚠️ No cookies file found - downloads may fail on region-locked videos');
+                    console.log('   To fix: Place youtube_cookies.txt in root directory');
+                }
+                
+                // Check for JavaScript runtime (needed for YouTube signature solving)
+                console.log('\n🔍 Checking for JavaScript runtime (for YouTube signature solving)...');
+                const jsRuntime = await this.getJavaScriptRuntime();
+                
+                if (!jsRuntime) {
+                    console.error('\n❌ CRITICAL: No JavaScript runtime found!');
+                    console.error('   YouTube requires JavaScript to solve signature challenges.');
+                    console.error('   Without it, only low-quality formats (storyboard) are available.\n');
+                    console.error('   INSTALL DENO (recommended):');
+                    console.error('   $ choco install deno');
+                    console.error('   Or: $ scoop install deno');
+                    console.error('   Or: https://deno.land/\n');
+                    
+                    throw new Error('JavaScript runtime not found - cannot solve YouTube signatures');
+                }
+                
+                // Debug: List available formats first
+                try {
+                    await this.listAvailableFormats(url);
+                } catch (err) {
+                    console.log('⚠️ Could not list formats (this is ok, continuing with download)');
+                }
+                
+                // Build command with JS runtime support and flexible format selection
+                const ytdlpArgs = [
+                    '--no-update',
+                    '--cookies', cookiePath,
+                    '--extractor-args', 'youtube:player_client=tv_downgraded,web_safari',
+                    '--extractor-args', `youtube:js_engine=${jsRuntime}`,  // Use detected JS runtime
+                    '--remote-components', 'ejs:github',  // Download EJS challenge solver for proper signature solving
+                    '--skip-unavailable-fragments',
+                    '--retries', '10',
+                    '--fragment-retries', '10',
+                    '--socket-timeout', '60',
+                    '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    // Format selection with fallback: try audio first, then best available
+                    '-f', 'bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio[ext=webm]/bestaudio/best',
+                    '-x',  // Extract audio only
+                    '--audio-format', 'mp3',
+                    '--audio-quality', '192',
+                    '--no-warnings',
+                    '-o', path.join(outputPath, '%(title)s.%(ext)s'),
+                    url
+                ];
+                
+                console.log(`\n📥 Starting yt-dlp directly...`);
+                console.log(`🔧 JavaScript Runtime: ${jsRuntime}`);
+                console.log(`📍 URL: ${url}`);
+                console.log(`💾 Output: ${path.join(outputPath, '%(title)s.%(ext)s')}\n`);
+                
+                const ytdlp = spawn('yt-dlp', ytdlpArgs);
+
+                let stdout = '';
+                let stderr = '';
+
+                ytdlp.stdout.on('data', (data) => {
+                    const output = data.toString();
+                    stdout += output;
+                    console.log(`[yt-dlp] ${output.trim()}`);
+                });
+
+                ytdlp.stderr.on('data', (data) => {
+                    const output = data.toString();
+                    stderr += output;
+                    console.log(`[yt-dlp] ${output.trim()}`);
                 });
 
                 ytdlp.on('close', (code) => {
                     if (code === 0) {
+                        console.log('\n✅ yt-dlp download completed successfully');
                         resolve(stdout);
                     } else {
-                        const errorMsg = stderr || 'yt-dlp download failed';
-                        reject(new Error(errorMsg));
+                        const fullError = stderr || stdout || 'yt-dlp download failed';
+                        console.log(`\n❌ yt-dlp exit code: ${code}`);
+                        console.log(`❌ Error: ${fullError}`);
+                        
+                        // Check if it's a format availability issue
+                        if (fullError.includes('Requested format is not available')) {
+                            console.log('\n📋 Daftar format yang tersedia untuk URL ini:');
+                            console.log('💡 Coba gunakan format lain atau periksa apakah URL masih valid\n');
+                            
+                            // Don't reject immediately - let calling code handle the error
+                            reject(new Error(`Format not available: ${fullError}`));
+                        } else {
+                            reject(new Error(fullError));
+                        }
                     }
                 });
 
                 ytdlp.on('error', (err) => {
+                    console.error('\n❌ Failed to execute yt-dlp:', err.message);
+                    
+                    if (err.code === 'ENOENT') {
+                        console.error('❌ yt-dlp not found!');
+                        console.error('   Install it with: pip install yt-dlp');
+                        console.error('   Or use: pip3 install yt-dlp');
+                    }
+                    
                     reject(err);
                 });
             } catch (error) {
+                console.error('❌ downloadWithYtdlp error:', error.message);
                 reject(error);
             }
         });

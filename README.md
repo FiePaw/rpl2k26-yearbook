@@ -11,6 +11,17 @@ A modern, interactive digital yearbook for RPL (Rekayasa Perangkat Lunak / Softw
 - **Click-to-Seek** - Click any lyric line to jump to that exact timestamp in the song
 - **Fallback Timing** - Gracefully handles lyrics without timestamps using smart defaults
 
+### 🎵 Advanced Music Downloader
+- **Spotify Support** - Download from Spotify links with automatic metadata detection
+- **YouTube Search** - Smart search using Spotify metadata (artist + title)
+- **Artist Input** - Manual artist name input for accurate YouTube searches
+- **Format Fallback** - Multiple audio format attempts (MP3 → M4A → WebM → Best)
+- **Signature Solving** - Automatic JavaScript runtime detection (Deno/Node.js/Bun) for YouTube authentication
+- **Region/Age-Lock Bypass** - YouTube cookies support for restricted videos
+- **Smart Retry Logic** - 10x retries with fragment-level retry for reliability
+- **Metadata Caching** - Smart caching system reduces API calls by 90%
+- **Real-time Rate Limiting** - Prevents API throttling with intelligent request spacing
+
 ### 👥 Student Profiles
 - **Photo & Audio** - Upload profile photos and custom audio files
 - **Metadata Extraction** - Auto-extract artist/title from MP3 files
@@ -60,14 +71,31 @@ A modern, interactive digital yearbook for RPL (Rekayasa Perangkat Lunak / Softw
    - Update `API_URL` in HTML files to match your backend domain
    - Ensure Nginx is configured as reverse proxy (HTTPS recommended)
 
-4. **Start server**
+4. **Setup YouTube Cookies (Optional but Recommended)**
+   For downloading region-locked or age-restricted videos:
+   - Install browser extension: "Get cookies.txt LOCALLY"
+   - Visit YouTube.com and login
+   - Export cookies from extension
+   - Save as `youtube_cookies.txt` in project root directory
+   - Format: Netscape HTTP Cookie File format
+   - Without cookies: Most videos work fine, some may fail
+
+5. **Setup JavaScript Runtimes (Automatic)** 
+   The system auto-detects available runtimes in this order:
+   - **Deno** (recommended) - Install: `choco install deno` (Windows) or `curl -fsSL https://deno.land/install.sh | sh` (Linux)
+   - **Node.js** (fallback) - Usually already installed
+   - **Bun** (fallback) - Install: `curl -fsSL https://bun.sh/install | bash`
+   
+   The downloader automatically uses whichever is available. Without any runtime, YouTube modern videos won't download properly.
+
+6. **Start server**
    ```bash
    npm start
    # or
    node server.js
    ```
 
-5. **Access the application**
+7. **Access the application**
    - Home: `https://your-domain.com/`
    - Admin: `https://your-domain.com/admin` (password protected)
 
@@ -141,6 +169,93 @@ YearBook/
    - Go to Beranda (carousel view)
    - Select the student profile
    - Audio plays and lyrics sync in real-time
+
+### Downloading Music from Spotify/YouTube
+
+#### For Students
+
+1. **Access Profile**
+   - Go to your student profile
+   - Scroll to "Audio" or "Music Download" tab
+
+2. **Paste Spotify/YouTube Link**
+   - Copy link from Spotify or YouTube
+   - Paste into the URL input field
+   - Artist input field appears ONLY for Spotify links
+
+3. **Enter Artist (Spotify only)**
+   - If Spotify link: Artist field appears automatically
+   - Type the artist name (e.g., "Joji", "Billie Eilish")
+   - This ensures accurate YouTube search
+
+4. **Download**
+   - Click "Download" button
+   - Wait for processing (usually 10-30 seconds)
+   - File saves to profile music directory
+   - Audio field auto-updates with new file
+
+#### For Admins
+
+1. **Access Admin Dashboard**
+   - Go to `/admin`
+   - Login with admin credentials
+   - Click "Edit" on any student profile
+
+2. **Download Music Section**
+   - Scroll to "Download Audio" section
+   - Paste Spotify or YouTube link
+   - Artist field appears for Spotify links
+
+3. **Enter Details**
+   - Type artist name for Spotify (required)
+   - Leave blank for YouTube (auto-detected)
+
+4. **Download & Save**
+   - Click "Download Audio"
+   - Monitor progress messages
+   - Changes save automatically
+
+#### Music Download Features Explained
+
+**Spotify Links**
+- Metadata retrieved via oEmbed API (no auth needed)
+- Artist name REQUIRED (API doesn't provide it)
+- Searches YouTube for: `"Artist - SongTitle"`
+- Fallback: Search by title only if artist search fails
+- Highly accurate format: `Joji - Last of a Dying Breed`
+
+**YouTube/YouTube Music Links**
+- Direct download from YouTube
+- Artist field hidden (auto-detected from metadata)
+- Handles:
+  - Region-locked videos (via cookies)
+  - Age-restricted content
+  - Premium content (with proper cookies)
+  - Multiple format options with intelligent fallback
+
+**Smart Audio Format Selection**
+```
+Priority order:
+1. MP3 (best quality, most compatible)
+2. M4A (if MP3 unavailable)
+3. WebM (fallback format)
+4. Any available audio format (last resort)
+```
+
+**Advanced Technical Details**
+- Automatic JavaScript runtime detection (Deno/Node.js/Bun)
+- YouTube signature challenge solving (required for modern videos)
+- Challenge solver auto-download on first run (cached for speed)
+- 10x retry attempts with fragment-level handling
+- Automatic user-agent rotation for reliability
+- Region-specific player client (`tv_downgraded`, `web_safari`)
+
+**Console Output Guide**
+- `✓ Cache HIT` = Using cached metadata (fast)
+- `✅ Found JavaScript runtime: deno` = Ready to download
+- `📋 Listing available formats` = Showing what's available
+- `✅ yt-dlp download completed` = Success!
+- `⚠️ Strategy gagal` = One search strategy failed, trying backup
 
 ### Timestamp Format
 

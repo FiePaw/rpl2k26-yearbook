@@ -1080,10 +1080,54 @@ function switchStudentAudioTab(event) {
         if (index === 1) {
             console.log('📥 Loading available audio files');
             setTimeout(() => loadAvailableAudioFiles(), 100);
+            
+            // Setup URL monitoring for artist input visibility
+            setupArtistInputMonitoring();
+        } else if (index === 0) {
+            // Clear artist input when switching to upload tab
+            const artistInputGroup = document.getElementById('studentArtistInputGroup');
+            const artistInput = document.getElementById('studentArtistInput');
+            const urlInput = document.getElementById('studentAudioUrl');
+            
+            if (artistInputGroup) artistInputGroup.style.display = 'none';
+            if (artistInput) artistInput.value = '';
+            if (urlInput) urlInput.value = '';
         }
     } else {
         console.warn('⚠️ Tab content not found for index:', index);
     }
+}
+
+// Setup monitoring untuk artist input visibility
+function setupArtistInputMonitoring() {
+    const urlInput = document.getElementById('studentAudioUrl');
+    const artistInputGroup = document.getElementById('studentArtistInputGroup');
+    const artistInput = document.getElementById('studentArtistInput');
+    
+    if (!urlInput || !artistInputGroup) return;
+    
+    // Monitor URL input untuk Spotify detection
+    urlInput.addEventListener('input', (e) => {
+        const url = e.target.value.trim();
+        const isSpotify = /spotify\.com/i.test(url);
+        
+        // Show artist input jika Spotify link terdeteksi
+        if (isSpotify) {
+            artistInputGroup.style.display = 'block';
+            artistInput?.focus();
+        } else {
+            artistInputGroup.style.display = 'none';
+            if (artistInput) artistInput.value = ''; // Reset artist input
+        }
+    });
+    
+    // Clear artist field when URL is cleared
+    urlInput.addEventListener('change', (e) => {
+        if (!e.target.value.trim()) {
+            artistInputGroup.style.display = 'none';
+            if (artistInput) artistInput.value = '';
+        }
+    });
 }
 
 // Upload student audio
@@ -1150,17 +1194,23 @@ function startSmartWaitMessages(statusDiv) {
     return intervalId;
 }
 
-// Download student audio from URL
 async function downloadStudentAudio() {
     const url = document.getElementById('studentAudioUrl').value;
+    const artist = document.getElementById('studentArtistInput').value || '';
+    const isSpotify = url.includes('spotify.com');
     
     if (!url) {
         popup.error('Masukin URL dulu dong!');
         return;
     }
     
+    // Validate artist input for Spotify (if field is shown, it means we detected Spotify)
+    if (isSpotify && !artist) {
+        popup.error('Silakan masukkan nama pembuat lagu (artist) untuk Spotify\n\nSpotify API tidak punya data artist, jadi harus input manual untuk hasil pencarian lebih akurat.');
+        return;
+    }
+    
     // Detect URL type
-    const isSpotify = url.includes('spotify.com');
     const isTikTok = url.includes('tiktok.com');
     
     if (!isSpotify && !isTikTok) {
@@ -1188,7 +1238,7 @@ async function downloadStudentAudio() {
         // Choose endpoint based on URL type
         let endpoint = isSpotify ? '/api/spotify/download' : '/api/audio/download';
         let body = isSpotify ? 
-            { spotifyUrl: url } : 
+            { spotifyUrl: url, artist: artist } : 
             { url };
         
         const response = await fetch(`${API_URL}${endpoint}`, {
@@ -2687,6 +2737,9 @@ async function selectAndEditStudent(studentId) {
         // Show edit form
         document.getElementById('adminEditForm').style.display = 'block';
         
+        // Setup audio download functionality
+        setupAdminAudioDownload();
+        
         // Scroll to form
         document.getElementById('adminEditForm').scrollIntoView({ behavior: 'smooth' });
     } catch (error) {
@@ -3893,6 +3946,137 @@ async function downloadAdminAudio() {
         } else {
             statusDiv.innerHTML = `<p style="color: #FF6B6B;"><i class="fas fa-exclamation-circle"></i> ${error.message}</p>`;
         }
+    }
+}
+
+// ========== SETUP ADMIN AUDIO DOWNLOAD ==========
+// Setup admin audio download functionality when edit form is shown
+function setupAdminAudioDownload() {
+    const downloadBtn = document.getElementById('adminDownloadAudioBtn');
+    const urlInput = document.getElementById('adminAudioUrl');
+    const artistInputGroup = document.getElementById('adminArtistInputGroup');
+    
+    if (!downloadBtn) return;
+    
+    // Remove existing event listeners to prevent duplicates
+    const newBtn = downloadBtn.cloneNode(true);
+    downloadBtn.parentElement.replaceChild(newBtn, downloadBtn);
+    
+    // Setup URL monitoring for artist input visibility
+    if (urlInput && artistInputGroup) {
+        // Remove existing listeners first
+        const newUrlInput = urlInput.cloneNode(true);
+        urlInput.parentElement.replaceChild(newUrlInput, urlInput);
+        
+        newUrlInput.addEventListener('input', (e) => {
+            const url = e.target.value.trim();
+            const isSpotify = /spotify\.com/i.test(url);
+            
+            if (isSpotify) {
+                artistInputGroup.style.display = 'block';
+                document.getElementById('adminArtistInput')?.focus();
+            } else {
+                artistInputGroup.style.display = 'none';
+                const artistInput = document.getElementById('adminArtistInput');
+                if (artistInput) artistInput.value = '';
+            }
+        });
+    }
+    
+    // Setup download button
+    const newdownloadBtn = document.getElementById('adminDownloadAudioBtn');
+    newdownloadBtn.addEventListener('click', adminDownloadAudio);
+}
+
+// Admin download audio function (called from button)
+async function adminDownloadAudio(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    const url = document.getElementById('adminAudioUrl').value;
+    const artist = document.getElementById('adminArtistInput')?.value || '';
+    const isSpotify = url.includes('spotify.com');
+    
+    if (!url) {
+        popup.error('Silakan masukkan URL dulu!');
+        return;
+    }
+    
+    // Validate artist input for Spotify
+    if (isSpotify && !artist) {
+        popup.error('Silakan masukkan nama pembuat lagu (artist) untuk Spotify');
+        return;
+    }
+    
+    const isTikTok = url.includes('tiktok.com');
+    if (!isSpotify && !isTikTok) {
+        popup.error('Hanya Spotify dan TikTok yang didukung!');
+        return;
+    }
+    
+    const statusDiv = document.getElementById('adminDownloadStatus');
+    const downloadBtn = document.getElementById('adminDownloadAudioBtn');
+    
+    statusDiv.style.display = 'block';
+    statusDiv.innerHTML = `<p style="color: var(--primary-color);"><i class="fas fa-spinner fa-spin"></i> Sedang download... mohon tunggu</p>`;
+    downloadBtn.disabled = true;
+    
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
+        
+        let endpoint = isSpotify ? '/api/spotify/download' : '/api/audio/download';
+        let body = isSpotify ? 
+            { spotifyUrl: url, artist: artist } : 
+            { url };
+        
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body),
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Set the audio file input to indicate a file was downloaded
+            const audioFileInput = document.getElementById('adminAudioFile');
+            if (audioFileInput && data.latestFile) {
+                // Create a virtual file object for display
+                const fileName = data.latestFile.url.split('/').pop();
+                document.getElementById('adminAudioFileName').textContent = fileName;
+                document.getElementById('adminAudioFilePreview').style.display = 'block';
+                
+                // Store the downloaded file path for later save
+                audioFileInput.dataset.downloadedPath = data.latestFile.url;
+                adminAudioPath = data.latestFile.url;
+                
+                // Navigate to the success message
+                displayAdminAudio();
+            }
+            
+            statusDiv.innerHTML = `<p style="color: var(--primary-color);"><i class="fas fa-check-circle"></i> ✅ Download berhasil!</p>`;
+            document.getElementById('adminAudioUrl').value = '';
+            document.getElementById('adminArtistInput').value = '';
+            document.getElementById('adminArtistInputGroup').style.display = 'none';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        } else {
+            throw new Error(data.error || data.message || 'Download gagal');
+        }
+    } catch (error) {
+        console.error('Download error:', error);
+        statusDiv.innerHTML = `<p style="color: #e74c3c;"><i class="fas fa-times-circle"></i> ❌ ${error.message}</p>`;
+    } finally {
+        downloadBtn.disabled = false;
     }
 }
 
