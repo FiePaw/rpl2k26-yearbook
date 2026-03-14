@@ -119,34 +119,81 @@
 - ✅ **Metadata Caching**: Improved cache hits with accurate artist search
 - ✅ **Cross-Platform**: Works on Windows, Linux, macOS
 
-#### ⚠️ Known Issues - Pending Fixes
+#### ✅ COMPLETED: Lyrics Form Auto-Population After Download
+**Status**: ✅ FULLY IMPLEMENTED & TESTED  
+**Priority**: MEDIUM - Improves user workflow convenience
 
-**1. Lyrics Form Not Auto-Populated After Download** 🐛
-- **Status**: REPORTED - Pending Implementation
-- **Location**: `profile.js` - `downloadStudentAudio()` function
-- **Issue**: After successful music download from Spotify/YouTube:
-  - `studentLyricsTextarea` should be **EMPTY** (cleared)
-  - `lyricsArtistInput` should **AUTO-FILL** with downloaded artist name
-  - `lyricsSongTitleInput` should **AUTO-FILL** with downloaded song title
-  - Currently: These fields are NOT updated after download completes
-- **Current Behavior**: 
-  - User downloads music successfully
-  - Gets redirected to Lyrics section
-  - But artist & title fields remain empty
-  - User must manually re-enter artist & title to generate lyrics
-- **Expected Behavior**:
-  - After download, form automatically populated with metadata
-  - Users can immediately click "Generate Lyrics" without re-entering data
-- **Impact**: Minor UX issue (workaround: manually enter artist/title)
-- **Priority**: MEDIUM - Improves user workflow convenience
-- **Files to Modify**: 
-  - `profile.js` - Extract metadata from download response
-  - `server.js` - Ensure backend returns artist/title in response
-- **Implementation Notes**:
-  - Extract artist + title from successful download
-  - Pass metadata back to frontend in API response
-  - Populate form fields with received metadata
-  - Keep lyrics textarea empty for fresh generation
+**1. Lyrics Form Auto-Populated After Audio Download** ✅ WORKING
+- **Problem**: After downloading music from Spotify/YouTube/TikTok:
+  - `lyricsArtistInput` & `lyricsSongTitleInput` remained empty
+  - `studentLyricsTextarea` would show old lyrics (confusing)
+  - User had to manually re-enter artist & title to generate new lyrics
+
+- **Solution Implemented**:
+  1. **Extract Metadata in `downloadStudentAudio()`**:
+     - Parse filename of just-downloaded file using `extractSongMetadata(filename)`
+     - Extract artist & title from filename format: `"Artist - Title"`
+     - Pass metadata to `displayStudentLyricsSection(downloadedArtist, downloadedTitle)`
+  
+  2. **Smart Lyrics Handling in `displayStudentLyricsSection()`**:
+     - Now accepts 2 optional parameters: `downloadedArtist`, `downloadedTitle`
+     - **PRIORITY 1**: Use freshly downloaded metadata (if file was just downloaded)
+     - **PRIORITY 2**: Use `studentAudioMetadata` from file selection
+     - **PRIORITY 3**: Extract from `student.audioFile` on first page load
+     - **Textarea Logic**:
+       - ✅ If recent download → **CLEAR** textarea (user generates fresh lyrics)
+       - ✅ If loading existing file → **SHOW** saved lyrics (if they exist)
+       - ✅ Never confuse old lyrics with new download
+
+- **Implementation Details**:
+  ```javascript
+  // In downloadStudentAudio() after successful download:
+  const metadata = extractSongMetadata(filename);
+  displayStudentLyricsSection(metadata.artist, metadata.title);  // Pass extracted data
+  
+  // In displayStudentLyricsSection():
+  if (downloadedArtist || downloadedTitle) {
+      // Recent download - populate form & clear textarea for fresh generation
+      artistInput.value = downloadedArtist;
+      songTitleInput.value = downloadedTitle;
+      textareaElement.value = '';  // Ready for new lyrics
+  } else if (student.studentLyrics) {
+      // Loading existing file - show saved lyrics
+      textareaElement.value = student.studentLyrics;
+  }
+  ```
+
+- **Files Modified**:
+  - `profile.js` - Line 1254-1299: Extract metadata in `downloadStudentAudio()`
+  - `profile.js` - Line 4872-4965: Refactored `displayStudentLyricsSection()` with parameter support
+
+- **User Workflow**:
+  ```
+  SCENARIO 1: Download new music
+  ✅ Download Spotify/YouTube/TikTok link
+  ✅ Artist & title form fields AUTO-FILL
+  ✅ Textarea CLEARED (ready for fresh lyrics)
+  ✅ Click "Generate Lyrics" immediately (no re-entry needed)
+  
+  SCENARIO 2: Select music from existing file
+  ✅ Click on saved position
+  ✅ Artist & title form fields POPULATE
+  ✅ Previous lyrics SHOWN (if any exist)
+  ✅ Can regenerate or start fresh
+  ```
+
+- **Testing Results** ✅ VERIFIED:
+  - ✅ Download Spotify → Artist & title populate automatically
+  - ✅ Download YouTube → Artist & title populate automatically
+  - ✅ Download TikTok → Artist & title populate automatically
+  - ✅ Textarea clears on fresh download (no confusing old lyrics)
+  - ✅ Textarea shows saved lyrics when reloading existing student data
+  - ✅ Form ready for immediate "Generate Lyrics" click after download
+  - ✅ No manual re-entry of artist/title needed
+  - ✅ Metadata extraction works for various filename formats
+  - ✅ All three priority sources working correctly
+
+#### ⚠️ Known Issues - Pending Fixes
 
 ---
 
