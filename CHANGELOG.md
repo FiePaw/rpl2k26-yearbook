@@ -751,6 +751,120 @@ const cachedData = await fetch(/api/transcribe/lyrics/{id});
 
 ---
 
+## [⏳ PLANNED] - March 14, 2026 (Upcoming)
+
+### 🎨 Beranda Animation Improvements
+**Status**: ⏳ PLANNED  
+**Priority**: MEDIUM - Enhance user experience with smooth transitions  
+**Assigned**: To be started
+
+#### 📋 Planned Improvements
+
+**1. Card Entrance Animations**
+- Student card grid items should animate in on page load
+- Staggered animation (card 1, delay, card 2, delay, card 3, etc.)
+- Smooth fade-in + slide-up transition
+- **Duration**: ~300-500ms per card
+- **Files to modify**: 
+  - `beranda.js` - Add animation trigger logic
+  - `style.css` - Create card entrance animation keyframes
+  - `animations.js` - Card animation coordination
+
+**2. Music Player Open/Close Animations**
+- Player container entrance animation (smooth slide-up from bottom)
+- Profile transition animation when switching between students
+- Album art rotation animation should be smooth
+- Player close animation (slide-down + fade-out)
+- **Files to modify**: 
+  - `beranda.js` - Already has some transition logic, enhance it
+  - `style.css` - Add/improve transition classes
+  - `animations.js` - Music player specific animations
+
+**3. Lyrics Scroll Animation**
+- Lyrics container smooth scroll-to-current-line
+- Highlight current line with smooth color transition
+- Timestamp color change animation as playback progresses
+- **Files to modify**:
+  - `beranda.js` - `syncBerandaLyricsWithAudio()` enhancement
+  - `style.css` - Lyric line animation keyframes
+  - `animations.js` - Lyric sync animation helpers
+
+**4. Button Hover & Click Animations**
+- Play/pause button rotation on hover
+- Prev/next buttons scale animation on click
+- Shuffle/repeat buttons toggle smoothly
+- Theme toggle button spin animation
+- **Files to modify**:
+  - `style.css` - Button animation classes
+  - `animations.js` - Button interaction animations
+
+**5. Progress Bar Animations**
+- Progress handle smooth follow animation
+- Progress fill smooth width transition
+- Time display number count animation (0:00 → 1:30)
+- **Files to modify**:
+  - `style.css` - Progress bar transitions
+  - `animations.js` - Number counting animation library
+
+**6. Search & Filter Animations**
+- Search result cards fade in when found
+- Filter button click animation & result update transition
+- Empty state animation when no results
+- **Files to modify**:
+  - `beranda.js` - Search trigger animation
+  - `style.css` - Search result animations
+  - `animations.js` - Filter animation coordination
+
+---
+
+#### ✨ Animation Goals
+
+- **Smooth**: All transitions should be fluid (not jarring)
+- **Purposeful**: Animations should aid usability, not distract
+- **Performant**: Use CSS transforms for 60fps animations
+- **Accessible**: Respect `prefers-reduced-motion` preference
+- **Consistent**: Animation timing & easing should match across UI
+
+---
+
+#### 📊 Technical Requirements
+
+- Use CSS `@keyframes` for performance
+- Leverage `anime.js` library already loaded in HTML
+- Respect `transition` property for smoothness
+- Add `will-change` hints for animated elements
+- Test on mobile devices for performance
+- Ensure no animation jank or lag
+
+---
+
+#### 📝 Implementation Checklist (TODO)
+
+- [ ] Analyze current animations in `animations.js`
+- [ ] Create animation timing constants (standardize duration/delay)
+- [ ] Implement card entrance animations
+- [ ] Enhance music player transitions
+- [ ] Add lyrics scroll animations
+- [ ] Create button interaction animations
+- [ ] Animate progress bar updates
+- [ ] Add search/filter transitions
+- [ ] Test on mobile devices
+- [ ] Verify `prefers-reduced-motion` support
+- [ ] Performance profiling (check 60fps)
+- [ ] Cross-browser testing
+
+---
+
+#### 🎯 Success Criteria
+
+- ✅ All card/player/button interactions have smooth animations
+- ✅ No animation jank on mobile devices
+- ✅ Animations enhance (not distract) user experience
+- ✅ `prefers-reduced-motion` respected for accessibility
+- ✅ 60fps performance on target devices
+
+---
+
 ## 🐛 Known Bugs / Issues to Fix
 
 ### 1. Theme Toggle Not Working on Beranda
@@ -825,6 +939,7 @@ const cachedData = await fetch(/api/transcribe/lyrics/{id});
 - ✅ Uniform card sizing with CSS Grid `grid-auto-rows`
 
 ### Pending Tasks
+- ⏳ **[PLANNED]** Beranda animation improvements (card entrance, player transitions, lyrics scroll)
 - ⏳ Fix theme toggle functionality on beranda
 - ⏳ Debug and repair teacher page layout
 - ⏳ Make video gallery section responsive
@@ -845,5 +960,5 @@ const cachedData = await fetch(/api/transcribe/lyrics/{id});
 
 ---
 
-**Last Updated**: January 19, 2026  
-**Status**: Ready for bug fixes on next session
+**Last Updated**: March 14, 2026  
+**Status**: Critical bugs fixed on Beranda, Animation improvements planned for next session

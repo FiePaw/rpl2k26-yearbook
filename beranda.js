@@ -223,7 +223,7 @@ function createStudentCard(student) {
     card.className = 'student-card';
     card.dataset.studentId = student.id;
     
-    const photoUrl = student.photo || 'https://instagram.fcgk27-2.fna.fbcdn.net/v/t51.2885-19/383807906_3433010510253665_6362020059237877936_n.jpg?stp=dst-jpg_s150x150_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby4xMDgwLmMyIn0&_nc_ht=instagram.fcgk27-2.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2QG0XlSSKxzzND0tqGnKHKmc_T2Mg73OdpEfsfECSHJGWas28YicQPvvDmgfaZuOlK0&_nc_ohc=ObunXjB7PYkQ7kNvwFPUeSA&_nc_gid=3E42X3RrQWj57ZSc85br3Q&edm=AOQ1c0wBAAAA&ccb=7-5&oh=00_AfiaveMpoag1cIcKxO_5kSvINDRovfR1XvB3bNVAGIITrQ&oe=6927BC1F&_nc_sid=8b3546' + encodeURIComponent(student.name);
+    const photoUrl = student.photo
     
     card.innerHTML = `
         <div class="card-photo-section">
@@ -434,7 +434,7 @@ function playStudent(index) {
     console.log(`🎯 Playing student: ${student.name} (ID: ${student.id}, Index: ${index})`);
     
     const playerContainer = document.getElementById('musicPlayer');
-    const photoUrl = student.photo || 'https://via.placeholder.com/400x400?text=' + encodeURIComponent(student.name);
+    const photoUrl = student.photo
 
     // Reset manual scroll flag when changing student
     lyricsManualScrolling = false;
