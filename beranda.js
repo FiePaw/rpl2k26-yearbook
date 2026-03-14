@@ -224,12 +224,13 @@ function createStudentCard(student) {
     card.className = 'student-card';
     card.dataset.studentId = student.id;
     
-    const photoUrl = student.photo
+    const photoUrl = student.photo;
+    const altText = photoUrl ? student.name : 'FOTO BELUM ADA';
     
     card.innerHTML = `
         <div class="card-photo-section">
             <div class="card-photo-frame">
-                <img src="${photoUrl}" alt="${student.name}">
+                <img src="${photoUrl}" alt="${altText}">
                 <div class="play-overlay">
                     <div class="play-btn">
                         <i class="fas fa-play"></i>
@@ -489,6 +490,7 @@ function playStudent(index) {
         }
         
         document.getElementById('playerPhoto').src = photoUrl;
+        document.getElementById('playerPhoto').alt = photoUrl ? student.name : 'FOTO BELUM ADA';
         document.getElementById('playerName').textContent = student.name;
         document.getElementById('playerBirthday').textContent = student.birthday || 'Not set';
         document.getElementById('playerMessage').textContent = student.message || 'No message available...';
