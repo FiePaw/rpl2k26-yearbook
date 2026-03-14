@@ -720,7 +720,7 @@ app.get('/api/spotify/check', async (req, res) => {
 
 // Download Spotify track (NEW: Menggunakan MusicDownloader dengan caching)
 app.post('/api/spotify/download', async (req, res) => {
-    const { spotifyUrl, cookieFile } = req.body;
+    const { spotifyUrl, artist } = req.body;
     
     if (!spotifyUrl) {
         return res.status(400).json({ 
@@ -743,7 +743,8 @@ app.post('/api/spotify/download', async (req, res) => {
         }
 
         // Download menggunakan MusicDownloader (dengan caching dan smart platform detection)
-        const result = await musicDownloader.download(spotifyUrl);
+        // Pass artist parameter untuk search yang lebih akurat
+        const result = await musicDownloader.download(spotifyUrl, artist);
         
         if (!result.success) {
             // Check if it's a setup error (Python/yt-dlp not found)
