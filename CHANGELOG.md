@@ -119,6 +119,35 @@
 - ✅ **Metadata Caching**: Improved cache hits with accurate artist search
 - ✅ **Cross-Platform**: Works on Windows, Linux, macOS
 
+#### ⚠️ Known Issues - Pending Fixes
+
+**1. Lyrics Form Not Auto-Populated After Download** 🐛
+- **Status**: REPORTED - Pending Implementation
+- **Location**: `profile.js` - `downloadStudentAudio()` function
+- **Issue**: After successful music download from Spotify/YouTube:
+  - `studentLyricsTextarea` should be **EMPTY** (cleared)
+  - `lyricsArtistInput` should **AUTO-FILL** with downloaded artist name
+  - `lyricsSongTitleInput` should **AUTO-FILL** with downloaded song title
+  - Currently: These fields are NOT updated after download completes
+- **Current Behavior**: 
+  - User downloads music successfully
+  - Gets redirected to Lyrics section
+  - But artist & title fields remain empty
+  - User must manually re-enter artist & title to generate lyrics
+- **Expected Behavior**:
+  - After download, form automatically populated with metadata
+  - Users can immediately click "Generate Lyrics" without re-entering data
+- **Impact**: Minor UX issue (workaround: manually enter artist/title)
+- **Priority**: MEDIUM - Improves user workflow convenience
+- **Files to Modify**: 
+  - `profile.js` - Extract metadata from download response
+  - `server.js` - Ensure backend returns artist/title in response
+- **Implementation Notes**:
+  - Extract artist + title from successful download
+  - Pass metadata back to frontend in API response
+  - Populate form fields with received metadata
+  - Keep lyrics textarea empty for fresh generation
+
 ---
 
 ## [In Progress] - March 14, 2026 (Earlier)

@@ -1256,21 +1256,31 @@ async function downloadStudentAudio() {
         const data = await response.json();
         
         if (data.success) {
+            let filename = '';
+            
             // Handle Spotify response differently
             if (isSpotify) {
                 // Spotify returns latest file and array of files
                 if (data.latestFile) {
                     console.log('🎵 Spotify download response:', data.latestFile);
                     studentAudioPath = data.latestFile.url; // Use latest downloaded file
+                    filename = data.latestFile.filename || '';
                     console.log('📁 Audio path set to:', studentAudioPath);
                     displayStudentAudio();
-                    displayStudentLyricsSection();  // Update form inputs
+                    
+                    // Extract metadata dari filename untuk populate form fields
+                    const metadata = extractSongMetadata(filename);
+                    displayStudentLyricsSection(metadata.artist, metadata.title);  // Pass extracted metadata
                     statusDiv.innerHTML = `<p style="color: var(--primary-color);"><i class="fas fa-check-circle"></i> ✅ ${data.message || 'Download completed successfully'}</p>`;
                     
                 } else if (data.tracks && data.tracks.length > 0) {
                     studentAudioPath = data.tracks[0].url; // Fallback to first track
+                    filename = data.tracks[0].filename || '';
                     displayStudentAudio();
-                    displayStudentLyricsSection();  // Update form inputs
+                    
+                    // Extract metadata dari filename untuk populate form fields
+                    const metadata = extractSongMetadata(filename);
+                    displayStudentLyricsSection(metadata.artist, metadata.title);  // Pass extracted metadata
                     statusDiv.innerHTML = `<p style="color: var(--primary-color);"><i class="fas fa-check-circle"></i> ✅ ${data.message || 'Download completed successfully'}</p>`;
                     
                 } else {
@@ -1279,8 +1289,12 @@ async function downloadStudentAudio() {
             } else {
                 // YouTube/TikTok response
                 studentAudioPath = data.path;
+                filename = data.filename || '';
                 displayStudentAudio();
-                displayStudentLyricsSection();  // Update form inputs
+                
+                // Extract metadata dari filename untuk populate form fields
+                const metadata = extractSongMetadata(filename);
+                displayStudentLyricsSection(metadata.artist, metadata.title);  // Pass extracted metadata
                 statusDiv.innerHTML = `<p style="color: var(--primary-color);"><i class="fas fa-check-circle"></i> ✅ ${data.message}</p>`;
             }
             
@@ -4871,8 +4885,10 @@ async function loadExistingLyrics(audioPath) {
 
 /**
  * Display lyrics section in student profile
+ * @param {string} downloadedArtist - Artist name extracted from just-downloaded file (optional)
+ * @param {string} downloadedTitle - Song title extracted from just-downloaded file (optional)
  */
-async function displayStudentLyricsSection() {
+async function displayStudentLyricsSection(downloadedArtist = null, downloadedTitle = null) {
     try {
         const user = JSON.parse(localStorage.getItem('user'));
         if (!user) return;
@@ -4890,13 +4906,19 @@ async function displayStudentLyricsSection() {
         let artistName = student.name || 'Unknown';
         let songTitle = 'Unknown';
         
-        // PRIORITY 1: Use studentAudioMetadata if available (from recent file selection/upload/download)
-        if (studentAudioMetadata && studentAudioMetadata.artist && studentAudioMetadata.title) {
+        // PRIORITY 1: Use parameters from just-downloaded file (most reliable)
+        if (downloadedArtist || downloadedTitle) {
+            artistName = downloadedArtist || studentAudioMetadata?.artist || student.name || 'Unknown';
+            songTitle = downloadedTitle || studentAudioMetadata?.title || 'Unknown';
+            console.log('📝 Form populated from downloaded file:', { artistName, songTitle });
+        }
+        // PRIORITY 2: Use studentAudioMetadata if available (from recent file selection/upload)
+        else if (studentAudioMetadata && studentAudioMetadata.artist && studentAudioMetadata.title) {
             artistName = studentAudioMetadata.artist;
             songTitle = studentAudioMetadata.title;
             console.log('📝 Form populated from studentAudioMetadata:', { artistName, songTitle });
         }
-        // PRIORITY 2: Extract from student data (first time page load)
+        // PRIORITY 3: Extract from student data (first time page load)
         else if (student.audioFile) {
             const filename = student.audioFile.split('/').pop();
             const parsed = extractSongMetadata(filename);
@@ -4908,6 +4930,7 @@ async function displayStudentLyricsSection() {
         // Populate form inputs with extracted values
         const artistInput = document.getElementById('lyricsArtistInput');
         const songTitleInput = document.getElementById('lyricsSongTitleInput');
+        const textareaElement = document.getElementById('studentLyricsTextarea');
         
         if (artistInput) artistInput.value = artistName;
         if (songTitleInput) songTitleInput.value = songTitle;
@@ -4915,16 +4938,24 @@ async function displayStudentLyricsSection() {
         // Show lyrics section
         lyricsSection.style.display = 'block';
 
+        // Handle textarea content:
+        // - If file was just downloaded (downloadedArtist/Title provided), user should generate fresh lyrics -> CLEAR textarea
+        // - If just loading existing lyrics (no downloads), keep existing lyrics or clear if none
+        if (student.studentLyrics && !downloadedArtist && !downloadedTitle) {
+            // No recent download - show existing lyrics if available
+            textareaElement.value = student.studentLyrics;
+        } else {
+            // Either just downloaded file OR no existing lyrics -> CLEAR textarea
+            textareaElement.value = '';
+        }
+
         // Set status information
         if (student.studentLyrics) {
             const lastUpdate = student.lyricsUpdatedAt ? new Date(student.lyricsUpdatedAt).toLocaleDateString('id-ID') : 'Unknown';
             const source = student.lyricsGeneratedFrom || 'unknown';
             document.getElementById('lyricsStatus').textContent = `Generated from: ${source} • Updated: ${lastUpdate}`;
             
-            // Populate textarea
-            document.getElementById('studentLyricsTextarea').value = student.studentLyrics;
-            
-            // Show save/delete buttons
+            // Show save/delete buttons (user can regenerate new lyrics if needed)
             document.getElementById('regenerateLyricsBtn').style.display = 'inline-block';
             document.getElementById('saveLyricsBtn').style.display = 'inline-block';
             document.getElementById('clearLyricsBtn').style.display = 'inline-block';
