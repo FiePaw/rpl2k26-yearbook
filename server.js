@@ -257,8 +257,8 @@ app.post('/api/login/student', async (req, res) => {
     
     if (password === correctPassword) {
         // Track login
-        trackLogin(studentId, 'student', student.name);
-        trackProfileVisit(studentId);
+        trackLogin(studentId, 'student', student.name, getClientIP(req));
+        trackProfileVisit(studentId, getClientIP(req), studentId);
         
         res.json({ 
             success: true, 
@@ -283,7 +283,7 @@ app.post('/api/login/teacher', async (req, res) => {
     
     if (password === 'RPL2k26') {
         // Track login
-        trackLogin(teacherId, 'teacher', teacher.name);
+        trackLogin(teacherId, 'teacher', teacher.name, getClientIP(req));
         
         res.json({ 
             success: true, 
@@ -302,7 +302,7 @@ app.post('/api/login/admin', async (req, res) => {
     // Admin only accepts ID 'admin' with password 'RYRisADMIN'
     if (adminId === 'admin' && password === 'RYRisADMIN') {
         // Track login
-        trackLogin(adminId, 'admin', 'Admin');
+        trackLogin(adminId, 'admin', 'Admin', getClientIP(req));
         
         res.json({ 
             success: true, 
@@ -1986,15 +1986,17 @@ app.post('/api/lyrics/search', async (req, res) => {
     }
 });
 
-// ========== ADMIN TRACKING SYSTEM ==========
+// ========== ADMIN TRACKING SYSTEM (v3.0) ==========
 
-// In-memory tracking data
+// In-memory tracking data — comprehensive activity tracking
 const trackingData = {
-    pageVisits: {},      // Store visit counts per profile
-    ipAccess: [],        // Store realtime IP access logs
-    loginHistory: [],    // Store login history
-    profileUpdates: {},  // Store update counts per profile
-    accessTimeline: {}   // Store hourly access counts
+    accounts: {},        // Per-account data: { [accountId]: { ips: [], logs: [] } }
+    visitorIPs: [],      // All IPs that visited the webapp
+    topVisited: {},      // { [profileId]: { count, visitors: [{ ip, accountId, timestamp }] } }
+    accessTimeline: {},  // { "HH": count }
+    loginHistory: [],    // Global login history
+    pageVisits: {},      // Legacy: { [profileId]: visitCount }
+    profileUpdates: {}   // Legacy: { [profileId]: updateCount }
 };
 
 // Load tracking data from adminbase.json on startup
@@ -2002,52 +2004,36 @@ async function loadTrackingData() {
     try {
         const data = await readJSON(ADMIN_TRACKING_PATH);
         if (data) {
-            trackingData.pageVisits = data.pageVisits || {};
-            trackingData.loginHistory = data.loginHistory || [];
-            trackingData.profileUpdates = data.profileUpdates || {};
+            trackingData.accounts = data.accounts || {};
+            trackingData.visitorIPs = data.visitorIPs || [];
+            trackingData.topVisited = data.topVisited || {};
             trackingData.accessTimeline = data.accessTimeline || {};
-            console.log('📊 Tracking data loaded from adminbase.json');
+            trackingData.loginHistory = data.loginHistory || [];
+            trackingData.pageVisits = data.pageVisits || {};
+            trackingData.profileUpdates = data.profileUpdates || {};
+            console.log('📊 Tracking data loaded from adminbase.json (v3)');
         }
     } catch (error) {
-        console.log('📝 Creating new adminbase.json for tracking data');
+        console.log('📝 Creating new adminbase.json for tracking data (v3)');
     }
 }
 
 // Save tracking data to adminbase.json
 async function saveTrackingData() {
     try {
-        const studentsNames = await readJSON(STUDENTS_PATH);
-        
-        // Build profile stats
-        const profileStats = studentsNames.map(student => ({
-            id: student.id,
-            name: student.name,
-            visits: trackingData.pageVisits[student.id] || 0,
-            updates: trackingData.profileUpdates[student.id] || 0,
-            lastVisit: new Date().toISOString()
-        }));
-        
-        // Build top profiles
-        const topProfiles = profileStats
-            .sort((a, b) => b.visits - a.visits)
-            .slice(0, 5);
-        
-        // Calculate summary
-        const totalVisits = Object.values(trackingData.pageVisits).reduce((a, b) => a + b, 0);
-        const totalUpdates = Object.values(trackingData.profileUpdates).reduce((a, b) => a + b, 0);
-        const uniqueIPs = new Set(trackingData.ipAccess.map(log => log.address)).size;
-        
         const adminData = {
-            profileStats: profileStats,
-            topProfiles: topProfiles,
-            loginHistory: trackingData.loginHistory.slice(-50), // Keep last 50
+            accounts: trackingData.accounts,
+            visitorIPs: trackingData.visitorIPs.slice(-500), // Keep last 500
+            topVisited: trackingData.topVisited,
             accessTimeline: trackingData.accessTimeline,
+            loginHistory: trackingData.loginHistory.slice(-200), // Keep last 200
             pageVisits: trackingData.pageVisits,
             profileUpdates: trackingData.profileUpdates,
             summary: {
-                totalVisits: totalVisits,
-                totalUpdates: totalUpdates,
-                uniqueIPs: uniqueIPs,
+                totalAccounts: Object.keys(trackingData.accounts).length,
+                totalVisits: Object.values(trackingData.pageVisits).reduce((a, b) => a + b, 0),
+                totalUpdates: Object.values(trackingData.profileUpdates).reduce((a, b) => a + b, 0),
+                uniqueIPs: new Set(trackingData.visitorIPs.map(v => v.ip)).size,
                 totalLogins: trackingData.loginHistory.length,
                 lastUpdated: new Date().toISOString()
             }
@@ -2062,28 +2048,118 @@ async function saveTrackingData() {
 // Save tracking data every 30 seconds
 setInterval(saveTrackingData, 30000);
 
-// Track access middleware
+// Helper: Get client IP
+function getClientIP(req) {
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+           req.headers['x-real-ip'] || 
+           req.ip || 
+           req.connection?.remoteAddress || 
+           'unknown';
+}
+
+// Helper: Ensure account exists in tracking
+function ensureAccount(accountId, name, type) {
+    if (!trackingData.accounts[accountId]) {
+        trackingData.accounts[accountId] = {
+            name: name || accountId,
+            type: type || 'unknown',
+            ips: [],
+            logs: [],
+            firstSeen: new Date().toISOString(),
+            lastActive: new Date().toISOString()
+        };
+    }
+    return trackingData.accounts[accountId];
+}
+
+// Helper: Add activity log to account
+function addActivityLog(accountId, action, details, ip) {
+    const account = trackingData.accounts[accountId];
+    if (!account) return;
+    
+    const logEntry = {
+        action: action,
+        details: details || '',
+        ip: ip || 'unknown',
+        timestamp: new Date().toISOString()
+    };
+    
+    account.logs.push(logEntry);
+    account.lastActive = logEntry.timestamp;
+    
+    // Keep only last 100 logs per account
+    if (account.logs.length > 100) {
+        account.logs = account.logs.slice(-100);
+    }
+}
+
+// Helper: Register IP for account
+function registerAccountIP(accountId, ip) {
+    const account = trackingData.accounts[accountId];
+    if (!account || !ip || ip === 'unknown') return;
+    
+    // Add IP if not already recorded
+    const existingIP = account.ips.find(entry => entry.ip === ip);
+    if (existingIP) {
+        existingIP.lastUsed = new Date().toISOString();
+        existingIP.count = (existingIP.count || 1) + 1;
+    } else {
+        account.ips.push({
+            ip: ip,
+            firstUsed: new Date().toISOString(),
+            lastUsed: new Date().toISOString(),
+            count: 1
+        });
+    }
+}
+
+// Helper: Record visitor IP
+function recordVisitorIP(ip, page, accountId) {
+    if (!ip || ip === 'unknown') return;
+    
+    trackingData.visitorIPs.push({
+        ip: ip,
+        page: page || '/',
+        accountId: accountId || null,
+        timestamp: new Date().toISOString()
+    });
+    
+    // Keep only last 500
+    if (trackingData.visitorIPs.length > 500) {
+        trackingData.visitorIPs = trackingData.visitorIPs.slice(-500);
+    }
+}
+
+// Helper: Track top visited profile
+function trackTopVisited(profileId, visitorIP, visitorAccountId) {
+    if (!trackingData.topVisited[profileId]) {
+        trackingData.topVisited[profileId] = { count: 0, visitors: [] };
+    }
+    
+    trackingData.topVisited[profileId].count++;
+    trackingData.topVisited[profileId].visitors.push({
+        ip: visitorIP || 'unknown',
+        accountId: visitorAccountId || null,
+        timestamp: new Date().toISOString()
+    });
+    
+    // Keep only last 50 visitors per profile
+    if (trackingData.topVisited[profileId].visitors.length > 50) {
+        trackingData.topVisited[profileId].visitors = trackingData.topVisited[profileId].visitors.slice(-50);
+    }
+}
+
+// Track access middleware — record IP visits and timeline
 app.use((req, res, next) => {
-    // Get IP address
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
+    const ip = getClientIP(req);
     const page = req.path;
     
-    // Track access
-    if (page.includes('/api/')) {
-        trackingData.ipAccess.push({
-            address: ip,
-            page: page,
-            timestamp: new Date().toISOString()
-        });
-        
-        // Keep only last 100 entries
-        if (trackingData.ipAccess.length > 100) {
-            trackingData.ipAccess.shift();
-        }
+    // Track page visits (non-static, non-admin-polling)
+    if (page.startsWith('/api/') && !page.includes('/api/admin/') && !page.includes('/api/health')) {
+        recordVisitorIP(ip, page, null);
         
         // Track hourly timeline
-        const now = new Date();
-        const hour = now.getHours().toString().padStart(2, '0');
+        const hour = new Date().getHours().toString().padStart(2, '0');
         trackingData.accessTimeline[hour] = (trackingData.accessTimeline[hour] || 0) + 1;
     }
     
@@ -2091,149 +2167,316 @@ app.use((req, res, next) => {
 });
 
 // Track profile visits
-function trackProfileVisit(profileId) {
+function trackProfileVisit(profileId, ip, visitorAccountId) {
     if (!trackingData.pageVisits[profileId]) {
         trackingData.pageVisits[profileId] = 0;
     }
     trackingData.pageVisits[profileId]++;
+    trackTopVisited(profileId, ip, visitorAccountId);
 }
 
 // Track login
-function trackLogin(userId, type, name) {
+function trackLogin(userId, type, name, ip) {
+    // Ensure account exists
+    ensureAccount(userId, name, type);
+    
+    // Register IP
+    registerAccountIP(userId, ip);
+    
+    // Add login log
+    addActivityLog(userId, 'login', `Logged in as ${type}`, ip);
+    
+    // Global login history
     trackingData.loginHistory.push({
         userId: userId,
         type: type,
         name: name,
+        ip: ip || 'unknown',
         timestamp: new Date().toISOString()
     });
     
-    // Keep only last 50 entries
-    if (trackingData.loginHistory.length > 50) {
-        trackingData.loginHistory.shift();
+    // Keep only last 200 entries
+    if (trackingData.loginHistory.length > 200) {
+        trackingData.loginHistory = trackingData.loginHistory.slice(-200);
     }
 }
 
 // Track profile update
-function trackProfileUpdate(profileId) {
+function trackProfileUpdate(profileId, ip) {
     if (!trackingData.profileUpdates[profileId]) {
         trackingData.profileUpdates[profileId] = 0;
     }
     trackingData.profileUpdates[profileId]++;
+    
+    // Add activity log
+    if (trackingData.accounts[profileId]) {
+        addActivityLog(profileId, 'profile_update', 'Updated own profile', ip);
+    }
 }
 
-// ========== TRACKING ENDPOINTS ==========
+// Track activity (generic — used by frontend reporting)
+function trackActivity(accountId, action, details, ip) {
+    if (!trackingData.accounts[accountId]) return;
+    addActivityLog(accountId, action, details, ip);
+    registerAccountIP(accountId, ip);
+}
 
-// Get profile statistics
-app.get('/api/admin/stats/profiles', async (req, res) => {
+// ========== ACTIVITY TRACKING ENDPOINT (called by frontend) ==========
+
+// Frontend reports activities here
+app.post('/api/track/activity', (req, res) => {
+    const { accountId, action, details } = req.body;
+    const ip = getClientIP(req);
+    
+    if (!accountId || !action) {
+        return res.json({ success: false, error: 'accountId and action required' });
+    }
+    
+    // Ensure account exists (use accountId as name fallback)
+    if (!trackingData.accounts[accountId]) {
+        ensureAccount(accountId, accountId, 'unknown');
+    }
+    
+    trackActivity(accountId, action, details || '', ip);
+    
+    res.json({ success: true });
+});
+
+// Frontend reports profile view
+app.post('/api/track/profile-view', (req, res) => {
+    const { viewerId, viewerName, profileId, profileName } = req.body;
+    const ip = getClientIP(req);
+    
+    if (!profileId) {
+        return res.json({ success: false, error: 'profileId required' });
+    }
+    
+    // Track visit
+    trackProfileVisit(profileId, ip, viewerId || null);
+    
+    // Log activity on viewer's account
+    if (viewerId && trackingData.accounts[viewerId]) {
+        addActivityLog(viewerId, 'view_profile', `Viewed profile: ${profileName || profileId}`, ip);
+    }
+    
+    res.json({ success: true });
+});
+
+// Frontend reports kolase activity
+app.post('/api/track/kolase', (req, res) => {
+    const { accountId, type, filename } = req.body;
+    const ip = getClientIP(req);
+    
+    if (!accountId) {
+        return res.json({ success: false, error: 'accountId required' });
+    }
+    
+    if (trackingData.accounts[accountId]) {
+        const action = type === 'video' ? 'view_kolase_video' : 'view_kolase_photo';
+        const details = `Viewed ${type || 'media'}: ${filename || 'unknown'}`;
+        addActivityLog(accountId, action, details, ip);
+    }
+    
+    res.json({ success: true });
+});
+
+// Frontend reports teacher profile view
+app.post('/api/track/teacher-view', (req, res) => {
+    const { accountId, teacherId, teacherName } = req.body;
+    const ip = getClientIP(req);
+    
+    if (!accountId) {
+        return res.json({ success: false, error: 'accountId required' });
+    }
+    
+    if (trackingData.accounts[accountId]) {
+        addActivityLog(accountId, 'view_teacher', `Viewed teacher: ${teacherName || teacherId}`, ip);
+    }
+    
+    res.json({ success: true });
+});
+
+// Frontend reports logout
+app.post('/api/track/logout', (req, res) => {
+    const { accountId } = req.body;
+    const ip = getClientIP(req);
+    
+    if (accountId && trackingData.accounts[accountId]) {
+        addActivityLog(accountId, 'logout', 'Logged out', ip);
+    }
+    
+    res.json({ success: true });
+});
+
+// ========== ADMIN DASHBOARD API ENDPOINTS ==========
+
+// Get full dashboard data (single endpoint for realtime polling)
+app.get('/api/admin/dashboard', async (req, res) => {
     try {
-        const adminData = await readJSON(ADMIN_TRACKING_PATH);
+        const students = await readJSON(STUDENTS_PATH);
+        const teachers = await readJSON(TEACHERS_PATH);
+        
+        // Build top visited profiles sorted
+        const topVisitedArray = Object.entries(trackingData.topVisited)
+            .map(([id, data]) => {
+                const student = students?.find(s => s.id === id);
+                return {
+                    id,
+                    name: student?.name || id,
+                    count: data.count,
+                    visitors: data.visitors.slice(-10)
+                };
+            })
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+        
+        // Unique visitor IPs
+        const uniqueVisitorIPs = {};
+        trackingData.visitorIPs.forEach(v => {
+            if (!uniqueVisitorIPs[v.ip]) {
+                uniqueVisitorIPs[v.ip] = { ip: v.ip, visits: 0, lastSeen: v.timestamp, pages: [] };
+            }
+            uniqueVisitorIPs[v.ip].visits++;
+            uniqueVisitorIPs[v.ip].lastSeen = v.timestamp;
+            if (!uniqueVisitorIPs[v.ip].pages.includes(v.page)) {
+                uniqueVisitorIPs[v.ip].pages.push(v.page);
+            }
+        });
+        
+        const visitorIPList = Object.values(uniqueVisitorIPs)
+            .sort((a, b) => b.visits - a.visits)
+            .slice(0, 50);
         
         res.json({
             success: true,
-            profiles: adminData.profileStats || []
+            timestamp: new Date().toISOString(),
+            summary: {
+                totalStudents: students?.length || 0,
+                totalTeachers: teachers?.length || 0,
+                totalAccounts: Object.keys(trackingData.accounts).length,
+                totalVisits: Object.values(trackingData.pageVisits).reduce((a, b) => a + b, 0),
+                totalUpdates: Object.values(trackingData.profileUpdates).reduce((a, b) => a + b, 0),
+                uniqueIPs: Object.keys(uniqueVisitorIPs).length,
+                totalLogins: trackingData.loginHistory.length
+            },
+            accounts: trackingData.accounts,
+            topVisited: topVisitedArray,
+            visitorIPs: visitorIPList,
+            loginHistory: trackingData.loginHistory.slice(-50).reverse(),
+            accessTimeline: trackingData.accessTimeline
         });
     } catch (error) {
-        res.json({
-            success: false,
-            profiles: []
-        });
+        console.error('Error loading dashboard data:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get specific account logs
+app.get('/api/admin/account/:accountId', (req, res) => {
+    const { accountId } = req.params;
+    const account = trackingData.accounts[accountId];
+    
+    if (!account) {
+        return res.json({ success: false, error: 'Account not found' });
+    }
+    
+    res.json({
+        success: true,
+        account: {
+            id: accountId,
+            ...account
+        }
+    });
+});
+
+// Get profile statistics (legacy compatibility)
+app.get('/api/admin/stats/profiles', async (req, res) => {
+    try {
+        const students = await readJSON(STUDENTS_PATH);
+        
+        const profiles = (students || []).map(student => ({
+            id: student.id,
+            name: student.name,
+            visits: trackingData.pageVisits[student.id] || 0,
+            updates: trackingData.profileUpdates[student.id] || 0,
+            lastVisit: trackingData.accounts[student.id]?.lastActive || 'never'
+        }));
+        
+        res.json({ success: true, profiles });
+    } catch (error) {
+        res.json({ success: false, profiles: [] });
     }
 });
 
 // Get summary statistics
-app.get('/api/admin/stats/summary', async (req, res) => {
-    try {
-        const adminData = await readJSON(ADMIN_TRACKING_PATH);
-        
-        res.json({
-            success: true,
-            totalVisits: adminData.summary?.totalVisits || 0,
-            totalUpdates: adminData.summary?.totalUpdates || 0,
-            uniqueIPs: adminData.summary?.uniqueIPs || 0,
-            logins: adminData.summary?.totalLogins || 0
-        });
-    } catch (error) {
-        res.json({
-            success: false,
-            totalVisits: 0,
-            totalUpdates: 0,
-            uniqueIPs: 0,
-            logins: 0
-        });
-    }
+app.get('/api/admin/stats/summary', (req, res) => {
+    const uniqueIPs = new Set(trackingData.visitorIPs.map(v => v.ip)).size;
+    
+    res.json({
+        success: true,
+        totalVisits: Object.values(trackingData.pageVisits).reduce((a, b) => a + b, 0),
+        totalUpdates: Object.values(trackingData.profileUpdates).reduce((a, b) => a + b, 0),
+        uniqueIPs: uniqueIPs,
+        logins: trackingData.loginHistory.length
+    });
 });
 
 // Get top visited profiles
 app.get('/api/admin/stats/top-profiles', async (req, res) => {
     try {
-        const adminData = await readJSON(ADMIN_TRACKING_PATH);
+        const students = await readJSON(STUDENTS_PATH);
         
-        res.json({
-            success: true,
-            profiles: adminData.topProfiles || []
-        });
+        const profiles = Object.entries(trackingData.topVisited)
+            .map(([id, data]) => {
+                const student = students?.find(s => s.id === id);
+                return { id, name: student?.name || id, visits: data.count };
+            })
+            .sort((a, b) => b.visits - a.visits)
+            .slice(0, 10);
+        
+        res.json({ success: true, profiles });
     } catch (error) {
-        res.json({
-            success: false,
-            profiles: []
-        });
+        res.json({ success: false, profiles: [] });
     }
 });
 
 // Get realtime IP access
 app.get('/api/admin/access/realtime', (req, res) => {
-    const recentIPs = trackingData.ipAccess.slice(-20).reverse();
+    const recentIPs = trackingData.visitorIPs.slice(-30).reverse();
     
     res.json({
         success: true,
         ips: recentIPs,
-        count: trackingData.ipAccess.length
+        count: trackingData.visitorIPs.length
     });
 });
 
 // Get login history
-app.get('/api/admin/stats/login-history', async (req, res) => {
-    try {
-        const adminData = await readJSON(ADMIN_TRACKING_PATH);
-        const history = (adminData.loginHistory || []).slice(-10).reverse();
-        
-        res.json({
-            success: true,
-            logins: history,
-            count: history.length
-        });
-    } catch (error) {
-        res.json({
-            success: false,
-            logins: [],
-            count: 0
-        });
-    }
+app.get('/api/admin/stats/login-history', (req, res) => {
+    const history = trackingData.loginHistory.slice(-30).reverse();
+    
+    res.json({
+        success: true,
+        logins: history,
+        count: trackingData.loginHistory.length
+    });
 });
 
 // Get access timeline (hourly)
-app.get('/api/admin/stats/timeline', async (req, res) => {
-    try {
-        const adminData = await readJSON(ADMIN_TRACKING_PATH);
-        
-        res.json({
-            success: true,
-            timeline: adminData.accessTimeline || {}
-        });
-    } catch (error) {
-        res.json({
-            success: false,
-            timeline: {}
-        });
-    }
+app.get('/api/admin/stats/timeline', (req, res) => {
+    res.json({
+        success: true,
+        timeline: trackingData.accessTimeline
+    });
 });
 
-// Health check endpoint untuk bandwidth monitoring
+// Health check
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'healthy', 
         timestamp: new Date().toISOString(),
-        server: 'Yearbook API'
+        server: 'Yearbook API v3',
+        uptime: process.uptime()
     });
 });
 
@@ -2243,69 +2486,174 @@ app.head('/api/health', (req, res) => {
 
 // ========== ADMIN BASE CONTROL ENDPOINTS ==========
 
-// Force save tracking data to adminbase.json
+// Force save tracking data
 app.post('/api/admin/save', async (req, res) => {
     try {
         await saveTrackingData();
-        
-        const adminData = await readJSON(ADMIN_TRACKING_PATH);
-        
         res.json({
             success: true,
             message: 'Tracking data saved successfully',
-            timestamp: new Date().toISOString(),
-            summary: adminData.summary
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: 'Failed to save tracking data',
-            message: error.message
-        });
-    }
-});
-
-// Get all admin data from adminbase.json
-app.get('/api/admin/data', async (req, res) => {
-    try {
-        const adminData = await readJSON(ADMIN_TRACKING_PATH);
-        
-        res.json({
-            success: true,
-            data: adminData,
             timestamp: new Date().toISOString()
         });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: 'Failed to load admin data',
-            message: error.message
-        });
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get all admin data
+app.get('/api/admin/data', async (req, res) => {
+    try {
+        const adminData = await readJSON(ADMIN_TRACKING_PATH);
+        res.json({ success: true, data: adminData, timestamp: new Date().toISOString() });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
 // Reset tracking data
 app.post('/api/admin/reset', async (req, res) => {
     try {
+        trackingData.accounts = {};
+        trackingData.visitorIPs = [];
+        trackingData.topVisited = {};
+        trackingData.accessTimeline = {};
+        trackingData.loginHistory = [];
         trackingData.pageVisits = {};
         trackingData.profileUpdates = {};
-        trackingData.loginHistory = [];
-        trackingData.accessTimeline = {};
-        trackingData.ipAccess = [];
         
         await saveTrackingData();
         
         res.json({
             success: true,
-            message: 'Tracking data reset successfully',
+            message: 'All tracking data reset',
             timestamp: new Date().toISOString()
         });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: 'Failed to reset tracking data',
-            message: error.message
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ========== ADMIN PROFILE & KOLASE MANAGEMENT ==========
+
+// Admin update student profile
+app.put('/api/admin/student/:studentId', async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const updates = req.body;
+        const ip = getClientIP(req);
+        
+        // Update in database.json
+        const db = await readJSON(DB_PATH);
+        let student = db.students?.find(s => s.id === studentId);
+        
+        if (!student) {
+            // Create new entry
+            student = { id: studentId, ...updates };
+            if (!db.students) db.students = [];
+            db.students.push(student);
+        } else {
+            // Merge updates
+            Object.assign(student, updates);
+        }
+        
+        student.updatedAt = new Date().toISOString();
+        student.updatedBy = 'admin';
+        
+        await writeJSON(DB_PATH, db);
+        
+        // Track update
+        trackProfileUpdate(studentId, ip);
+        addActivityLog('admin', 'admin_edit_profile', `Admin edited profile: ${studentId}`, ip);
+        
+        res.json({ success: true, message: 'Profile updated', student });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Admin update teacher profile
+app.put('/api/admin/teacher/:teacherId', async (req, res) => {
+    try {
+        const { teacherId } = req.params;
+        const updates = req.body;
+        const ip = getClientIP(req);
+        
+        const teachers = await readJSON(TEACHERS_PATH);
+        const teacher = teachers?.find(t => t.id === teacherId);
+        
+        if (!teacher) {
+            return res.status(404).json({ success: false, error: 'Teacher not found' });
+        }
+        
+        Object.assign(teacher, updates);
+        await writeJSON(TEACHERS_PATH, teachers);
+        
+        addActivityLog('admin', 'admin_edit_teacher', `Admin edited teacher: ${teacherId}`, ip);
+        
+        res.json({ success: true, message: 'Teacher updated', teacher });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Admin get kolase (gallery) data
+app.get('/api/admin/kolase', async (req, res) => {
+    try {
+        const galleryDir = path.join(__dirname, 'OurGallery');
+        const files = await fs.readdir(galleryDir);
+        
+        const images = [];
+        const videos = [];
+        
+        for (const file of files) {
+            if (file === 'optimized' || file.startsWith('.')) continue;
+            
+            const ext = path.extname(file).toLowerCase();
+            const stat = await fs.stat(path.join(galleryDir, file));
+            const fileInfo = {
+                filename: file,
+                size: stat.size,
+                uploadedAt: stat.mtime.toISOString(),
+                url: `/OurGallery/${file}`
+            };
+            
+            if (['.mp4', '.webm', '.mov'].includes(ext)) {
+                videos.push(fileInfo);
+            } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
+                images.push(fileInfo);
+            }
+        }
+        
+        res.json({
+            success: true,
+            images: images.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt)),
+            videos: videos.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt)),
+            totalImages: images.length,
+            totalVideos: videos.length
         });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Admin delete kolase file
+app.delete('/api/admin/kolase/:filename', async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const ip = getClientIP(req);
+        const filePath = path.join(__dirname, 'OurGallery', filename);
+        
+        await fs.access(filePath);
+        await fs.unlink(filePath);
+        
+        addActivityLog('admin', 'admin_delete_kolase', `Deleted kolase file: ${filename}`, ip);
+        
+        res.json({ success: true, message: `Deleted: ${filename}` });
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            return res.status(404).json({ success: false, error: 'File not found' });
+        }
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

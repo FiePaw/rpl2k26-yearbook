@@ -11,492 +11,154 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
     <script>
-        // Define API_URL globally for all scripts
-        if (!window.API_URL) {
-            window.API_URL = 'http://47.130.190.120:3000';
-        }
+        if (!window.API_URL) window.API_URL = 'https://rpl2k26.site';
     </script>
 </head>
 <body>
+    <!-- Header -->
     <header class="music-header">
-        <button class="sidebar-toggle" id="sidebarToggle">
-            <i class="fas fa-bars"></i>
-        </button>
         <div class="header-left">
             <i class="fas fa-shield-alt"></i>
             <span class="header-title">Admin Dashboard</span>
         </div>
-        <nav class="header-nav">
-            <a href="beranda.html"><i class="fas fa-home"></i> Home</a>
-            <a href="kolase.html"><i class="fas fa-images"></i> Memories</a>
-            <a href="wali-kelas.html"><i class="fas fa-star"></i> Teachers</a>
-            <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
-        </nav>
         <div class="header-right">
-            <button id="themeToggle" class="theme-btn">
-                <i class="fas fa-moon"></i>
-            </button>
-            <button id="logoutBtn" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
+            <span class="header-update">Updated: <span id="lastUpdate">--:--</span></span>
+            <button id="themeToggle" class="theme-btn"><i class="fas fa-moon"></i></button>
+            <button id="logoutBtn" class="btn-icon" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
         </div>
     </header>
 
-    <!-- Mobile Sidebar Navigation -->
-    <aside class="sidebar-nav" id="sidebarNav">
-        <div class="sidebar-header">
-            <i class="fas fa-shield-alt"></i>
-            <span>Admin Dashboard</span>
-            <button class="sidebar-close" id="sidebarClose">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <nav class="sidebar-menu">
-            <a href="beranda.html" class="sidebar-item">
-                <i class="fas fa-home"></i>
-                <span>Home</span>
-            </a>
-            <a href="kolase.html" class="sidebar-item">
-                <i class="fas fa-images"></i>
-                <span>Memories</span>
-            </a>
-            <a href="wali-kelas.html" class="sidebar-item">
-                <i class="fas fa-star"></i>
-                <span>Teachers</span>
-            </a>
-            <a href="profile.html" class="sidebar-item">
-                <i class="fas fa-user"></i>
-                <span>Profile</span>
-            </a>
+    <main class="admin-layout">
+        <!-- Tab Navigation -->
+        <nav class="admin-tabs">
+            <button class="tab-btn active" data-tab="overview"><i class="fas fa-tachometer-alt"></i> <span>Overview</span></button>
+            <button class="tab-btn" data-tab="accounts"><i class="fas fa-users"></i> <span>Accounts</span></button>
+            <button class="tab-btn" data-tab="visitors"><i class="fas fa-globe"></i> <span>Visitors</span></button>
+            <button class="tab-btn" data-tab="profiles"><i class="fas fa-user-edit"></i> <span>Profiles</span></button>
+            <button class="tab-btn" data-tab="kolase"><i class="fas fa-images"></i> <span>Kolase</span></button>
         </nav>
-        <div class="sidebar-footer">
-            <button class="sidebar-theme-btn" id="sidebarThemeToggle">
-                <i class="fas fa-moon"></i>
-                <span>Dark Mode</span>
-            </button>
-        </div>
-    </aside>
 
-    <!-- Sidebar Overlay -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <!-- Tab: Overview -->
+        <section id="tab-overview" class="tab-content active">
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-box"><div class="stat-num" id="statStudents">0</div><div class="stat-lbl">Students</div></div>
+                <div class="stat-box"><div class="stat-num" id="statVisits">0</div><div class="stat-lbl">Total Visits</div></div>
+                <div class="stat-box"><div class="stat-num" id="statUpdates">0</div><div class="stat-lbl">Updates</div></div>
+                <div class="stat-box"><div class="stat-num" id="statIPs">0</div><div class="stat-lbl">Unique IPs</div></div>
+                <div class="stat-box"><div class="stat-num" id="statLogins">0</div><div class="stat-lbl">Logins</div></div>
+                <div class="stat-box"><div class="stat-num" id="statAccounts">0</div><div class="stat-lbl">Accounts</div></div>
+            </div>
 
-    <main class="main-content admin-main">
-        <div class="container admin-container">
-            <!-- Dashboard Header -->
-            <div class="dashboard-header">
-                <div class="dashboard-title">
-                    <h1><i class="fas fa-tachometer-alt"></i> Control Center</h1>
-                    <p>Monitor aktivitas dan kelola data yearbook</p>
+            <div class="overview-grid">
+                <!-- Top Visited -->
+                <div class="panel">
+                    <div class="panel-header"><h3><i class="fas fa-trophy"></i> Top Visited Profiles</h3></div>
+                    <div class="panel-body" id="topVisitedList"><p class="empty-msg">Loading...</p></div>
                 </div>
-                <div class="dashboard-controls">
-                    <button id="saveBtn" class="btn-save" style="background: #4CAF50; margin-right: 10px;">
-                        <i class="fas fa-download"></i> Save to DB
-                    </button>
-                    <button id="refreshBtn" class="btn-refresh">
-                        <i class="fas fa-sync-alt"></i> Refresh Now
-                    </button>
-                    <span class="last-update">Last update: <span id="lastUpdateTime">--:--</span></span>
+
+                <!-- Login History -->
+                <div class="panel">
+                    <div class="panel-header"><h3><i class="fas fa-history"></i> Login History</h3></div>
+                    <div class="panel-body scrollable" id="loginHistoryList"><p class="empty-msg">Loading...</p></div>
                 </div>
             </div>
 
-            <!-- Stats Grid -->
-            <div class="stats-grid">
-                <!-- Total Students -->
-                <div class="stat-card stat-card-primary">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>Total Students</h3>
-                        <p class="stat-value" id="totalStudents">0</p>
-                        <span class="stat-label">registered</span>
-                    </div>
-                </div>
-
-                <!-- Total Visits -->
-                <div class="stat-card stat-card-success">
-                    <div class="stat-icon">
-                        <i class="fas fa-eye"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>Total Visits</h3>
-                        <p class="stat-value" id="totalVisits">0</p>
-                        <span class="stat-label">all pages</span>
-                    </div>
-                </div>
-
-                <!-- Profile Updates -->
-                <div class="stat-card stat-card-warning">
-                    <div class="stat-icon">
-                        <i class="fas fa-edit"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>Profile Updates</h3>
-                        <p class="stat-value" id="totalUpdates">0</p>
-                        <span class="stat-label">this session</span>
-                    </div>
-                </div>
-
-                <!-- Active IPs -->
-                <div class="stat-card stat-card-info">
-                    <div class="stat-icon">
-                        <i class="fas fa-globe"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>Unique IPs</h3>
-                        <p class="stat-value" id="uniqueIPs">0</p>
-                        <span class="stat-label">accessing</span>
-                    </div>
+            <!-- Timeline -->
+            <div class="panel panel-full">
+                <div class="panel-header"><h3><i class="fas fa-chart-bar"></i> Access Timeline (24h)</h3></div>
+                <div class="panel-body">
+                    <div class="timeline-container" id="timelineChart"></div>
                 </div>
             </div>
 
-            <!-- Main Content Grid -->
-            <div class="dashboard-grid">
-                <!-- Section 1: Profile Statistics -->
-                <section class="dashboard-section">
-                    <div class="section-header">
-                        <h2><i class="fas fa-chart-bar"></i> Profile Statistics</h2>
-                        <button class="btn-reload" onclick="reloadProfileStats()">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
-                    <div class="section-content">
-                        <div id="profileStatsContainer" class="profile-stats-list">
-                            <p class="loading"><i class="fas fa-spinner fa-spin"></i> Loading statistics...</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Section 2: Realtime IP Access Monitor -->
-                <section class="dashboard-section">
-                    <div class="section-header">
-                        <h2><i class="fas fa-network-wired"></i> Realtime IP Access</h2>
-                        <span class="refresh-timer" id="refreshTimer">Auto-refresh: 5s</span>
-                    </div>
-                    <div class="section-content">
-                        <div id="realtimeIPContainer" class="ip-list">
-                            <p class="loading"><i class="fas fa-spinner fa-spin"></i> Monitoring IP addresses...</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Section 3: Top Visited Profiles -->
-                <section class="dashboard-section">
-                    <div class="section-header">
-                        <h2><i class="fas fa-star"></i> Top Visited Profiles</h2>
-                        <button class="btn-reload" onclick="reloadTopProfiles()">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
-                    <div class="section-content">
-                        <div id="topProfilesContainer" class="top-profiles-list">
-                            <p class="loading"><i class="fas fa-spinner fa-spin"></i> Loading top profiles...</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Section 4: User Login History -->
-                <section class="dashboard-section">
-                    <div class="section-header">
-                        <h2><i class="fas fa-history"></i> Login History</h2>
-                        <button class="btn-reload" onclick="reloadLoginHistory()">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
-                    <div class="section-content">
-                        <div id="loginHistoryContainer" class="login-list">
-                            <p class="loading"><i class="fas fa-spinner fa-spin"></i> Loading login history...</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Section 5: Network Bandwidth Stats -->
-                <section class="dashboard-section dashboard-section-full">
-                    <div class="section-header">
-                        <h2><i class="fas fa-signal"></i> Access Timeline (Last 24 Hours)</h2>
-                        <button class="btn-reload" onclick="reloadTimeline()">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
-                    <div class="section-content">
-                        <div id="timelineContainer" class="timeline-chart">
-                            <p class="loading"><i class="fas fa-spinner fa-spin"></i> Loading timeline data...</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Section 6: System Health -->
-                <section class="dashboard-section dashboard-section-full">
-                    <div class="section-header">
-                        <h2><i class="fas fa-heartbeat"></i> System Health</h2>
-                        <button class="btn-reload" onclick="reloadSystemHealth()">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
-                    <div class="section-content">
-                        <div id="systemHealthContainer" class="system-health">
-                            <p class="loading"><i class="fas fa-spinner fa-spin"></i> Checking system health...</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Section 7: Admin Profile Management -->
-                <section class="dashboard-section dashboard-section-full">
-                    <div class="section-header">
-                        <h2><i class="fas fa-user-edit"></i> Admin Profile Management</h2>
-                        <button class="btn-reload" onclick="reloadAdminProfiles()">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
-                    <div class="section-content">
-                        <div id="adminProfilesContainer" class="admin-profiles-list">
-                            <p class="loading"><i class="fas fa-spinner fa-spin"></i> Loading admin profiles...</p>
-                        </div>
-                    </div>
-                </section>
+            <!-- Controls -->
+            <div class="admin-controls">
+                <button id="refreshBtn" class="btn-action"><i class="fas fa-sync-alt"></i> Refresh</button>
+                <button id="saveBtn" class="btn-action btn-save"><i class="fas fa-download"></i> Save to DB</button>
             </div>
+        </section>
 
-            <!-- Admin Edit Form (Hidden by default) -->
-            <div id="adminEditForm" style="display: none; background: var(--card-bg); padding: 2rem; border-radius: 15px; margin-top: 2rem; border: 2px solid var(--primary-color);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                    <h2 style="margin: 0;">
-                        <i class="fas fa-edit"></i> Edit Student Profile: <span id="adminEditStudentName">--</span>
-                    </h2>
-                    <button type="button" class="btn-close" onclick="closeAdminEditForm()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-
-                <form id="adminEditFormSubmit" onsubmit="submitAdminStudentEdit(event)">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-                        <!-- Left Column -->
-                        <div>
-                            <!-- Name Field -->
-                            <div style="margin-bottom: 1.5rem;">
-                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-color);">
-                                    <i class="fas fa-user"></i> Nama Lengkap
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="adminFullName" 
-                                    placeholder="Enter full name"
-                                    style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color); font-size: 1rem;"
-                                    required
-                                >
-                            </div>
-
-                            <!-- Birthday Field -->
-                            <div style="margin-bottom: 1.5rem;">
-                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-color);">
-                                    <i class="fas fa-birthday-cake"></i> Tanggal Lahir
-                                </label>
-                                <input 
-                                    type="date" 
-                                    id="adminBirthday" 
-                                    style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color); font-size: 1rem;"
-                                >
-                            </div>
-
-                            <!-- Message Field -->
-                            <div style="margin-bottom: 1.5rem;">
-                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-color);">
-                                    <i class="fas fa-comment"></i> Pesan
-                                </label>
-                                <textarea 
-                                    id="adminMessage" 
-                                    placeholder="Enter message"
-                                    style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color); font-size: 1rem; resize: vertical; min-height: 100px;"
-                                ></textarea>
-                            </div>
-
-                            <!-- Lyrics Field -->
-                            <div style="margin-bottom: 1.5rem;">
-                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-color);">
-                                    <i class="fas fa-music"></i> Lirik Lagu
-                                </label>
-                                <textarea 
-                                    id="adminStudentLyricsTextarea" 
-                                    placeholder="Paste or generate song lyrics here..."
-                                    style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color); font-size: 0.9rem; resize: vertical; min-height: 150px; font-family: monospace;"
-                                ></textarea>
-                                <small style="color: var(--text-secondary); display: block; margin-top: 0.3rem;">
-                                    <i class="fas fa-info-circle"></i> Lirik lagu untuk karaoke (opsional)
-                                </small>
-                            </div>
-                        </div>
-
-                        <!-- Right Column -->
-                        <div>
-                            <!-- Photo Field -->
-                            <div style="margin-bottom: 1.5rem;">
-                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-color);">
-                                    <i class="fas fa-image"></i> Foto Profil
-                                </label>
-                                <div style="width: 100%; height: 200px; border: 2px dashed var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 1rem; background: var(--light-bg); display: flex; align-items: center; justify-content: center;">
-                                    <img id="adminPhotoPreview" src="https://via.placeholder.com/300x300?text=Upload+Photo" alt="Photo Preview" style="width: 100%; height: 100%; object-fit: cover;">
-                                </div>
-                                <input 
-                                    type="file" 
-                                    id="adminPhotoFile" 
-                                    accept="image/*"
-                                    style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color);"
-                                >
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Audio Section -->
-                    <div style="background: var(--light-bg); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-                        <h3 style="margin-top: 0; margin-bottom: 1rem;">
-                            <i class="fas fa-music"></i> Audio File
-                        </h3>
-
-                        <div style="margin-bottom: 1.5rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-color);">
-                                Upload Audio
-                            </label>
-                            <input 
-                                type="file" 
-                                id="adminAudioFile" 
-                                accept="audio/*"
-                                style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color);"
-                            >
-                            <small style="color: var(--text-secondary); display: block; margin-top: 0.3rem;">
-                                <i class="fas fa-info-circle"></i> Upload file MP3 atau format audio lainnya
-                            </small>
-                        </div>
-
-                        <!-- Download from URL Section -->
-                        <div style="margin-bottom: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-color);">
-                                <i class="fas fa-download"></i> Atau Download dari URL
-                            </label>
-                            <input 
-                                type="text" 
-                                id="adminAudioUrl" 
-                                placeholder="Spotify atau TikTok link... (misal: https://open.spotify.com/track/...)"
-                                style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color); margin-bottom: 0.8rem;"
-                            >
-                            
-                            <!-- Artist Input Field (Hidden by default, shows only for Spotify) -->
-                            <div id="adminArtistInputGroup" style="display: none; margin-bottom: 0.8rem;">
-                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-color); font-size: 0.95rem;">
-                                    <i class="fas fa-user"></i> Nama Pembuat Lagu (Artist)
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="adminArtistInput" 
-                                    placeholder="Contoh: Joji, Billie Eilish, HYOHYO, dsb..."
-                                    style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color);"
-                                >
-                                <small style="color: var(--text-secondary); margin-top: 0.3rem; display: block;">
-                                    💡 Spotify API tidak ada data artist, silakan masukkan manual untuk hasil pencarian lebih akurat
-                                </small>
-                            </div>
-
-                            <button type="button" id="adminDownloadAudioBtn" style="background: var(--primary-color); color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%;">
-                                <i class="fas fa-download"></i> Download Audio
-                            </button>
-                            <div id="adminDownloadStatus" style="display: none; margin-top: 0.8rem;"></div>
-                        </div>
-
-                        <!-- Audio Preview -->
-                        <div id="adminAudioFilePreview" style="display: none; margin-bottom: 1.5rem;">
-                            <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary);">
-                                <i class="fas fa-check-circle" style="color: #4CAF50;"></i> File: <span id="adminAudioFileName">--</span>
-                            </p>
-                            <div id="adminAudioPlayer" style="width: 100%;"></div>
-                        </div>
-
-                        <!-- Trim Controls -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div>
-                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-color);">
-                                    Trim Start (seconds)
-                                </label>
-                                <input 
-                                    type="number" 
-                                    id="adminAudioTrimStart" 
-                                    min="0" 
-                                    step="0.1"
-                                    style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color);"
-                                >
-                                <input 
-                                    type="range" 
-                                    id="adminAudioTrimStartInput" 
-                                    min="0" 
-                                    step="0.1"
-                                    style="width: 100%; margin-top: 0.5rem;"
-                                >
-                            </div>
-                            <div>
-                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-color);">
-                                    Trim End (seconds)
-                                </label>
-                                <input 
-                                    type="number" 
-                                    id="adminAudioTrimEnd" 
-                                    min="0" 
-                                    step="0.1"
-                                    style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color);"
-                                >
-                                <input 
-                                    type="range" 
-                                    id="adminAudioTrimEndInput" 
-                                    min="0" 
-                                    step="0.1"
-                                    style="width: 100%; margin-top: 0.5rem;"
-                                >
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Form Actions -->
-                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                        <button type="button" onclick="closeAdminEditForm()" style="background: var(--border-color); color: var(--text-color); padding: 0.8rem 2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                            <i class="fas fa-times"></i> Cancel
-                        </button>
-                        <button type="submit" style="background: var(--primary-color); color: white; padding: 0.8rem 2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                            <i class="fas fa-save"></i> Save Changes
-                        </button>
-                    </div>
-                </form>
+        <!-- Tab: Accounts & Activity Logs -->
+        <section id="tab-accounts" class="tab-content">
+            <div class="panel panel-full">
+                <div class="panel-header"><h3><i class="fas fa-users"></i> All Accounts & Activity Logs</h3></div>
+                <div class="panel-body scrollable-lg" id="accountsList"><p class="empty-msg">Loading...</p></div>
             </div>
-        </div>
+        </section>
+
+        <!-- Tab: Visitor IPs -->
+        <section id="tab-visitors" class="tab-content">
+            <div class="panel panel-full">
+                <div class="panel-header"><h3><i class="fas fa-globe"></i> Visitor IPs</h3></div>
+                <div class="panel-body scrollable-lg" id="visitorIPsList"><p class="empty-msg">Loading...</p></div>
+            </div>
+        </section>
+
+        <!-- Tab: Profile Management -->
+        <section id="tab-profiles" class="tab-content">
+            <div class="panel panel-full">
+                <div class="panel-header"><h3><i class="fas fa-user-edit"></i> Profile Management</h3></div>
+                <div class="panel-body scrollable-lg" id="profileMgmtList"><p class="empty-msg">Loading...</p></div>
+            </div>
+        </section>
+
+        <!-- Tab: Kolase Management -->
+        <section id="tab-kolase" class="tab-content">
+            <div class="panel panel-full">
+                <div class="panel-header"><h3><i class="fas fa-images"></i> Kolase Management (Photos & Videos)</h3></div>
+                <div class="panel-body" id="kolaseMgmtContent"><p class="empty-msg">Loading...</p></div>
+            </div>
+        </section>
     </main>
 
-    <footer class="music-footer">
-        <div class="footer-content">
-            <div class="footer-left">
-                <i class="fas fa-shield-alt"></i>
-                <span>Admin Dashboard • Yearbook RPL 2026</span>
+    <!-- Account Detail Modal -->
+    <div class="modal-overlay" id="accountModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-circle"></i> <span id="modalAccountName">-</span></h3>
+                <button class="btn-close" onclick="closeAccountModal()"><i class="fas fa-times"></i></button>
             </div>
-            <div class="footer-center">
-                <div class="equalizer">
-                    <span></span><span></span><span></span><span></span><span></span>
-                </div>
+            <div class="modal-meta">
+                <span class="badge" id="modalAccountType">-</span>
+                <code id="modalAccountId">-</code>
             </div>
-            <div class="footer-right">
-                <a href="#"><i class="fab fa-instagram"></i></a>
-                <a href="#"><i class="fab fa-facebook"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
+            <div class="modal-section">
+                <h4><i class="fas fa-network-wired"></i> Registered IPs</h4>
+                <div id="modalAccountIPs"></div>
+            </div>
+            <div class="modal-section">
+                <h4><i class="fas fa-list-alt"></i> Activity Logs</h4>
+                <div class="modal-logs-scroll" id="modalAccountLogs"></div>
             </div>
         </div>
-    </footer>
+    </div>
 
-    <!-- Define global variables before loading scripts -->
-    <script>
-        // Ensure API_URL is defined for all scripts
-        if (!window.API_URL) {
-            window.API_URL = 'http://47.130.190.120:3000';
-        }
-    </script>
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="editProfileModal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Edit Profile</h3>
+                <button class="btn-close" onclick="closeEditProfile()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="edit-form">
+                <label>Name</label>
+                <input type="text" id="editName" placeholder="Full name">
+                <label>Nickname</label>
+                <input type="text" id="editNickname" placeholder="Nickname">
+                <label>Birthday</label>
+                <input type="text" id="editBirthday" placeholder="e.g. 15 Januari 2008">
+                <label>Message</label>
+                <textarea id="editMessage" rows="4" placeholder="Message & Thoughts"></textarea>
+                <div class="edit-actions">
+                    <button class="btn-action" onclick="closeEditProfile()">Cancel</button>
+                    <button class="btn-action btn-save" onclick="saveEditProfile()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="/src/client/js/loading.js"></script>
-    <script src="/src/client/js/image-optimizer.js"></script>
-    <script src="/src/client/js/popup.js"></script>
-    <script src="/src/client/js/enable-scroll.js"></script>
     <script src="/src/client/js/admin-dashboard.js"></script>
-    <script src="/src/client/js/animations.js"></script>
 </body>
 </html>

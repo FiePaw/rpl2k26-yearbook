@@ -9,6 +9,56 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.0.0] — 2026-05-10
+
+### Added — Admin Dashboard Major Refactor
+Refaktor total Admin Dashboard dari nol — semua fitur sekarang berfungsi dengan data realtime.
+
+#### Server-side (Tracking System v3.0)
+- **Per-account tracking**: Setiap account (student/teacher/admin) memiliki data tersendiri di `adminbase.json` berisi: daftar IP yang pernah login, activity logs lengkap, first seen, last active.
+- **Activity logging komprehensif**: Semua aktivitas tercatat — login, logout, update profile, view profile (di beranda), view foto kolase, view video kolase, view profile guru.
+- **IP tracking per account**: Setiap kali login, IP dicatat ke account dengan jumlah penggunaan dan timestamp.
+- **Visitor IP tracking**: Semua IP yang mengakses webapp tercatat dengan page yang diakses.
+- **Top visited profiles**: Profile yang paling sering dikunjungi tercatat dengan detail siapa yang mengunjungi (IP + account).
+- **New endpoints**:
+  - `POST /api/track/activity` — Frontend melaporkan aktivitas generik
+  - `POST /api/track/profile-view` — Track view profile di beranda
+  - `POST /api/track/kolase` — Track view foto/video di kolase
+  - `POST /api/track/teacher-view` — Track view profile guru
+  - `POST /api/track/logout` — Track logout
+  - `GET /api/admin/dashboard` — Single endpoint untuk semua data dashboard (realtime polling)
+  - `GET /api/admin/account/:accountId` — Detail logs per account
+  - `PUT /api/admin/student/:studentId` — Admin edit profile student
+  - `PUT /api/admin/teacher/:teacherId` — Admin edit profile teacher
+  - `GET /api/admin/kolase` — List semua foto & video di kolase
+  - `DELETE /api/admin/kolase/:filename` — Admin hapus file kolase
+
+#### Frontend (Dashboard UI v3.0)
+- **Tabbed interface**: 5 tab — Overview, Accounts, Visitors, Profiles, Kolase.
+- **Overview tab**: Stats grid (Students, Visits, Updates, IPs, Logins, Accounts), Top Visited Profiles (ranked), Login History, 24h Access Timeline chart, Refresh & Save buttons.
+- **Accounts tab**: Daftar semua account yang pernah login. Klik account → modal detail menampilkan semua IP terdaftar dan activity logs lengkap (dengan ikon, warna, dan timestamp).
+- **Visitors tab**: Daftar semua IP unik yang mengakses webapp, jumlah request, dan last seen.
+- **Profiles tab**: Daftar semua student dengan status (Complete/Incomplete). Admin bisa klik Edit → modal untuk mengubah nama, nickname, birthday, message.
+- **Kolase tab**: Grid semua foto dan video di kolase. Admin bisa hapus file langsung dari dashboard.
+- **Realtime polling**: Data di-refresh otomatis setiap 5 detik.
+- **Toast notifications**: Feedback visual untuk aksi save/delete/error.
+- **Responsive**: Bekerja di mobile dan desktop.
+
+#### Activity Tracker (`activity-tracker.js`)
+- File baru `src/client/js/activity-tracker.js` — lightweight tracker untuk halaman frontend.
+- Di-include di `beranda.html`, `kolase.html`, `wali-kelas.html`.
+- `ActivityTracker.viewProfile(id, name)` — dipanggil saat klik profile di beranda.
+- `ActivityTracker.viewKolasePhoto(filename)` / `viewKolaseVideo(filename)` — dipanggil saat lihat media kolase.
+- `ActivityTracker.viewTeacher(id, name)` — dipanggil saat lihat profile guru.
+- `ActivityTracker.logout()` — dipanggil saat user logout.
+
+### Changed
+- **adminbase.json schema**: Restructured dari flat ke per-account. Sekarang menyimpan `accounts`, `visitorIPs`, `topVisited`, `accessTimeline`, `loginHistory`, `pageVisits`, `profileUpdates`, dan `summary`.
+- **Login routes**: Semua login handler (`/api/login/student`, `/api/login/teacher`, `/api/login/admin`) sekarang menyertakan IP address ke tracking system.
+- **Beranda**: `playStudent()` sekarang memanggil `ActivityTracker.viewProfile()` untuk tracking. Logout memanggil `ActivityTracker.logout()`.
+
+---
+
 ## [2.8.3] — 2026-05-10
 
 ### Fixed

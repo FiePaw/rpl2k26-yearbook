@@ -105,6 +105,7 @@ function checkLoginStatus() {
         if (user) {
             const result = await popup.confirm('Mau logout nih?');
             if (result) {
+                if (window.ActivityTracker) ActivityTracker.logout();
                 localStorage.removeItem('user');
                 window.location.href = 'index';
             }
@@ -506,6 +507,11 @@ function playStudent(index) {
     
     // Update play-pause button
     updatePlayPauseButton();
+    
+    // Track profile view for admin dashboard
+    if (window.ActivityTracker) {
+        ActivityTracker.viewProfile(student.id, student.name);
+    }
     
     // Load dan tampilkan lyrics hanya jika student punya lagu
     if (student.audioFile) {
