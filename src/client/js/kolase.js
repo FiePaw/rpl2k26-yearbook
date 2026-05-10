@@ -292,8 +292,7 @@ function showVideoSectionWhenReady() {
                 // browser applies the layout from removing .hidden.
                 requestAnimationFrame(() => {
                     const firstVideo = document.getElementById(`video-${currentIndex}`);
-                    if (firstVideo && !firstVideo._primed) {
-                        firstVideo._primed = true;
+                    if (firstVideo) {
                         try { firstVideo.load(); } catch (_) {}
                         console.log(`🔄 Primed video ${currentIndex} after section reveal`);
                     }
@@ -997,26 +996,38 @@ function formatTime(seconds) {
 // pipeline — without this, a user clicking "play" while the element is
 // still stuck in the display:none-initialized black-frame state gets no
 // response at all.
+//
+// FIX: Always force .load() on the first *visible* play attempt. The old
+// code set _primed=true during showVideoSectionWhenReady() which ran inside
+// requestAnimationFrame, but the browser hadn't necessarily finished layout
+// or decoded a frame yet. So subsequent play() calls saw _primed=true and
+// skipped .load(), leaving the video stuck on a black frame.
+//
+// New approach: _playPrimed tracks whether we've done a successful visible
+// load+play cycle. We only trust readyState if we've already played at
+// least one frame (currentTime > 0).
 function requestVideoPlay(videoEl) {
     if (!videoEl) return;
+
     const doPlay = () => {
         const p = videoEl.play();
         if (p && typeof p.catch === 'function') {
             p.catch(e => console.warn('⚠️ play() rejected:', e.message));
         }
     };
-    if (!videoEl._primed) {
-        videoEl._primed = true;
-        videoEl.addEventListener('canplay', doPlay, { once: true });
-        try { videoEl.load(); } catch (_) {}
+
+    // If video has actually played before (currentTime > 0) and has data, just play
+    if (videoEl.currentTime > 0 && videoEl.readyState >= 3) {
+        doPlay();
         return;
     }
-    if (videoEl.readyState >= 3 /* HAVE_FUTURE_DATA */) {
-        doPlay();
-    } else {
-        videoEl.addEventListener('canplay', doPlay, { once: true });
-        try { videoEl.load(); } catch (_) {}
-    }
+
+    // Otherwise, force a full .load() to reset the decoder pipeline.
+    // This handles the case where video was initialized while display:none
+    // and the decoder is stuck showing a black frame.
+    console.log(`🔄 requestVideoPlay: Force loading video to reset decoder pipeline`);
+    videoEl.addEventListener('canplay', doPlay, { once: true });
+    try { videoEl.load(); } catch (_) {}
 }
 
 // ========== INITIALIZE PLAYER CONTROL LISTENERS ==========

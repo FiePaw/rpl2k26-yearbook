@@ -397,6 +397,7 @@ function openCropModal(file, photoInput, photoPreview) {
     const cropModal = document.getElementById('cropModal');
     const cropImage = document.getElementById('cropImage');
     let cropper = null;
+    let cropperReady = false;
 
     // Read file and show in crop modal
     const reader = new FileReader();
@@ -408,6 +409,7 @@ function openCropModal(file, photoInput, photoPreview) {
         // Destroy previous cropper if exists
         if (cropper) {
             cropper.destroy();
+            cropperReady = false;
         }
 
         // Initialize Cropper.js with 1:1 aspect ratio (square, matches card photo container)
@@ -426,6 +428,7 @@ function openCropModal(file, photoInput, photoPreview) {
             toggleDragModeOnDblclick: false,
             ready() {
                 console.log('🖼️ Cropper ready');
+                cropperReady = true;
             }
         });
     };
@@ -466,7 +469,12 @@ function openCropModal(file, photoInput, photoPreview) {
 
     // Confirm crop
     document.getElementById('cropConfirm').onclick = async () => {
-        if (!cropper) return;
+        if (!cropper || !cropperReady) {
+            if (typeof popup !== 'undefined') {
+                popup.error('Cropper belum siap. Tunggu sebentar lalu coba lagi.');
+            }
+            return;
+        }
 
         try {
             // Show loading state
@@ -481,6 +489,11 @@ function openCropModal(file, photoInput, photoPreview) {
                 imageSmoothingEnabled: true,
                 imageSmoothingQuality: 'high'
             });
+
+            // Check if canvas was successfully created
+            if (!canvas) {
+                throw new Error('Gagal membuat canvas crop. Pastikan gambar sudah dimuat sepenuhnya.');
+            }
 
             // Convert canvas to WebP blob
             const webpBlob = await new Promise((resolve, reject) => {
