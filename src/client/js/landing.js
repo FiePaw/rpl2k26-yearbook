@@ -925,3 +925,77 @@ async function loadMobileCards() {
 
     console.log(`📱 Mobile cards rendered: ${filtered.length} students`);
 }
+
+
+// ═══════════════════════════════════════════════════════════════
+//  MOBILE HERO — Floating Photo Collage Cards
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Load floating collage cards in the mobile hero section.
+ * Uses student profile photos randomly scattered as decorative cards.
+ */
+async function loadHeroCollageCards() {
+    const container = document.getElementById('mobileHeroCollage');
+    if (!container) return;
+
+    console.log('🖼️ Loading hero collage cards...');
+
+    // Wait a bit for data to be available (from cache or parallel fetch)
+    let students, dbData;
+    const maxWait = 4000;
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxWait) {
+        if (jsonDataCache.students && jsonDataCache.database) {
+            students = jsonDataCache.students;
+            dbData = jsonDataCache.database;
+            break;
+        }
+        await new Promise(r => setTimeout(r, 200));
+    }
+
+    // If cache still empty, try fetching
+    if (!students || !dbData) {
+        try {
+            const [sRes, dRes] = await Promise.all([
+                fetch(`${API_URL}/api/students/names`, { cache: 'no-cache' }),
+                fetch(`${API_URL}/api/students`, { cache: 'no-cache' })
+            ]);
+            students = await sRes.json();
+            const studentsFullArr = await dRes.json();
+            dbData = { students: Array.isArray(studentsFullArr) ? studentsFullArr : [] };
+        } catch (err) {
+            console.warn('⚠️ Hero collage fetch failed:', err.message);
+            return;
+        }
+    }
+
+    // Get student photos
+    const photosAvailable = (dbData?.students || [])
+        .filter(s => s && s.photo && s.id && s.id.startsWith('student_'))
+        .map(s => s.photo);
+
+    if (photosAvailable.length === 0) {
+        console.warn('⚠️ No photos available for hero collage');
+        return;
+    }
+
+    // Shuffle and pick up to 8 photos
+    const shuffled = photosAvailable.sort(() => Math.random() - 0.5);
+    const selectedPhotos = shuffled.slice(0, 8);
+
+    // Render collage cards
+    container.innerHTML = selectedPhotos.map((photoUrl, i) => `
+        <div class="collage-card" style="animation-delay: ${i * 0.15}s, ${i * 0.15}s;">
+            <img src="${photoUrl}" alt="" loading="lazy" draggable="false">
+        </div>
+    `).join('');
+
+    console.log(`🖼️ Hero collage rendered: ${selectedPhotos.length} floating cards`);
+}
+
+// Initialize hero collage on mobile
+if (window.innerWidth <= 768) {
+    loadHeroCollageCards();
+}

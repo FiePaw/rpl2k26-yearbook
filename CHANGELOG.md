@@ -9,6 +9,20 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.5.0] — 2026-05-10
+
+### Added
+- **Landing Page — Mobile Hero Floating Photo Collage** : Menambahkan floating photo cards (kolase) sebagai elemen dekoratif di area hero mobile. Foto-foto siswa ditampilkan secara acak dengan efek scatter, rotasi, dan animasi floating. Badge dan tombol CTA diposisikan di atas collage untuk kontras visual yang baik.
+- **Mobile Hero — collageFadeIn animation** : Animasi staggered fade-in untuk setiap card collage agar muncul secara bertahap.
+- **Mobile Hero — collageFloat animation** : Animasi floating subtle (naik-turun 8px) untuk memberi kesan hidup pada foto-foto.
+
+### Changed
+- **Mobile Badge — backdrop blur** : Badge kini menggunakan `backdrop-filter: blur(8px)` untuk readability yang lebih baik di atas foto collage.
+- **Mobile Hero Title — text shadow** : Ditambahkan text-shadow halus untuk memastikan judul tetap terbaca di atas floating cards.
+- **Mobile Hero Content — z-index** : Dinaikkan dari `z-index: 1` ke `z-index: 2` agar konten (badge, title, CTA) selalu tampil di atas collage cards.
+
+---
+
 ## [2.4.0] — 2026-05-10
 
 ### Fixed

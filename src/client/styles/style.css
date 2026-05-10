@@ -6347,7 +6347,7 @@ select:focus {
 
 .mobile-hero-content {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -6359,7 +6359,9 @@ select:focus {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    background: rgba(0,0,0,0.12);
+    background: rgba(0,0,0,0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(0,0,0,0.25);
     color: #000000;
     font-size: 0.72rem;
@@ -6383,6 +6385,7 @@ select:focus {
     line-height: 1.2;
     color: #000000;
     letter-spacing: -0.01em;
+    text-shadow: 0 1px 8px rgba(255,255,255,0.3);
 }
 
 .mobile-title-text {
@@ -6392,6 +6395,138 @@ select:focus {
 
 .mobile-highlight {
     color: #FFFFFF;
+}
+
+/* ───────────────────────────────
+   Floating Photo Collage in Hero
+─────────────────────────────── */
+.mobile-hero-collage {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.mobile-hero-collage .collage-card {
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+    border: 2.5px solid rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, #085078, #85d8ce);
+    opacity: 0;
+    animation: collageFadeIn 0.8s ease forwards, collageFloat 6s ease-in-out infinite;
+}
+
+.mobile-hero-collage .collage-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Positions and rotations for each collage card */
+.mobile-hero-collage .collage-card:nth-child(1) {
+    top: 8%;
+    right: 8%;
+    transform: rotate(6deg);
+    animation-delay: 0s, 0.5s;
+    width: 80px;
+    height: 80px;
+}
+
+.mobile-hero-collage .collage-card:nth-child(2) {
+    top: 5%;
+    left: 5%;
+    transform: rotate(-8deg);
+    animation-delay: 0.15s, 1.3s;
+    width: 70px;
+    height: 70px;
+}
+
+.mobile-hero-collage .collage-card:nth-child(3) {
+    top: 30%;
+    right: 5%;
+    transform: rotate(4deg);
+    animation-delay: 0.3s, 2s;
+    width: 85px;
+    height: 85px;
+}
+
+.mobile-hero-collage .collage-card:nth-child(4) {
+    bottom: 25%;
+    left: 3%;
+    transform: rotate(-5deg);
+    animation-delay: 0.45s, 3s;
+    width: 75px;
+    height: 75px;
+}
+
+.mobile-hero-collage .collage-card:nth-child(5) {
+    bottom: 8%;
+    right: 12%;
+    transform: rotate(8deg);
+    animation-delay: 0.6s, 1.8s;
+    width: 80px;
+    height: 80px;
+}
+
+.mobile-hero-collage .collage-card:nth-child(6) {
+    bottom: 10%;
+    left: 15%;
+    transform: rotate(-3deg);
+    animation-delay: 0.75s, 2.5s;
+    width: 70px;
+    height: 70px;
+}
+
+.mobile-hero-collage .collage-card:nth-child(7) {
+    top: 50%;
+    left: 2%;
+    transform: rotate(7deg);
+    animation-delay: 0.9s, 3.5s;
+    width: 65px;
+    height: 65px;
+}
+
+.mobile-hero-collage .collage-card:nth-child(8) {
+    top: 55%;
+    right: 3%;
+    transform: rotate(-6deg);
+    animation-delay: 1.05s, 0.8s;
+    width: 72px;
+    height: 72px;
+}
+
+@keyframes collageFloat {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes collageFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.7) translateY(10px);
+    }
+    to {
+        opacity: 0.5;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* On very small devices, shrink cards slightly */
+@media (max-width: 360px) {
+    .mobile-hero-collage .collage-card {
+        width: 60px !important;
+        height: 60px !important;
+    }
 }
 
 /* Tombol CTA mobile */
