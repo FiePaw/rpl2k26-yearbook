@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="/src/client/styles/popup.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <!-- Cropper.js for image cropping -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
     <!-- Anime.js for advanced animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
     <style>
@@ -851,6 +854,255 @@
         #adminStudentsList {
             -webkit-overflow-scrolling: touch;
         }
+
+        /* ═══ Crop Modal Styles ═══ */
+        .crop-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: cropFadeIn 0.25s ease;
+        }
+
+        @keyframes cropFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .crop-modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+        }
+
+        .crop-modal-content {
+            position: relative;
+            z-index: 10;
+            width: 90vw;
+            max-width: 600px;
+            max-height: 90vh;
+            background: var(--bg-card, #282828);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            animation: cropZoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes cropZoomIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .crop-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color, #404040);
+        }
+
+        .crop-modal-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary, #fff);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .crop-modal-header h3 i {
+            color: var(--primary-color, #1DB954);
+        }
+
+        .crop-modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary, #b3b3b3);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            line-height: 1;
+        }
+
+        .crop-modal-close:hover {
+            color: var(--text-primary, #fff);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .crop-modal-body {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            min-height: 300px;
+            max-height: 60vh;
+            background: #1a1a1a;
+        }
+
+        .crop-container {
+            width: 100%;
+            height: 100%;
+            max-height: 55vh;
+        }
+
+        .crop-container img {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .crop-modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border-color, #404040);
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .crop-actions-left,
+        .crop-actions-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .crop-btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .crop-btn-rotate {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary, #fff);
+            padding: 0.6rem;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            justify-content: center;
+        }
+
+        .crop-btn-rotate:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .crop-btn-reset {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary, #fff);
+            padding: 0.6rem;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            justify-content: center;
+        }
+
+        .crop-btn-reset:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .crop-btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary, #b3b3b3);
+        }
+
+        .crop-btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-primary, #fff);
+        }
+
+        .crop-btn-confirm {
+            background: var(--primary-color, #1DB954);
+            color: #000;
+        }
+
+        .crop-btn-confirm:hover {
+            background: #1ed760;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.4);
+        }
+
+        /* Cropper.js overrides for dark theme */
+        .cropper-view-box {
+            outline: 2px solid var(--primary-color, #1DB954);
+            outline-color: rgba(29, 185, 84, 0.75);
+        }
+
+        .cropper-line {
+            background-color: var(--primary-color, #1DB954);
+        }
+
+        .cropper-point {
+            background-color: var(--primary-color, #1DB954);
+            width: 8px;
+            height: 8px;
+            opacity: 1;
+        }
+
+        .cropper-modal {
+            background-color: #000;
+            opacity: 0.6;
+        }
+
+        /* Mobile adjustments for crop modal */
+        @media (max-width: 480px) {
+            .crop-modal-content {
+                width: 95vw;
+                max-height: 85vh;
+                border-radius: 12px;
+            }
+
+            .crop-modal-header {
+                padding: 0.75rem 1rem;
+            }
+
+            .crop-modal-header h3 {
+                font-size: 0.95rem;
+            }
+
+            .crop-modal-body {
+                min-height: 250px;
+                max-height: 50vh;
+                padding: 0.75rem;
+            }
+
+            .crop-modal-footer {
+                padding: 0.75rem 1rem;
+            }
+
+            .crop-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+            }
+
+            .crop-btn-rotate,
+            .crop-btn-reset {
+                width: 32px;
+                height: 32px;
+                padding: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1306,6 +1558,41 @@
             </div>
         </div>
     </footer>
+
+    <!-- Crop Modal -->
+    <div id="cropModal" class="crop-modal" style="display:none;">
+        <div class="crop-modal-overlay"></div>
+        <div class="crop-modal-content">
+            <div class="crop-modal-header">
+                <h3><i class="fas fa-crop-alt"></i> Crop Foto</h3>
+                <button type="button" class="crop-modal-close" id="cropModalClose">&times;</button>
+            </div>
+            <div class="crop-modal-body">
+                <div class="crop-container">
+                    <img id="cropImage" src="" alt="Crop preview">
+                </div>
+            </div>
+            <div class="crop-modal-footer">
+                <div class="crop-actions-left">
+                    <button type="button" class="crop-btn crop-btn-rotate" id="cropRotateLeft" title="Putar Kiri">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                    <button type="button" class="crop-btn crop-btn-rotate" id="cropRotateRight" title="Putar Kanan">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    <button type="button" class="crop-btn crop-btn-reset" id="cropReset" title="Reset">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="crop-actions-right">
+                    <button type="button" class="crop-btn crop-btn-cancel" id="cropCancel">Batal</button>
+                    <button type="button" class="crop-btn crop-btn-confirm" id="cropConfirm">
+                        <i class="fas fa-check"></i> Terapkan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="/src/client/js/loading.js"></script>
     <script src="/src/client/js/popup.js"></script>

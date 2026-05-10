@@ -386,6 +386,147 @@ async function convertMultipleImagesToWebP(files) {
     return convertedFiles;
 }
 
+/**
+ * Open the crop modal for image cropping before upload
+ * @param {File} file - The selected image file
+ * @param {HTMLElement} photoInput - The file input element
+ * @param {HTMLElement} photoPreview - The preview image element
+ */
+function openCropModal(file, photoInput, photoPreview) {
+    const cropModal = document.getElementById('cropModal');
+    const cropImage = document.getElementById('cropImage');
+    let cropper = null;
+
+    // Read file and show in crop modal
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        cropImage.src = e.target.result;
+        cropModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        // Destroy previous cropper if exists
+        if (cropper) {
+            cropper.destroy();
+        }
+
+        // Initialize Cropper.js with 3:4 aspect ratio (portrait for cards)
+        cropper = new Cropper(cropImage, {
+            aspectRatio: 3 / 4,
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.9,
+            responsive: true,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            ready() {
+                console.log('🖼️ Cropper ready');
+            }
+        });
+    };
+    reader.readAsDataURL(file);
+
+    // Helper to close modal
+    function closeCropModal() {
+        cropModal.style.display = 'none';
+        document.body.style.overflow = '';
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        // Reset file input so same file can be selected again
+        photoInput.value = '';
+    }
+
+    // Close button
+    const closeBtn = document.getElementById('cropModalClose');
+    const cancelBtn = document.getElementById('cropCancel');
+    const overlay = cropModal.querySelector('.crop-modal-overlay');
+
+    const handleClose = () => closeCropModal();
+    closeBtn.onclick = handleClose;
+    cancelBtn.onclick = handleClose;
+    overlay.onclick = handleClose;
+
+    // Rotate buttons
+    document.getElementById('cropRotateLeft').onclick = () => {
+        if (cropper) cropper.rotate(-90);
+    };
+    document.getElementById('cropRotateRight').onclick = () => {
+        if (cropper) cropper.rotate(90);
+    };
+    document.getElementById('cropReset').onclick = () => {
+        if (cropper) cropper.reset();
+    };
+
+    // Confirm crop
+    document.getElementById('cropConfirm').onclick = async () => {
+        if (!cropper) return;
+
+        try {
+            // Show loading state
+            const confirmBtn = document.getElementById('cropConfirm');
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+            confirmBtn.disabled = true;
+
+            // Get cropped canvas
+            const canvas = cropper.getCroppedCanvas({
+                maxWidth: 800,
+                maxHeight: 1067, // 800 * 4/3
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
+
+            // Convert canvas to WebP blob
+            const webpBlob = await new Promise((resolve, reject) => {
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('Failed to create cropped image'));
+                    },
+                    'image/webp',
+                    0.85
+                );
+            });
+
+            // Set preview
+            const previewReader = new FileReader();
+            previewReader.onload = (ev) => {
+                photoPreview.src = ev.target.result;
+                photoPreview.style.opacity = '1';
+                const overlayEl = photoPreview.nextElementSibling;
+                if (overlayEl) overlayEl.innerHTML = '<i class="fas fa-camera"></i><span>Click to change</span>';
+            };
+            previewReader.readAsDataURL(webpBlob);
+
+            // Store the converted blob for later upload
+            photoInput.webpBlob = webpBlob;
+            photoInput.webpFilename = file.name.replace(/\.[^/.]+$/, '') + '.webp';
+
+            console.log(`✅ Photo cropped and converted to WebP: ${photoInput.webpFilename}`);
+
+            // Close modal
+            closeCropModal();
+
+            // Reset button state
+            confirmBtn.innerHTML = '<i class="fas fa-check"></i> Terapkan';
+            confirmBtn.disabled = false;
+        } catch (error) {
+            console.error('Error cropping photo:', error);
+            if (typeof popup !== 'undefined') {
+                popup.error('Gagal crop foto: ' + error.message);
+            }
+            const confirmBtn = document.getElementById('cropConfirm');
+            confirmBtn.innerHTML = '<i class="fas fa-check"></i> Terapkan';
+            confirmBtn.disabled = false;
+        }
+    };
+}
+
 // Wait for loading to complete first
 document.addEventListener('loadingComplete', () => {
     console.log('📍 Loading Complete on Profile, starting page initialization...');
@@ -558,34 +699,8 @@ function setupStudentForm(studentId) {
     photoInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
-            try {
-                // Show conversion status
-                photoPreview.style.opacity = '0.6';
-                photoPreview.nextElementSibling.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
-                
-                // Convert to WebP
-                const webpBlob = await convertImageToWebP(file, 0.85);
-                
-                // Create blob URL for preview
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    photoPreview.src = e.target.result;
-                    photoPreview.style.opacity = '1';
-                    photoPreview.nextElementSibling.innerHTML = '<i class="fas fa-camera"></i><span>Click to upload</span>';
-                };
-                reader.readAsDataURL(webpBlob);
-                
-                // Store the converted blob for later upload
-                photoInput.webpBlob = webpBlob;
-                photoInput.webpFilename = file.name.replace(/\.[^/.]+$/, '') + '.webp';
-                
-                console.log(`✅ Photo converted to WebP: ${photoInput.webpFilename}`);
-            } catch (error) {
-                console.error('Error converting photo:', error);
-                popup.error('Waduh gagal nih: ' + error.message + '. Coba foto yang lain');
-                photoPreview.style.opacity = '1';
-                photoPreview.nextElementSibling.innerHTML = '<i class="fas fa-camera"></i><span>Click to upload</span>';
-            }
+            // Open crop modal instead of directly converting
+            openCropModal(file, photoInput, photoPreview);
         }
     });
     
