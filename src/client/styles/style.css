@@ -3680,21 +3680,17 @@ body.has-main-content {
 }
 
 .memory-card.landscape .memory-frame {
-    padding-top: 45%;
+    /* Natural sizing — image determines height */
 }
 
 /* Portrait orientation */
 .memory-card.portrait {
     grid-column: span 1;
     grid-row: span 2;
-    display: flex;
-    flex-direction: column;
 }
 
 .memory-card.portrait .memory-frame {
-    padding-top: 0;
-    flex: 1;
-    min-height: 0;
+    /* Natural sizing — image determines height */
 }
 
 /* Large cards for wider aspect ratios */
@@ -3704,35 +3700,28 @@ body.has-main-content {
 
 .memory-frame {
     position: relative;
-    padding-top: 75%;
     overflow: hidden;
-    background: linear-gradient(135deg, var(--bg-card) 0%, rgba(40, 40, 40, 0.8) 100%);
+    background: var(--bg-card, #1a1a2e);
     box-shadow: inset 0 1px 3px rgba(29, 185, 84, 0.1), var(--shadow);
     transition: var(--transition);
     border: 1px solid rgba(29, 185, 84, 0.1);
-    aspect-ratio: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .memory-card.portrait .memory-frame {
-    padding-top: 0;
-    aspect-ratio: 3/4;
+    /* No fixed aspect ratio — let image determine height */
 }
 
 .memory-frame img {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
-    height: 100%;
+    height: auto;
+    display: block;
     object-fit: contain;
     transition: var(--transition);
-    /* Use browser default ("auto") resampling for photos. `crisp-edges` is
-       meant for pixel art and causes real photos to look pixelated / broken
-       on Firefox and Safari when downscaled. */
     image-rendering: auto;
-    /* Enable srcset support */
     max-width: 100%;
-    background: var(--bg-card, #1a1a2e);
 }
 
 .memory-card:hover .memory-frame img {
@@ -4072,8 +4061,7 @@ img {
     }
     
     .memory-card.portrait .memory-frame {
-        padding-top: 135%;
-        aspect-ratio: auto;
+        /* Natural sizing */
     }
     
     .memory-large {
@@ -4690,8 +4678,7 @@ img {
     }
     
     .memory-card.portrait .memory-frame {
-        padding-top: 135%;
-        aspect-ratio: auto;
+        /* Natural sizing */
     }
 }
 
