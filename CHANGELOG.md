@@ -9,6 +9,19 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.6.3] — 2026-05-10
+
+### Fixed
+- **Kolase — Video player hitam pada video pertama (final fix)** : Perbaikan sebelumnya (v2.6.2) menggunakan flag `_primed` yang di-set di `showVideoSectionWhenReady()` via `requestAnimationFrame`. Masalahnya, `.load()` yang dipanggil dalam rAF belum tentu selesai me-reset decoder sebelum user scroll ke section. Saat IntersectionObserver atau tombol play memicu `requestVideoPlay()`, fungsi melihat `_primed = true` DAN `readyState >= 3` (stale dari pipeline display:none) → langsung `.play()` tanpa `.load()` ulang → tetap black frame.
+  - **New approach:** Hapus flag `_primed` sepenuhnya. `requestVideoPlay()` sekarang menggunakan `currentTime > 0` sebagai indikator video benar-benar pernah diputar. Jika `currentTime === 0` (belum pernah play), **selalu** force `.load()` + tunggu `canplay` baru `.play()`.
+  - `showVideoSectionWhenReady()` tetap memanggil `.load()` sebagai pre-prime, tapi tanpa set flag apapun — jadi tidak ada race condition lagi.
+- **Profile — Crop foto gagal dengan error "Cannot read properties of null (reading 'toBlob')"** : `cropper.getCroppedCanvas()` mengembalikan `null` jika Cropper.js belum sepenuhnya ready (gambar belum decode). 
+  - Tambah variabel `cropperReady` yang di-set `true` hanya setelah callback `ready()` dari Cropper.js terpanggil.
+  - Tombol "Terapkan" sekarang cek `!cropper || !cropperReady` sebelum proses — jika belum siap, tampilkan pesan error user-friendly.
+  - Tambah null-check pada hasil `getCroppedCanvas()` sebelum memanggil `.toBlob()`.
+
+---
+
 ## [2.6.2] — 2026-05-10
 
 ### Fixed
