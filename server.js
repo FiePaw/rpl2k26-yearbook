@@ -364,7 +364,7 @@ app.get('/api/students/:id', async (req, res) => {
 // Update student profile
 app.put('/api/students/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, birthday, message, photo, audioFile, audioTrimStart, audioTrimEnd, studentLyrics, lyricsGeneratedFrom, lyricsUpdatedAt } = req.body;
+    const { name, birthday, message, photo, audioFile, audioTrimStart, audioTrimEnd, studentLyrics, lyricsGeneratedFrom, lyricsUpdatedAt, lyricsArtistName, lyricsSongTitle } = req.body;
     
     const database = await readJSON(DB_PATH);
     
@@ -384,6 +384,8 @@ app.put('/api/students/:id', async (req, res) => {
         studentLyrics: studentLyrics !== undefined ? studentLyrics : (existingData.studentLyrics || null),
         lyricsGeneratedFrom: lyricsGeneratedFrom !== undefined ? lyricsGeneratedFrom : (existingData.lyricsGeneratedFrom || null),
         lyricsUpdatedAt: lyricsUpdatedAt !== undefined ? lyricsUpdatedAt : (existingData.lyricsUpdatedAt || null),
+        lyricsArtistName: lyricsArtistName !== undefined ? lyricsArtistName : (existingData.lyricsArtistName || null),
+        lyricsSongTitle: lyricsSongTitle !== undefined ? lyricsSongTitle : (existingData.lyricsSongTitle || null),
         updatedAt: new Date().toISOString()
     };
     
@@ -2432,6 +2434,108 @@ initializeDatabase().then(() => {
                 console.log(`Server running on http://localhost:${PORT}`);
                 console.log('Yearbook application is ready!');
                 console.log('📊 Admin tracking system initialized');
+
+                // ========== AUTO LYRICS GENERATION CYCLE ==========
+                console.log('🎵 Starting auto lyrics generation cycle (every 60s)');
+                
+                let isLyricsCycleRunning = false;
+
+                async function autoLyricsGenerationCycle() {
+                    if (isLyricsCycleRunning) {
+                        console.log('⏭️ Auto lyrics cycle already running, skipping...');
+                        return;
+                    }
+
+                    isLyricsCycleRunning = true;
+                    console.log('🔄 Auto lyrics cycle started...');
+
+                    try {
+                        const database = await readJSON(DB_PATH);
+                        if (!database || !database.students || database.students.length === 0) {
+                            console.log('📭 No students in database, skipping lyrics cycle');
+                            return;
+                        }
+
+                        let generated = 0;
+                        let skipped = 0;
+                        let noInfo = 0;
+
+                        for (const student of database.students) {
+                            // Skip if student already has lyrics
+                            if (student.studentLyrics) {
+                                skipped++;
+                                continue;
+                            }
+
+                            // Determine artist and title
+                            let artist = student.lyricsArtistName || null;
+                            let title = student.lyricsSongTitle || null;
+
+                            // Fallback: try to extract from audioFile filename
+                            if ((!artist || !title) && student.audioFile) {
+                                const filename = student.audioFile.split('/').pop();
+                                // Try pattern: "Artist - Title" or "timestamp_Artist - Title.ext"
+                                const cleanName = filename.replace(/^\d+_/, '').replace(/\.[^.]+$/, '').replace(/\s*\[.*?\]\s*/g, '');
+                                const parts = cleanName.split(' - ');
+                                if (parts.length >= 2) {
+                                    artist = artist || parts[0].trim();
+                                    title = title || parts.slice(1).join(' - ').trim();
+                                }
+                            }
+
+                            // Skip if no artist/title info available
+                            if (!artist || !title) {
+                                noInfo++;
+                                continue;
+                            }
+
+                            // Generate lyrics for this student
+                            console.log(`🎵 Auto-generating lyrics for student ${student.id}: "${title}" by "${artist}"`);
+
+                            try {
+                                const lyrics = await lyricsFetcher.searchLyrics(artist, title);
+
+                                if (lyrics && lyrics.length >= 50) {
+                                    // Save lyrics to database
+                                    const freshDb = await readJSON(DB_PATH);
+                                    const idx = freshDb.students.findIndex(s => s.id === student.id);
+                                    if (idx >= 0) {
+                                        freshDb.students[idx].studentLyrics = lyrics;
+                                        freshDb.students[idx].lyricsGeneratedFrom = 'auto-qwen-3prompt';
+                                        freshDb.students[idx].lyricsUpdatedAt = new Date().toISOString();
+                                        await writeJSON(DB_PATH, freshDb);
+                                        generated++;
+                                        console.log(`✅ Lyrics saved for student ${student.id} (${lyrics.length} chars)`);
+                                    }
+                                } else {
+                                    console.log(`⚠️ No valid lyrics found for student ${student.id}`);
+                                }
+                            } catch (err) {
+                                console.error(`❌ Error generating lyrics for student ${student.id}:`, err.message);
+                            }
+
+                            // Process ONE student at a time - wait before next to avoid overloading Qwen
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                        }
+
+                        console.log(`🎵 Auto lyrics cycle complete: ${generated} generated, ${skipped} already have lyrics, ${noInfo} no artist/title info`);
+
+                    } catch (error) {
+                        console.error('❌ Auto lyrics cycle error:', error.message);
+                    } finally {
+                        isLyricsCycleRunning = false;
+                    }
+                }
+
+                // Run first cycle after 30 seconds (let server fully start)
+                setTimeout(() => {
+                    autoLyricsGenerationCycle();
+                }, 30000);
+
+                // Then run every 60 seconds
+                setInterval(() => {
+                    autoLyricsGenerationCycle();
+                }, 60000);
             });
         });
     });

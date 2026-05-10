@@ -9,6 +9,22 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.7.0] — 2026-05-10
+
+### Removed
+- **Profile — Trim functions dihapus**: `syncTrimInputs()`, `syncTrimSliders()`, `updateAudioTrimInfo()`, `previewStudentAudioTrim()`, `resetStudentAudioTrim()` beserta event listener references di `displayStudentAudio()`.
+- **Profile — Generate Lyrics button/UI dihapus**: `generateStudentLyrics()`, `saveStudentLyrics()`, `regenerateStudentLyrics()`, `clearStudentLyrics()`, `setupLyricsAutoSave()`, `updateLyricsCharCount()` dan DOMContentLoaded listener terkait.
+
+### Changed
+- **Profile — Lyrics section disederhanakan**: Sekarang hanya berisi Artist Name + Song Title confirmation inputs, tanpa textarea, tanpa Generate/Regenerate/Save/Clear buttons, tanpa loading indicator, tanpa error container. Header diganti dari "Song Lyrics" menjadi "Song Info".
+- **AI Lyrics Fetcher — Rewrite dengan 3-prompt conversation strategy**: Alur baru menggunakan 3 prompt berurutan dalam 1 session Qwen (bukan masing-masing `newSession`). Prompt 1 & 2 sebagai "pemanasan" konteks, Prompt 3 meminta lirik dengan format `[MM:SS]`. Hanya hasil Prompt 3 yang diambil, dan di-clean untuk hanya menyimpan baris `[MM:SS] Lyrics`.
+
+### Added
+- **Server-side auto lyrics generation cycle**: Background process yang berjalan setiap 60 detik. Membaca semua student dari database, cek apakah punya `lyricsArtistName` + `lyricsSongTitle` tapi belum punya `studentLyrics` → generate otomatis via `lyricsFetcher.searchLyrics()`. Memproses satu student per cycle untuk menghindari overload Qwen API.
+- **Form saves `lyricsArtistName` dan `lyricsSongTitle`**: Field baru disimpan ke database saat profile form di-submit dari frontend.
+
+---
+
 ## [2.6.4] — 2026-05-10
 
 ### Fixed

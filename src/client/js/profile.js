@@ -750,7 +750,9 @@ function setupStudentForm(studentId) {
             audioFile: studentAudioPath,
             audioTrimStart: studentAudioPath ? trimStart : null,
             audioTrimEnd: studentAudioPath ? trimEnd : null,
-            studentLyrics: document.getElementById('studentLyricsTextarea')?.value || null
+            studentLyrics: document.getElementById('studentLyricsTextarea')?.value || null,
+            lyricsArtistName: document.getElementById('lyricsArtistInput')?.value || null,
+            lyricsSongTitle: document.getElementById('lyricsSongTitleInput')?.value || null
         };
         
         let loadingDialog = null;
@@ -1485,24 +1487,7 @@ function displayStudentAudio() {
         const endInput = document.getElementById('studentAudioTrimEndInput');
         
         if (startSlider && endSlider && startInput && endInput) {
-            // Clone nodes to remove all event listeners
-            const newStartSlider = startSlider.cloneNode(true);
-            const newEndSlider = endSlider.cloneNode(true);
-            const newStartInput = startInput.cloneNode(true);
-            const newEndInput = endInput.cloneNode(true);
-            
-            startSlider.parentNode.replaceChild(newStartSlider, startSlider);
-            endSlider.parentNode.replaceChild(newEndSlider, endSlider);
-            startInput.parentNode.replaceChild(newStartInput, startInput);
-            endInput.parentNode.replaceChild(newEndInput, endInput);
-            
-            // Add new event listeners to cloned elements
-            newStartSlider.addEventListener('change', syncTrimInputs);
-            newStartSlider.addEventListener('input', updateAudioTrimInfo);
-            newEndSlider.addEventListener('change', syncTrimInputs);
-            newEndSlider.addEventListener('input', updateAudioTrimInfo);
-            newStartInput.addEventListener('change', syncTrimInputs);
-            newEndInput.addEventListener('change', syncTrimInputs);
+            // Trim elements exist but no longer need event listeners (trim removed)
         }
         
         // Handle loadedmetadata with proper timing
@@ -1515,13 +1500,9 @@ function displayStudentAudio() {
                 console.warn('⚠️ Canvas has 0 width, waiting for layout...');
                 setTimeout(() => {
                     updateAudioDurationDisplay();
-                    updateAudioTrimInfo();
-                    syncTrimSliders();
                 }, 100);
             } else {
                 updateAudioDurationDisplay();
-                updateAudioTrimInfo();
-                syncTrimSliders();
             }
             
             // Load student lyrics from backend
@@ -1603,107 +1584,6 @@ function updateAudioDurationDisplay() {
     }, 50);
 }
 
-// Update trim info display with better UI
-function updateAudioTrimInfo() {
-    const player = document.getElementById('studentAudioPlayer');
-    const startSlider = document.getElementById('studentAudioTrimStart');
-    const endSlider = document.getElementById('studentAudioTrimEnd');
-    const startDisplay = document.getElementById('studentAudioTrimStartDisplay');
-    const endDisplay = document.getElementById('studentAudioTrimEndDisplay');
-    const trimInfo = document.getElementById('studentAudioTrimInfo');
-    const highlight = document.getElementById('studentAudioTrimHighlight');
-    
-    if (!player || !startSlider || !endSlider || !startDisplay || !endDisplay || !trimInfo || !highlight) {
-        console.warn('⚠️ Some trim UI elements not found');
-        return;
-    }
-    
-    const startTime = parseFloat(startSlider.value) || 0;
-    const endTime = parseFloat(endSlider.value) || 0;
-    const duration = player.duration || 0;
-    
-    console.log('🎯 Updating trim info:', { startTime, endTime, duration });
-    
-    // Update displays
-    startDisplay.textContent = formatTime(startTime);
-    endDisplay.textContent = formatTime(endTime);
-    
-    // Update highlight on timeline (prevent division by zero)
-    if (duration > 0) {
-        const startPercent = (startTime / duration) * 100;
-        const endPercent = (endTime / duration) * 100;
-        highlight.style.left = Math.max(0, Math.min(100, startPercent)) + '%';
-        highlight.style.width = Math.max(0, Math.min(100, endPercent - startPercent)) + '%';
-    } else {
-        highlight.style.left = '0%';
-        highlight.style.width = '0%';
-    }
-    
-    // Update trim info text
-    if (startTime > 0 || (duration > 0 && endTime < duration)) {
-        const trimDuration = Math.max(0, endTime - startTime);
-        trimInfo.textContent = `${formatTime(startTime)} → ${formatTime(endTime)} (${formatTime(trimDuration)})`;
-    } else {
-        trimInfo.textContent = 'No trim (full audio)';
-    }
-}
-
-// Sync trim sliders with input fields
-function syncTrimInputs() {
-    const startSlider = document.getElementById('studentAudioTrimStart');
-    const endSlider = document.getElementById('studentAudioTrimEnd');
-    const startInput = document.getElementById('studentAudioTrimStartInput');
-    const endInput = document.getElementById('studentAudioTrimEndInput');
-    
-    if (!startSlider || !endSlider || !startInput || !endInput) {
-        console.warn('⚠️ Trim slider elements not found, skipping sync');
-        return;
-    }
-    
-    // Sync from sliders to inputs
-    startInput.value = startSlider.value;
-    endInput.value = endSlider.value;
-    
-    updateAudioTrimInfo();
-}
-
-// Sync trim sliders from input fields
-function syncTrimSliders() {
-    const startSlider = document.getElementById('studentAudioTrimStart');
-    const endSlider = document.getElementById('studentAudioTrimEnd');
-    const startInput = document.getElementById('studentAudioTrimStartInput');
-    const endInput = document.getElementById('studentAudioTrimEndInput');
-    const player = document.getElementById('studentAudioPlayer');
-    
-    if (!startSlider || !endSlider || !startInput || !endInput || !player) {
-        console.warn('❌ Required trim elements not found');
-        return;
-    }
-    
-    // Get current values or defaults
-    let startVal = parseFloat(startInput.value);
-    let endVal = parseFloat(endInput.value);
-    const duration = player.duration || 0;
-    
-    // Validate and fix values
-    if (isNaN(startVal) || startVal < 0) startVal = 0;
-    if (isNaN(endVal) || endVal <= 0) endVal = Math.floor(duration);
-    if (endVal > duration) endVal = Math.floor(duration);
-    if (startVal >= endVal) startVal = 0;
-    
-    // Update sliders
-    startSlider.value = startVal;
-    endSlider.value = endVal;
-    
-    // Update inputs if they had invalid values
-    startInput.value = startVal;
-    endInput.value = endVal;
-    
-    console.log('✅ Trim sliders synced:', { startVal, endVal, duration });
-    
-    updateAudioTrimInfo();
-}
-
 // Draw waveform on canvas (simplified)
 function drawAudioWaveform() {
     const canvas = document.getElementById('studentAudioCanvas');
@@ -1776,49 +1656,6 @@ function updatePlayhead() {
     
     const currentPercent = (player.currentTime / player.duration) * 100;
     playhead.style.left = currentPercent + '%';
-}
-
-// Preview trimmed audio
-function previewStudentAudioTrim() {
-    const player = document.getElementById('studentAudioPlayer');
-    const startTime = parseFloat(document.getElementById('studentAudioTrimStart').value) || 0;
-    const endTime = parseFloat(document.getElementById('studentAudioTrimEnd').value) || player.duration;
-    
-    // Validate times
-    if (startTime >= endTime) {
-        popup.error('Trim awal sama akhir nya salah, coba di reset dulu deh');
-        return;
-    }
-    
-    // Play from start time
-    player.currentTime = startTime;
-    player.play();
-    
-    // Pause at end time
-    const checkInterval = setInterval(() => {
-        if (player.currentTime >= endTime) {
-            player.pause();
-            clearInterval(checkInterval);
-        }
-    }, 100);
-    
-    document.getElementById('studentAudioPlayhead').style.display = 'block';
-}
-
-// Reset trim to full audio
-function resetStudentAudioTrim() {
-    const player = document.getElementById('studentAudioPlayer');
-    const startSlider = document.getElementById('studentAudioTrimStart');
-    const endSlider = document.getElementById('studentAudioTrimEnd');
-    const startInput = document.getElementById('studentAudioTrimStartInput');
-    const endInput = document.getElementById('studentAudioTrimEndInput');
-    
-    startSlider.value = 0;
-    endSlider.value = player.duration || 0;
-    startInput.value = 0;
-    endInput.value = Math.floor(player.duration || 0);
-    
-    updateAudioTrimInfo();
 }
 
 // Format time in MM:SS format
@@ -5045,8 +4882,8 @@ async function displayStudentLyricsSection(downloadedArtist = null, downloadedTi
         const student = await response.json();
 
         // Get audio info for lyrics source
-        let artistName = student.name || 'Unknown';
-        let songTitle = 'Unknown';
+        let artistName = student.lyricsArtistName || student.name || 'Unknown';
+        let songTitle = student.lyricsSongTitle || 'Unknown';
         
         // PRIORITY 1: Use parameters from just-downloaded file (most reliable)
         if (downloadedArtist || downloadedTitle) {
@@ -5060,7 +4897,13 @@ async function displayStudentLyricsSection(downloadedArtist = null, downloadedTi
             songTitle = studentAudioMetadata.title;
             console.log('📝 Form populated from studentAudioMetadata:', { artistName, songTitle });
         }
-        // PRIORITY 3: Extract from student data (first time page load)
+        // PRIORITY 3: Use saved lyricsArtistName/lyricsSongTitle from student data
+        else if (student.lyricsArtistName && student.lyricsSongTitle) {
+            artistName = student.lyricsArtistName;
+            songTitle = student.lyricsSongTitle;
+            console.log('📝 Form populated from saved artist/title:', { artistName, songTitle });
+        }
+        // PRIORITY 4: Extract from student audioFile (first time page load)
         else if (student.audioFile) {
             const filename = student.audioFile.split('/').pop();
             const parsed = extractSongMetadata(filename);
@@ -5072,7 +4915,6 @@ async function displayStudentLyricsSection(downloadedArtist = null, downloadedTi
         // Populate form inputs with extracted values
         const artistInput = document.getElementById('lyricsArtistInput');
         const songTitleInput = document.getElementById('lyricsSongTitleInput');
-        const textareaElement = document.getElementById('studentLyricsTextarea');
         
         if (artistInput) artistInput.value = artistName;
         if (songTitleInput) songTitleInput.value = songTitle;
@@ -5080,410 +4922,20 @@ async function displayStudentLyricsSection(downloadedArtist = null, downloadedTi
         // Show lyrics section
         lyricsSection.style.display = 'block';
 
-        // Handle textarea content:
-        // - If file was just downloaded (downloadedArtist/Title provided), user should generate fresh lyrics -> CLEAR textarea
-        // - If just loading existing lyrics (no downloads), keep existing lyrics or clear if none
-        if (student.studentLyrics && !downloadedArtist && !downloadedTitle) {
-            // No recent download - show existing lyrics if available
-            textareaElement.value = student.studentLyrics;
-        } else {
-            // Either just downloaded file OR no existing lyrics -> CLEAR textarea
-            textareaElement.value = '';
-        }
-
         // Set status information
-        if (student.studentLyrics) {
+        const statusEl = document.getElementById('lyricsStatus');
+        if (student.studentLyrics && statusEl) {
             const lastUpdate = student.lyricsUpdatedAt ? new Date(student.lyricsUpdatedAt).toLocaleDateString('id-ID') : 'Unknown';
             const source = student.lyricsGeneratedFrom || 'unknown';
-            document.getElementById('lyricsStatus').textContent = `Generated from: ${source} • Updated: ${lastUpdate}`;
-            
-            // Show save/delete buttons (user can regenerate new lyrics if needed)
-            document.getElementById('regenerateLyricsBtn').style.display = 'inline-block';
-            document.getElementById('saveLyricsBtn').style.display = 'inline-block';
-            document.getElementById('clearLyricsBtn').style.display = 'inline-block';
+            statusEl.textContent = `✅ Lirik auto-generated (${source}) • ${lastUpdate}`;
+        } else if (statusEl) {
+            statusEl.textContent = 'Lirik akan di-generate otomatis oleh server';
         }
-
-        // Update character count
-        updateLyricsCharCount();
-
-        // Set up auto-save
-        setupLyricsAutoSave(user.id);
 
     } catch (error) {
         console.error('Error displaying lyrics section:', error);
     }
 }
-
-/**
- * Generate lyrics using AI API
- */
-async function generateStudentLyrics() {
-    try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user) {
-            popup.error('User information not found');
-            return;
-        }
-
-        // Get audio info
-        const audioResponse = await fetch(`${API_URL}/api/students/${user.id}`);
-        if (!audioResponse.ok) {
-            popup.error('Could not fetch student data');
-            return;
-        }
-
-        const student = await audioResponse.json();
-        
-        // Use audioFile from API, or fallback to local studentAudioPath (for unsaved downloads)
-        const audioFile = student.audioFile || studentAudioPath;
-        
-        if (!audioFile) {
-            popup.error('Please upload an audio file first');
-            return;
-        }
-
-        // Get artist and song title from form inputs (priority) or fallback to extraction
-        let artistName = document.getElementById('lyricsArtistInput').value.trim();
-        let songTitle = document.getElementById('lyricsSongTitleInput').value.trim();
-
-        // If form inputs are empty, try extract from filename
-        if (!artistName || !songTitle) {
-            const filename = audioFile.split('/').pop();
-            const parsed = extractSongMetadata(filename);
-            artistName = artistName || parsed.artist || student.name || '';
-            songTitle = songTitle || parsed.title || filename || '';
-        }
-
-        // Validate we have both
-        if (!artistName || !songTitle) {
-            popup.error('⚠️ Please enter artist name and song title');
-            return;
-        }
-
-        // Show loading indicator
-        const loadingIndicator = document.getElementById('lyricsLoadingIndicator');
-        const errorContainer = document.getElementById('lyricsErrorContainer');
-        const generateBtn = document.getElementById('generateLyricsBtn');
-        
-        loadingIndicator.style.display = 'block';
-        errorContainer.style.display = 'none';
-        generateBtn.disabled = true;
-
-        console.log(`🎵 Generating lyrics: "${songTitle}" by "${artistName}"`);
-
-        // Create AbortController with 620 second timeout (10.3 minutes - server timeout is 600s)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 620000);
-
-        try {
-            // Call backend API with artist/title AND audioFile path
-            const response = await fetch(`${API_URL}/api/student/lyrics/generate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    studentId: user.id,
-                    audioFile: audioFile,
-                    artistName: artistName,
-                    songTitle: songTitle
-                }),
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.error || 'Failed to generate lyrics');
-            }
-
-            // Display generated lyrics
-            const lyrics = data.lyrics || '';
-            if (!lyrics || lyrics.length < 50) {
-                throw new Error('Empty or invalid lyrics received');
-            }
-
-            const textarea = document.getElementById('studentLyricsTextarea');
-            textarea.value = lyrics;
-
-            // Update UI with actual artist/title from server
-            const statusDiv = document.getElementById('lyricsStatus');
-            const serverArtist = data.artist || artistName;
-            const serverTitle = data.title || songTitle;
-            const timestamp = new Date().toLocaleString();
-            statusDiv.textContent = `✅ "${serverTitle}" by "${serverArtist}" • Qwen AI • ${timestamp}`;
-            
-            document.getElementById('regenerateLyricsBtn').style.display = 'inline-block';
-            document.getElementById('saveLyricsBtn').style.display = 'inline-block';
-            document.getElementById('clearLyricsBtn').style.display = 'inline-block';
-            
-            updateLyricsCharCount();
-            popup.success('✅ Lyrics generated successfully!');
-            console.log('✅ Lyrics loaded from server');
-
-        } catch (fetchError) {
-            clearTimeout(timeoutId);
-            
-            let errorMsg = fetchError.message;
-            if (fetchError.name === 'AbortError') {
-                errorMsg = '⏱️ Generate request timeout (10+ min) - Qwen AI took too long';
-            } else if (errorMsg.includes('Failed to fetch')) {
-                errorMsg = '❌ Network error - could not reach server';
-            }
-            
-            errorContainer.textContent = errorMsg;
-            errorContainer.style.display = 'block';
-            console.error('❌ Fetch error:', fetchError);
-            popup.error(errorMsg);
-        }
-
-    } catch (error) {
-        console.error('❌ Lyrics generation error:', error);
-        const errorContainer = document.getElementById('lyricsErrorContainer');
-        errorContainer.style.display = 'block';
-        errorContainer.textContent = `❌ Error: ${error.message}`;
-        popup.error(`Failed to generate lyrics: ${error.message}`);
-
-    } finally {
-        document.getElementById('lyricsLoadingIndicator').style.display = 'none';
-        document.getElementById('generateLyricsBtn').disabled = false;
-    }
-}
-
-/**
- * Save lyrics to database
- */
-async function saveStudentLyrics() {
-    try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user) {
-            popup.error('User information not found');
-            return;
-        }
-
-        const lyricsText = document.getElementById('studentLyricsTextarea').value;
-        
-        if (!lyricsText || lyricsText.trim().length === 0) {
-            popup.error('Lyrics cannot be empty');
-            return;
-        }
-
-        const saveLyricsBtn = document.getElementById('saveLyricsBtn');
-        saveLyricsBtn.disabled = true;
-
-        // Create AbortController with 30 second timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        try {
-            // Call backend API
-            const response = await fetch(`${API_URL}/api/student/lyrics/save`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    studentId: user.id,
-                    lyricsText,
-                    source: 'manual-edit'
-                }),
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.error || 'Failed to save lyrics');
-            }
-
-            console.log('✅ Lyrics saved successfully');
-            document.getElementById('lyricsStatus').textContent = `Generated from: manual-edit • Updated: ${new Date().toLocaleString()}`;
-            
-            // Clear draft from localStorage
-            localStorage.removeItem(`lyrics_draft_${user.id}`);
-            
-            popup.success('💾 Lyrics saved successfully!');
-
-        } catch (fetchError) {
-            clearTimeout(timeoutId);
-            
-            if (fetchError.name === 'AbortError') {
-                popup.error('❌ Save request timeout - please try again');
-            } else {
-                popup.error(`Failed to save lyrics: ${fetchError.message}`);
-            }
-            console.error('❌ Lyrics save error:', fetchError);
-        }
-
-    } catch (error) {
-        console.error('❌ Lyrics save error:', error);
-        popup.error(`Failed to save lyrics: ${error.message}`);
-
-    } finally {
-        document.getElementById('saveLyricsBtn').disabled = false;
-    }
-}
-
-/**
- * Regenerate lyrics (with confirmation)
- */
-async function regenerateStudentLyrics() {
-    if (!confirm('Replace current lyrics with AI-generated ones?')) {
-        return;
-    }
-
-    // Clear current lyrics before generating new ones
-    document.getElementById('studentLyricsTextarea').value = '';
-    
-    // Call generate function
-    await generateStudentLyrics();
-}
-
-/**
- * Clear lyrics
- */
-async function clearStudentLyrics() {
-    if (!confirm('Delete all lyrics? This action cannot be undone.')) {
-        return;
-    }
-
-    try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user) {
-            popup.error('User information not found');
-            return;
-        }
-
-        const clearBtn = document.getElementById('clearLyricsBtn');
-        clearBtn.disabled = true;
-
-        // Create AbortController with 30 second timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        try {
-            // Call backend API
-            const response = await fetch(`${API_URL}/api/student/lyrics/${user.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.error || 'Failed to delete lyrics');
-            }
-
-            // Clear UI
-            document.getElementById('studentLyricsTextarea').value = '';
-            document.getElementById('lyricsStatus').textContent = 'No lyrics available';
-            document.getElementById('regenerateLyricsBtn').style.display = 'none';
-            document.getElementById('saveLyricsBtn').style.display = 'none';
-            document.getElementById('clearLyricsBtn').style.display = 'none';
-            document.getElementById('autosaveStatus').textContent = '';
-
-            // Clear draft
-            localStorage.removeItem(`lyrics_draft_${user.id}`);
-
-            popup.success('🗑️ Lyrics deleted');
-
-        } catch (fetchError) {
-            clearTimeout(timeoutId);
-            
-            if (fetchError.name === 'AbortError') {
-                popup.error('❌ Delete request timeout - please try again');
-            } else {
-                popup.error(`Failed to delete lyrics: ${fetchError.message}`);
-            }
-            console.error('❌ Lyrics delete error:', fetchError);
-        }
-
-    } catch (error) {
-        console.error('❌ Lyrics delete error:', error);
-        popup.error(`Failed to delete lyrics: ${error.message}`);
-
-    } finally {
-        document.getElementById('clearLyricsBtn').disabled = false;
-    }
-}
-
-/**
- * Auto-save lyrics draft to localStorage
- */
-function setupLyricsAutoSave(studentId) {
-    const textarea = document.getElementById('studentLyricsTextarea');
-    if (!textarea) return;
-
-    let saveTimeout;
-    let lastSavedContent = textarea.value;
-
-    textarea.addEventListener('input', () => {
-        clearTimeout(saveTimeout);
-        
-        saveTimeout = setTimeout(() => {
-            const currentContent = textarea.value;
-            
-            if (currentContent !== lastSavedContent && currentContent.trim().length > 0) {
-                localStorage.setItem(`lyrics_draft_${studentId}`, currentContent);
-                document.getElementById('autosaveStatus').textContent = 'Auto-saved ✓';
-                lastSavedContent = currentContent;
-
-                // Clear auto-save message after 2 seconds
-                setTimeout(() => {
-                    document.getElementById('autosaveStatus').textContent = '';
-                }, 2000);
-            }
-        }, 2000); // Auto-save after 2 seconds of inactivity
-    });
-
-    // Load draft on startup
-    const savedDraft = localStorage.getItem(`lyrics_draft_${studentId}`);
-    if (savedDraft && !textarea.value) {
-        textarea.value = savedDraft;
-        document.getElementById('autosaveStatus').textContent = 'Draft loaded';
-        setTimeout(() => {
-            document.getElementById('autosaveStatus').textContent = '';
-        }, 2000);
-    }
-}
-
-/**
- * Update lyrics character count display
- */
-function updateLyricsCharCount() {
-    const textarea = document.getElementById('studentLyricsTextarea');
-    const charCount = textarea ? textarea.value.length : 0;
-    const charCountDisplay = document.getElementById('lyricsCharCount');
-    
-    if (charCountDisplay) {
-        charCountDisplay.textContent = `${charCount} characters`;
-    }
-}
-
-// Initialize lyrics section when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    const lyricsSection = document.getElementById('studentLyricsSection');
-    const textarea = document.getElementById('studentLyricsTextarea');
-    
-    if (lyricsSection) {
-        // Display section on page load if user is logged in
-        displayStudentLyricsSection();
-    }
-
-    // Update character count on input
-    if (textarea) {
-        textarea.addEventListener('input', updateLyricsCharCount);
-    }
-});
 
 // Sync lyrics with audio playback
 function syncLyricsWithAudio(audioElement, trimStart = 0, trimEnd = null) {
