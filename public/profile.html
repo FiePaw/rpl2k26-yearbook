@@ -1216,6 +1216,42 @@
                                     <textarea id="studentMessage" rows="6" placeholder="Tuliskan kesan dan pesan kamu untuk kelas RPL 2026..." required></textarea>
                                 </div>
 
+                                <!-- Social Media Links (all optional). Saved onto the
+                                     student's profile and rendered as clickable SVG
+                                     badges on the Beranda music player. -->
+                                <div class="form-group social-media-group">
+                                    <label><i class="fas fa-share-nodes"></i> Sosial Media <small style="color: var(--text-secondary); font-weight: 400;">(opsional, isi yang mau ditampilkan)</small></label>
+                                    <div class="social-media-inputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <i class="fab fa-instagram" style="color: #E4405F; width: 18px;"></i>
+                                            <input type="text" id="socialInstagram" placeholder="username atau link" style="flex: 1;">
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <i class="fab fa-tiktok" style="color: #ff0050; width: 18px;"></i>
+                                            <input type="text" id="socialTiktok" placeholder="username atau link" style="flex: 1;">
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <i class="fab fa-linkedin" style="color: #0A66C2; width: 18px;"></i>
+                                            <input type="text" id="socialLinkedin" placeholder="username atau link" style="flex: 1;">
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <i class="fab fa-facebook" style="color: #1877F2; width: 18px;"></i>
+                                            <input type="text" id="socialFacebook" placeholder="username atau link" style="flex: 1;">
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <i class="fab fa-x-twitter" style="color: var(--text-primary); width: 18px;"></i>
+                                            <input type="text" id="socialTwitter" placeholder="username atau link" style="flex: 1;">
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <i class="fab fa-threads" style="color: var(--text-primary); width: 18px;"></i>
+                                            <input type="text" id="socialThreads" placeholder="username atau link" style="flex: 1;">
+                                        </div>
+                                    </div>
+                                    <small style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem; display: block;">
+                                        Boleh isi hanya username (contoh: <code>johndoe</code>) atau full URL (contoh: <code>https://instagram.com/johndoe</code>). Badge tidak muncul kalau kosong.
+                                    </small>
+                                </div>
+
                                 <!-- Audio Section -->
                                 <div class="form-group audio-section">
                                     <label><i class="fas fa-music"></i> Profile Music</label>

@@ -662,8 +662,20 @@ async function initVideoCarousel() {
                 
                 // Create list of URLs to try in order (fallback chain)
                 const urlsToTry = [];
-                
-                // Priority 1: Optimized versions (most reliable - already converted)
+
+                // Priority 0: Unified streaming endpoint (TikTok-style).
+                // /api/video/stream picks the best optimized variant on
+                // the server and responds with proper Range + cache
+                // headers, so the <video> element can scrub without
+                // re-downloading and files cache forever.
+                if (video.streamUrl) {
+                    urlsToTry.push({ url: video.streamUrl + '?quality=auto', label: 'stream (auto)' });
+                    urlsToTry.push({ url: video.streamUrl + '?quality=720p', label: 'stream (720p)' });
+                    urlsToTry.push({ url: video.streamUrl + '?quality=480p', label: 'stream (480p)' });
+                    urlsToTry.push({ url: video.streamUrl + '?quality=360p', label: 'stream (360p)' });
+                }
+
+                // Priority 1: Optimized versions (direct CDN-style static URLs)
                 if (video.optimizedVersions) {
                     if (video.optimizedVersions.auto) {
                         urlsToTry.push({ url: video.optimizedVersions.auto, label: 'optimized (auto)' });
@@ -678,7 +690,7 @@ async function initVideoCarousel() {
                         urlsToTry.push({ url: video.optimizedVersions['360p'], label: 'optimized (360p)' });
                     }
                 }
-                
+
                 // Priority 2: Original URL (may be corrupt - only use if no optimized versions)
                 if (video.url && urlsToTry.length === 0) {
                     urlsToTry.push({ url: video.url, label: 'original' });
@@ -787,31 +799,101 @@ async function initVideoCarousel() {
             //   which resets the HTMLMediaElement resource-selection
             //   algorithm. requestVideoPlay() below does exactly that the
             //   first time any element is asked to play.
+            // ========== SCROLL-AWARE PLAY/PAUSE (TIKTOK-STYLE) ==========
+            //
+            // Previous behavior (BUG): IntersectionObserver fired with
+            // threshold=0.3, which meant *any* scroll movement across the
+            // 30% boundary produced a play() or pause() call. While a user
+            // scrolled past the section, the observer fired both
+            // isIntersecting=true AND isIntersecting=false dozens of times
+            // per second → the video element oscillated between playing
+            // and paused, producing the "start/pause while scrolling"
+            // artifact the user reported.
+            //
+            // Fix:
+            //   1. Use threshold=[0] + rootMargin: '-30% 0%' so the
+            //      transition only fires when the section is meaningfully
+            //      on/off screen (not on every pixel of scroll crossing a
+            //      0.3 boundary).
+            //   2. Track the user's *intent* via a short-circuited flag
+            //      (userPausedManually) so the observer does not
+            //      auto-resume a video the user just deliberately paused.
+            //   3. Debounce state changes — we only apply a decision
+            //      after the user stopped scrolling for ~120ms, so
+            //      mid-scroll spikes never reach the video element.
+            //   4. Global `isScrolling` flag — while the user is
+            //      actively scrolling, we freeze any play/pause
+            //      decisions. A separate scroll listener with a
+            //      timer-based "scroll ended" detection re-enables
+            //      decisions afterwards.
             if (videoSection && 'IntersectionObserver' in window) {
+                let lastDecisionTimer = null;
+                let pendingShouldPlay = null;
+                let isScrolling = false;
+                let scrollEndTimer = null;
+
+                // Mark scrolling state so IntersectionObserver doesn't
+                // fight the scroll itself.
+                const onScroll = () => {
+                    isScrolling = true;
+                    if (scrollEndTimer) clearTimeout(scrollEndTimer);
+                    scrollEndTimer = setTimeout(() => {
+                        isScrolling = false;
+                        // After scroll ends, apply the last pending decision.
+                        if (pendingShouldPlay !== null) {
+                            applyDecision(pendingShouldPlay);
+                            pendingShouldPlay = null;
+                        }
+                    }, 140);
+                };
+                window.addEventListener('scroll', onScroll, { passive: true });
+
+                const applyDecision = (shouldPlay) => {
+                    const currentVideo = document.getElementById(`video-${currentIndex}`);
+                    if (!currentVideo) return;
+                    if (shouldPlay) {
+                        // Don't auto-resume a video the user explicitly paused.
+                        if (window._videoUserPaused) return;
+                        if (currentVideo.paused) {
+                            console.log(`▶️ Section fully visible: Auto-playing video ${currentIndex}`);
+                            requestVideoPlay(currentVideo);
+                        }
+                    } else {
+                        if (!currentVideo.paused) {
+                            console.log(`⏸️ Section off-screen: Pausing video ${currentIndex}`);
+                            currentVideo.pause();
+                        }
+                    }
+                };
+
                 const videoObserver = new IntersectionObserver((entries) => {
                     entries.forEach((entry) => {
-                        const currentVideo = document.getElementById(`video-${currentIndex}`);
+                        const shouldPlay = entry.isIntersecting;
 
-                        if (entry.isIntersecting) {
-                            // Section is visible - auto-play current video
-                            if (currentVideo && currentVideo.paused) {
-                                console.log(`▶️ Section visible: Auto-playing video ${currentIndex}`);
-                                requestVideoPlay(currentVideo);
-                            }
-                        } else {
-                            // Section is not visible - pause video
-                            if (currentVideo && !currentVideo.paused) {
-                                console.log(`⏸️ Section hidden: Pausing video ${currentIndex}`);
-                                currentVideo.pause();
-                            }
+                        // During active scroll, just queue the decision
+                        // and let the scroll-end handler apply it.
+                        if (isScrolling) {
+                            pendingShouldPlay = shouldPlay;
+                            return;
                         }
+
+                        // Otherwise debounce by 120ms so we don't react
+                        // to quick in/out crossings.
+                        if (lastDecisionTimer) clearTimeout(lastDecisionTimer);
+                        lastDecisionTimer = setTimeout(() => {
+                            applyDecision(shouldPlay);
+                        }, 120);
                     });
                 }, {
-                    threshold: 0.3 // Trigger when 30% of section is visible
+                    // Only fire when section is meaningfully (not 30%) off-screen.
+                    // rootMargin shrinks viewport by 30% top/bottom so
+                    // a quick scroll past the 30% boundary doesn't toggle.
+                    threshold: 0,
+                    rootMargin: '-30% 0% -30% 0%'
                 });
-                
+
                 videoObserver.observe(videoSection);
-                console.log('✅ Video auto-play observer initialized');
+                console.log('✅ Scroll-aware video observer initialized (debounced)');
             }
             // Rotate to the next video every 40s **if still playing**.
             // Fade-out starts at 38s (2s fade), then nextVideo().
@@ -893,6 +975,10 @@ function showVideo(index) {
     currentIndex = index;
     updateVideoInfo();
     updatePlayerControls();
+
+    // Navigating to a different video is an explicit action — allow
+    // auto-play on the new one even if the user had paused the previous.
+    window._videoUserPaused = false;
 
     // Restart the 40s auto-rotate countdown so that a video the user just
     // picked (via next/prev/swipe/keyboard) plays for its full window
@@ -1052,8 +1138,13 @@ function initPlayerControlListeners() {
             if (!currentVideoEl) return;
             
             if (currentVideoEl.paused) {
+                // User explicitly asks to play — clear the pause flag.
+                window._videoUserPaused = false;
                 requestVideoPlay(currentVideoEl);
             } else {
+                // User explicitly paused — remember this so the scroll
+                // observer doesn't auto-resume on the next intersection.
+                window._videoUserPaused = true;
                 currentVideoEl.pause();
             }
         });
@@ -1067,8 +1158,10 @@ function initPlayerControlListeners() {
             if (!currentVideoEl) return;
             
             if (currentVideoEl.paused) {
+                window._videoUserPaused = false;
                 requestVideoPlay(currentVideoEl);
             } else {
+                window._videoUserPaused = true;
                 currentVideoEl.pause();
             }
         });
@@ -1183,8 +1276,10 @@ document.addEventListener('keydown', (e) => {
         if (!currentVideoEl) return;
         
         if (currentVideoEl.paused) {
+            window._videoUserPaused = false;
             requestVideoPlay(currentVideoEl);
         } else {
+            window._videoUserPaused = true;
             currentVideoEl.pause();
         }
     }

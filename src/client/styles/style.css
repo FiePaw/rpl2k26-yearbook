@@ -2059,6 +2059,122 @@ body.has-main-content {
     }
 }
 
+/* ================================================================
+   Social Media Badges + Song Info (below playerSubtitle)
+   ================================================================
+   Badges are *opt-in* per network — each <a.social-badge-*> appears
+   only when the student populated that URL in their profile. Clicking
+   opens the profile in a new tab (target=_blank + rel=noopener).
+   Song info shows lyricsSongTitle/lyricsArtistName as a subtle
+   "now-playing" caption, inspired by Spotify / TikTok UI. */
+.player-social-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.2rem;
+    text-align: left;
+}
+
+.player-social-badges .social-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-secondary, rgba(255,255,255,0.08));
+    color: var(--text-primary, #fff);
+    text-decoration: none;
+    transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    border: 1px solid var(--border-color, rgba(255,255,255,0.12));
+}
+
+.player-social-badges .social-badge:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Per-platform brand tints on hover — only the SVG gets the color via
+   currentColor (see inline SVG fill="currentColor"). */
+.player-social-badges .social-badge-instagram:hover { color: #E4405F; border-color: #E4405F; }
+.player-social-badges .social-badge-tiktok:hover    { color: #ff0050; border-color: #ff0050; }
+.player-social-badges .social-badge-linkedin:hover  { color: #0A66C2; border-color: #0A66C2; }
+.player-social-badges .social-badge-facebook:hover  { color: #1877F2; border-color: #1877F2; }
+.player-social-badges .social-badge-twitter:hover   { color: #1DA1F2; border-color: #1DA1F2; }
+.player-social-badges .social-badge-threads:hover   { color: var(--text-primary, #fff); border-color: var(--text-primary, #fff); }
+
+.player-social-badges .social-badge svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+.player-song-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.5rem;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #b3b3b3);
+    background: var(--bg-secondary, rgba(255,255,255,0.05));
+    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    border-radius: 999px;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.player-song-info > i {
+    color: var(--primary-color, #1DB954);
+    font-size: 0.9rem;
+    animation: songInfoSpin 6s linear infinite;
+}
+
+@keyframes songInfoSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.player-song-info .song-info-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.player-song-info .song-info-divider {
+    opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+    .player-social-badges {
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    .player-social-badges .social-badge {
+        width: 32px;
+        height: 32px;
+    }
+    .player-social-badges .social-badge svg {
+        width: 16px;
+        height: 16px;
+    }
+    .player-song-info {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
+        display: inline-flex;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    /* Align song info + badges centrally under the player title on mobile */
+    #playerSongInfo { text-align: center; }
+    #playerSocialMediaBadges { justify-content: center; }
+}
+
 /* Message Display New Style */
 .message-display-new {
     background: var(--bg-secondary);

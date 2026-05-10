@@ -364,7 +364,7 @@ app.get('/api/students/:id', async (req, res) => {
 // Update student profile
 app.put('/api/students/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, birthday, message, photo, audioFile, audioTrimStart, audioTrimEnd, studentLyrics, lyricsGeneratedFrom, lyricsUpdatedAt, lyricsArtistName, lyricsSongTitle } = req.body;
+    const { name, birthday, message, photo, audioFile, audioTrimStart, audioTrimEnd, studentLyrics, lyricsGeneratedFrom, lyricsUpdatedAt, lyricsArtistName, lyricsSongTitle, socialMedia } = req.body;
     
     const database = await readJSON(DB_PATH);
     
@@ -372,6 +372,21 @@ app.put('/api/students/:id', async (req, res) => {
     const existingIndex = database.students.findIndex(s => s.id === id);
     const existingData = existingIndex >= 0 ? database.students[existingIndex] : {};
     
+    // Sanitize socialMedia — only keep known platforms, coerce to strings,
+    // trim whitespace. Empty strings are kept (means the student
+    // explicitly cleared that platform).
+    const allowedSocial = ['instagram', 'tiktok', 'linkedin', 'facebook', 'twitter', 'threads'];
+    let cleanedSocialMedia = null;
+    if (socialMedia && typeof socialMedia === 'object') {
+        cleanedSocialMedia = {};
+        allowedSocial.forEach(key => {
+            if (Object.prototype.hasOwnProperty.call(socialMedia, key)) {
+                const v = socialMedia[key];
+                cleanedSocialMedia[key] = (v === null || v === undefined) ? '' : String(v).trim();
+            }
+        });
+    }
+
     const studentData = {
         id,
         name,
@@ -386,6 +401,9 @@ app.put('/api/students/:id', async (req, res) => {
         lyricsUpdatedAt: lyricsUpdatedAt !== undefined ? lyricsUpdatedAt : (existingData.lyricsUpdatedAt || null),
         lyricsArtistName: lyricsArtistName !== undefined ? lyricsArtistName : (existingData.lyricsArtistName || null),
         lyricsSongTitle: lyricsSongTitle !== undefined ? lyricsSongTitle : (existingData.lyricsSongTitle || null),
+        // Merge: if the request sent a socialMedia object, use the
+        // cleaned one; otherwise preserve whatever was saved before.
+        socialMedia: cleanedSocialMedia !== null ? cleanedSocialMedia : (existingData.socialMedia || null),
         updatedAt: new Date().toISOString()
     };
     
@@ -1576,6 +1594,12 @@ app.get('/api/gallery/videos', async (req, res) => {
                         name: filename.replace(/^\d+_/, '').replace(/\.[^/.]+$/, ''),
                         filename: filename,
                         url: `/OurGallery/${filename}`,
+                        // TikTok-style single-URL streaming endpoint. The
+                        // client can always hit /api/video/stream/<file>
+                        // and pass ?quality=720p|480p|360p|auto to pick a
+                        // variant without having to know hash/optimized
+                        // paths. Byte-range + aggressive cache headers.
+                        streamUrl: `/api/video/stream/${encodeURIComponent(filename)}`,
                         size: stats.size,
                         uploadedAt: stats.mtime.toISOString(),
                         isVideo: true,
@@ -1603,6 +1627,133 @@ app.get('/api/gallery/videos', async (req, res) => {
             error: 'Failed to list videos',
             details: error.message
         });
+    }
+});
+
+// ==========================================================================
+// TIKTOK-STYLE VIDEO STREAMING ENDPOINT
+// --------------------------------------------------------------------------
+// GET /api/video/stream/:filename?quality=auto|720p|480p|360p
+//
+// Why this exists even though express.static(OurGallery) already serves
+// MP4 files:
+//   1. We want a single URL the client can always hit (/api/video/stream/
+//      foo.mp4) and let the server pick the best available variant based
+//      on the `quality` query param — no client-side URL juggling.
+//   2. We guarantee correct Range, Content-Range, Accept-Ranges,
+//      Content-Length headers. express.static does this too, but we
+//      explicitly add `Cache-Control: public, max-age=31536000, immutable`
+//      (the optimized files are content-hashed, so they're safe to cache
+//      forever) and CORS for range requests — both of which are needed
+//      for the mobile Safari <video> element to scrub without re-fetching.
+//   3. We set Content-Type to `video/mp4` explicitly so poorly-guessed
+//      extensions don't break iOS inline playback.
+//
+// This makes playback feel TikTok-smooth: the player fetches only the
+// byte range it needs, browser caches aggressively, and seeking doesn't
+// cause a full re-download.
+// ==========================================================================
+app.get('/api/video/stream/:filename', async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const requestedQuality = (req.query.quality || 'auto').toString();
+
+        // Security: reject any path-traversal attempt.
+        if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+            return res.status(400).json({ success: false, error: 'Invalid filename' });
+        }
+
+        const galleryDir = path.join(__dirname, 'OurGallery');
+        const optimizedDir = path.join(galleryDir, 'optimized');
+        const originalPath = path.join(galleryDir, filename);
+
+        // Resolve which actual file to serve. Strategy:
+        //   1. If the requested filename is ALREADY an optimized variant
+        //      (i.e. lives in optimized/), stream it directly.
+        //   2. Else, hash the original file's content, look up the
+        //      optimized variant for the requested quality, fall back
+        //      to 720p → 480p → 360p → auto → original in that order.
+        let resolvedPath = null;
+
+        // Case 1: caller already knows the optimized file name
+        const directOptimized = path.join(optimizedDir, filename);
+        if (filename.endsWith('.mp4') && fsSync.existsSync(directOptimized)) {
+            resolvedPath = directOptimized;
+        } else if (fsSync.existsSync(originalPath)) {
+            // Case 2: map from original → optimized variants by content hash.
+            try {
+                const buf = fsSync.readFileSync(originalPath);
+                const hash = require('crypto').createHash('md5').update(buf).digest('hex');
+
+                const fallbackChain = [requestedQuality, '720p', 'auto', '480p', '360p'];
+                for (const q of fallbackChain) {
+                    const candidate = path.join(optimizedDir, `${hash}_${q}.mp4`);
+                    if (fsSync.existsSync(candidate)) {
+                        resolvedPath = candidate;
+                        break;
+                    }
+                }
+                // Last-resort: stream the unmodified original.
+                if (!resolvedPath) resolvedPath = originalPath;
+            } catch (hashErr) {
+                console.warn('[stream] hash lookup failed, falling back to original:', hashErr.message);
+                resolvedPath = originalPath;
+            }
+        }
+
+        if (!resolvedPath || !fsSync.existsSync(resolvedPath)) {
+            return res.status(404).json({ success: false, error: 'Video not found' });
+        }
+
+        const stat = fsSync.statSync(resolvedPath);
+        const fileSize = stat.size;
+        const range = req.headers.range;
+
+        // Headers shared by both range + full-file responses. Optimized
+        // variants are content-hashed so we can cache them forever.
+        const isOptimizedVariant = resolvedPath.includes(`${path.sep}optimized${path.sep}`);
+        const cacheControl = isOptimizedVariant
+            ? 'public, max-age=31536000, immutable'
+            : 'public, max-age=3600';
+
+        if (range) {
+            // Partial content: the <video> element asking for a byte slice.
+            const parts = range.replace(/bytes=/, '').split('-');
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+            if (isNaN(start) || isNaN(end) || start >= fileSize || end >= fileSize) {
+                res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+                return res.end();
+            }
+
+            const chunkSize = (end - start) + 1;
+            const file = fsSync.createReadStream(resolvedPath, { start, end });
+
+            res.writeHead(206, {
+                'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+                'Accept-Ranges': 'bytes',
+                'Content-Length': chunkSize,
+                'Content-Type': 'video/mp4',
+                'Cache-Control': cacheControl
+            });
+            file.pipe(res);
+        } else {
+            // No Range header: send the whole file with streaming headers
+            // so the browser can still scrub after the initial fetch.
+            res.writeHead(200, {
+                'Content-Length': fileSize,
+                'Content-Type': 'video/mp4',
+                'Accept-Ranges': 'bytes',
+                'Cache-Control': cacheControl
+            });
+            fsSync.createReadStream(resolvedPath).pipe(res);
+        }
+    } catch (error) {
+        console.error('Video stream error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, error: 'Streaming error' });
+        }
     }
 });
 

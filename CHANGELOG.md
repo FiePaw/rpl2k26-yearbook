@@ -9,6 +9,84 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.1.0] — 2026-05-10
+
+### Changed — Video Streaming Refactor (TikTok-style delivery)
+Refaktor total pipeline video, dari upload ke streaming, untuk mengejar target "video jernih, ukuran kecil, streaming mulus" seperti TikTok.
+
+#### Server — `src/server/media/videoOptimizer.js`
+- **Rewrite penuh** dengan profil encoder yang lebih efisien:
+  - `libx264 high@4.0`, `preset=slow`, `-tune film`, `CRF 22` untuk 720p/auto (sebelumnya CRF 23 preset medium). CRF 23 untuk 480p, CRF 25 untuk 360p.
+  - **Aspect-ratio preserving scale**: tidak lagi memaksa 1280x720 pada semua video. Scale longest-edge saja (720p → 1280px, 480p → 854px, 360p → 640px), sisi lain dihitung otomatis (`-2`) agar tetap genap. Video portrait (TikTok 9:16) tetap portrait, landscape tetap landscape.
+  - **Keyframe tiap ~2 detik** (`-g fps*2`, `-keyint_min`, `-sc_threshold 0`) → scrubbing/seek responsif seperti TikTok, tidak perlu re-buffer saat geser timeline.
+  - **Frame-rate cap 30fps** → mengurangi ukuran file tanpa kehilangan smoothness pada tampilan `<video>` di carousel.
+  - **`yuv420p`** eksplisit → kompatibilitas lebar browser (Safari khususnya menolak yuv444/422).
+  - **Audio `loudnorm=I=-16:TP=-1.5:LRA=11`** + `AAC 128k` stereo 44.1kHz → loudness konsisten antar klip (ciri khas TikTok "semua clip sama keras").
+  - **`-movflags +faststart+use_metadata_tags`** → moov atom di depan file, `<video>` bisa mulai play sebelum download selesai.
+- **Encode order: lowest-first** (`360p → 480p → 720p → auto`) agar variant mobile-fallback tersedia paling cepat setelah upload selesai.
+- **`auto` variant = copy dari 720p** (tidak re-encode) untuk hemat CPU, tetap backward-compatible dengan kontrak `/api/gallery/videos`.
+- **API shape tetap sama** (`optimizedVideos.{auto,720p,480p,360p}`), tidak ada breaking change untuk `server.js` / `kolase.js` yang sudah ada.
+- Helper baru: `probeVideoDimensions()` (ffprobe: width, height, fps), `buildVideoFilter()` (generate VF chain per orientation), `buildVariantInfo()` (payload per variant).
+
+#### Server — `server.js`
+- **Endpoint baru `GET /api/video/stream/:filename?quality=auto|720p|480p|360p`**:
+  - Single URL untuk streaming: client tinggal hit `/api/video/stream/<file>`, server yang memilih variant optimized terbaik berdasarkan query `quality` dengan fallback chain (requested → 720p → auto → 480p → 360p → original).
+  - **Explicit byte-range handling**: `Accept-Ranges: bytes`, `Content-Range`, 206 Partial Content untuk Range request, 416 jika out-of-range.
+  - **Cache-Control `public, max-age=31536000, immutable`** untuk variant optimized (nama file di-hash content, aman cache selamanya). Original file dapat `max-age=3600`.
+  - **Security**: reject filename yang mengandung `..`, `/`, atau `\` untuk mencegah path traversal.
+  - Content-Type eksplisit `video/mp4` agar iOS Safari mau inline playback.
+- **`/api/gallery/videos` response**: menambah field `streamUrl: /api/video/stream/<filename>` pada setiap video agar client bisa langsung pakai unified endpoint.
+
+#### Client — `src/client/js/kolase.js`
+- **Fallback chain video di-reorder**: sekarang prioritas 0 = `streamUrl` (4 variant dengan query `?quality=`), prioritas 1 = URL optimized langsung, prioritas 2 = original URL. Memberi throughput/scrubbing terbaik sekaligus graceful degradation kalau endpoint streaming bermasalah.
+
+### Fixed
+- **Kolase — Bug video start/pause saat di-scroll**:
+  - Penyebab: `IntersectionObserver` dengan `threshold: 0.3` memicu `play()` / `pause()` berkali-kali saat user scroll melewati 30% boundary. Handler firing berulang per piksel scroll → video oscillate antara play dan pause → efek "start/pause saat scroll" yang dilaporkan.
+  - **Fix**:
+    1. `threshold: 0` + `rootMargin: '-30% 0% -30% 0%'` — transition hanya fire saat section benar-benar keluar/masuk viewport, bukan pada setiap gerakan scroll kecil.
+    2. **Scroll-state aware**: flag `isScrolling` di-set oleh `window.addEventListener('scroll')`. Saat scrolling aktif, keputusan play/pause di-queue saja, lalu di-apply setelah scroll selesai (~140ms idle).
+    3. **Debounce 120ms** pada IntersectionObserver callback → quick in/out crossing tidak sampai ke video element.
+    4. **Honor user intent**: flag `window._videoUserPaused` — jika user explicit pause (tombol play/pause / overlay button / spacebar), observer **tidak akan** auto-resume pada intersection berikutnya. Flag di-reset saat user next/prev/swipe (navigasi eksplisit = restart play).
+
+### Added — Beranda Social Media Badges + Song Info
+Fitur baru di halaman Beranda untuk setiap profile yang aktif di music player.
+
+#### Frontend
+- **Social media badges** muncul di `player-top-section`, tepat di bawah `playerSubtitle`. Mendukung 6 platform: **Instagram, TikTok, LinkedIn, Facebook, Twitter, Threads**.
+  - Badge berupa inline SVG (bukan Font Awesome) untuk konsistensi visual dan coloring via `currentColor`.
+  - Diklik → buka profile di tab baru (`target="_blank" rel="noopener"`).
+  - **Opsional**: badge hanya muncul untuk platform yang diisi di profile. Kalau tidak diisi, badge tidak di-render sama sekali. Kalau semua kosong, container di-hide total.
+  - Hover per platform → warna brand official (Instagram pink, TikTok merah, LinkedIn biru, Facebook biru, Twitter, Threads).
+- **Song info** (`#playerSongInfo`) muncul di bawah badges (atau di bawah `playerSubtitle` kalau badges kosong):
+  - Format: `<spinning vinyl icon> <song title> • <artist name>`
+  - Pill style dengan border radius 999px, icon vinyl berputar (animasi CSS `songInfoSpin 6s linear`).
+  - Hide kalau `lyricsSongTitle` dan `lyricsArtistName` dua-duanya kosong. Divider titik (`•`) auto-hide kalau salah satu kosong.
+
+#### Profile Form
+- Section baru **"Sosial Media"** di bawah "Kesan & Pesan" di `public/profile.html`:
+  - 6 input text (opsional) dengan label icon berwarna brand masing-masing.
+  - Support 2 format input: username saja (contoh: `johndoe`) atau full URL (`https://instagram.com/johndoe`). Normalizer di client side (`normalizeSocialUrl`) mengonversi username ke URL lengkap per platform.
+- **Helpers baru di `profile.js`**:
+  - `SOCIAL_MEDIA_FIELDS` — mapping 6 platform → DOM id suffix.
+  - `collectSocialMediaFromForm(context)` — baca semua input social-media dari form (student/admin) → object.
+  - `populateSocialMediaForm(socialMedia, context)` — isi form dari student record.
+- Form student (`studentProfileForm`) dan admin edit form → keduanya menyimpan `socialMedia` object saat submit.
+
+#### Server
+- **`PUT /api/students/:id`** sekarang menerima dan menyimpan field `socialMedia`:
+  - Hanya 6 key yang di-whitelist (`instagram`, `tiktok`, `linkedin`, `facebook`, `twitter`, `threads`).
+  - Semua value di-coerce ke string dan di-trim.
+  - Empty string dipertahankan (user bisa "clear" platform dengan mengosongkan input).
+  - Jika request tidak mengirim `socialMedia` sama sekali, value lama di database tetap dipertahankan (tidak overwrite).
+
+### Styles
+- CSS baru `.player-social-badges` + `.social-badge-*` di `style.css` dengan hover brand color per platform.
+- CSS baru `.player-song-info` (pill UI + spinning vinyl icon animation).
+- Responsive: pada mobile (`≤768px`) badges center-aligned dan size dikecilkan (`32x32`, SVG `16x16`), song info font size `0.75rem`.
+
+---
+
 ## [3.0.2] — 2026-05-10
 
 ### Fixed

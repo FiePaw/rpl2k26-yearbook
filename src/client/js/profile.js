@@ -4,6 +4,56 @@ if (!window.API_URL) {
 }
 const API_URL = window.API_URL;
 
+// ========== SOCIAL MEDIA HELPERS ==========
+// Keys: the 6 platforms supported in the UI. The second element of each
+// pair is the DOM-id suffix used in the student form; the admin edit
+// form uses the same suffixes but with an "admin" prefix.
+const SOCIAL_MEDIA_FIELDS = [
+    ['instagram', 'socialInstagram'],
+    ['tiktok',    'socialTiktok'],
+    ['linkedin',  'socialLinkedin'],
+    ['facebook',  'socialFacebook'],
+    ['twitter',   'socialTwitter'],
+    ['threads',   'socialThreads']
+];
+
+/**
+ * Read social media inputs from the form and return an object ready to
+ * send to the server. `context` selects which set of inputs to read:
+ *   - 'student' → socialInstagram, socialTiktok, ...
+ *   - 'admin'   → adminSocialInstagram, adminSocialTiktok, ...
+ * Empty strings are kept (so the server can clear a platform by saving
+ * "" — the beranda renderer hides empty entries automatically).
+ */
+function collectSocialMediaFromForm(context = 'student') {
+    const prefix = context === 'admin' ? 'adminSocial' : 'social';
+    const data = {};
+    SOCIAL_MEDIA_FIELDS.forEach(([key, idSuffix]) => {
+        const id = context === 'admin'
+            ? 'adminS' + idSuffix.slice(1) // socialInstagram → adminSocialInstagram
+            : idSuffix;
+        const el = document.getElementById(id);
+        data[key] = el ? (el.value || '').trim() : '';
+    });
+    return data;
+}
+
+/**
+ * Populate the social media form inputs from a `socialMedia` object
+ * that came back from GET /api/students/:id. Missing object or missing
+ * keys result in empty inputs (no-op).
+ */
+function populateSocialMediaForm(socialMedia, context = 'student') {
+    const sm = socialMedia || {};
+    SOCIAL_MEDIA_FIELDS.forEach(([key, idSuffix]) => {
+        const id = context === 'admin'
+            ? 'adminS' + idSuffix.slice(1)
+            : idSuffix;
+        const el = document.getElementById(id);
+        if (el) el.value = sm[key] || '';
+    });
+}
+
 // ========== ADMIN DASHBOARD REDIRECT ==========
 function checkAndShowAdminLink() {
     try {
@@ -108,6 +158,9 @@ async function loadStudentForEdit(studentId) {
         if (fullNameEl) fullNameEl.value = student.name || '';
         if (birthdayEl) birthdayEl.value = student.birthday || '';
         if (messageEl) messageEl.value = student.message || '';
+
+        // Load saved social media links into their corresponding inputs.
+        populateSocialMediaForm(student.socialMedia, 'student');
         
         if (student.photo) {
             const photoPreview = document.querySelector('#studentProfile .photo-preview img') || document.getElementById('photoPreview');
@@ -650,6 +703,9 @@ async function loadStudentProfile(studentId) {
         document.getElementById('studentFullName').value = student.name || '';
         document.getElementById('studentBirthday').value = student.birthday || '';
         document.getElementById('studentMessage').value = student.message || '';
+
+        // Load saved social media links (same helper as edit flow).
+        populateSocialMediaForm(student.socialMedia, 'student');
         
         // Load audio if exists AND file is valid
         if (student.audioFile) {
@@ -752,7 +808,12 @@ function setupStudentForm(studentId) {
             audioTrimEnd: studentAudioPath ? trimEnd : null,
             studentLyrics: document.getElementById('studentLyricsTextarea')?.value || null,
             lyricsArtistName: document.getElementById('lyricsArtistInput')?.value || null,
-            lyricsSongTitle: document.getElementById('lyricsSongTitleInput')?.value || null
+            lyricsSongTitle: document.getElementById('lyricsSongTitleInput')?.value || null,
+            // Social media links — all optional. Empty strings are kept as
+            // empty strings so the server can distinguish "removed" from
+            // "never set". The beranda renderer hides badges for empty
+            // values so the UX remains unaffected.
+            socialMedia: collectSocialMediaFromForm('student')
         };
         
         let loadingDialog = null;
@@ -2699,6 +2760,9 @@ async function selectAndEditStudent(studentId) {
         document.getElementById('adminBirthday').value = student.birthday || '';
         document.getElementById('adminMessage').value = student.message || '';
         document.getElementById('adminStudentLyricsTextarea').value = student.studentLyrics || '';
+
+        // Load saved social media links into the admin edit form.
+        populateSocialMediaForm(student.socialMedia, 'admin');
         
         // Set photo
         if (student.photo) {
@@ -2772,7 +2836,11 @@ async function submitAdminStudentEdit(e) {
         photo: adminPhotoPreview.src.startsWith('data:') ? adminPhotoPreview.src : null,
         audioFile: adminAudioPath || null,
         audioTrimStart: parseFloat(document.getElementById('adminAudioTrimStart').value) || 0,
-        audioTrimEnd: parseFloat(document.getElementById('adminAudioTrimEnd').value) || null
+        audioTrimEnd: parseFloat(document.getElementById('adminAudioTrimEnd').value) || null,
+        // Social media links collected from the admin edit form's inputs
+        // (prefix adminSocial*). Same shape as student form — the server
+        // stores them under student.socialMedia.
+        socialMedia: collectSocialMediaFromForm('admin')
     };
     
     try {
