@@ -14,11 +14,10 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - **Cookie Rotator Module** (`src/server/utils/cookie-rotator.js`): Sistem rotating cookies untuk YouTube. Jika cookie invalid/expired, otomatis rotate ke cookie berikutnya. Mendukung banyak file cookies di `cookies/` directory (format: `ytCookies1.txt`, `ytCookies2.txt`, `ytCookies3.txt`, dst.).
 - **Direktori `cookies/`**: Lokasi baru untuk menyimpan semua YouTube cookies (dipindahkan dari `downloads/`). Contoh: `cookies/ytCookies1.txt`, `cookies/ytCookies2.txt`, `cookies/ytCookies3.txt`.
-- **Music Downloader — Fallback YouTube Search**: `searchYoutube()` sekarang memiliki 4 metode fallback berurutan:
+- **Music Downloader — Fallback YouTube Search**: `searchYoutube()` sekarang memiliki 3 metode fallback berurutan:
   1. `play-dl` — Library pertama yang dicoba
   2. `yt-search` — Fallback kedua
   3. `youtube-sr` — Fallback ketiga
-  4. **AI Thinking Mode (Qwen)** — Last resort: mengirim prompt `"carikan saya lagu (namalagunya) dengan nama pencipta dengan format NAMANYA=(NamaPenciptanya) jangan berkata apapun cukup beritahu saya dengan format"` menggunakan thinkMode `'thinking'`
 - **Dependencies baru** di `package.json`: `play-dl`, `yt-search`, `youtube-sr` (optional — loaded with try/catch).
 
 ### Changed

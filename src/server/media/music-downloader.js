@@ -7,7 +7,7 @@
  * - Smart Platform Detection (Spotify/YouTube/YouTube Music)
  * - Spotify oEmbed API (tanpa authentication, tidak ada rate limit)
  * - Cookie Rotation (multiple cookies, auto-rotate on invalid/expired)
- * - Fallback YouTube Search (play-dl → yt-search → youtube-sr → AI thinking)
+ * - Fallback YouTube Search (play-dl → yt-search → youtube-sr)
  * 
  * Mengatasi masalah:
  * ✅ Rate limit issue dari spotdl
@@ -47,31 +47,12 @@ class MusicDownloader {
         // Initialize cookie rotator - uses cookies/ directory at project root
         const projectRoot = path.join(__dirname, '..', '..', '..');
         this.cookieRotator = new CookieRotator(path.join(projectRoot, 'cookies'));
-        
-        // QwenClient for AI fallback search (lazy loaded)
-        this._qwenClient = null;
 
         // Ensure output directory exists
         if (!fsSync.existsSync(outputDir)) {
             fsSync.mkdirSync(outputDir, { recursive: true });
         }
     }
-
-    /**
-     * Get or create QwenClient for AI fallback search
-     */
-    _getQwenClient() {
-        if (!this._qwenClient) {
-            try {
-                const QwenClient = require('../ai/AIAPI');
-                this._qwenClient = new QwenClient('http://108.137.15.61:9000', 60000);
-            } catch (e) {
-                console.error('❌ Failed to load QwenClient:', e.message);
-            }
-        }
-        return this._qwenClient;
-    }
-
 
     /**
      * Detect which Python command is available (python, python3, python2, etc)
@@ -181,7 +162,6 @@ class MusicDownloader {
      * 1. play-dl
      * 2. yt-search
      * 3. youtube-sr
-     * 4. AI thinking mode (Qwen) as last resort
      * 
      * @param {string} query - Search query
      * @returns {Promise<{title: string, url: string, videoId: string}>}
@@ -260,65 +240,7 @@ class MusicDownloader {
             console.log('  ⏭️ youtube-sr not installed, skipping...');
         }
 
-        // Method 4: AI Thinking Mode (Qwen) as last resort
-        console.log('  📡 All search methods failed, trying AI thinking mode...');
-        const aiResult = await this._searchWithAI(query);
-        if (aiResult) {
-            return aiResult;
-        }
-
-        throw new Error(`YouTube search gagal untuk: "${query}" — semua metode (play-dl, yt-search, youtube-sr, AI) gagal`);
-    }
-
-    /**
-     * AI-powered YouTube search fallback using Qwen thinking mode.
-     * @param {string} query - Song name to search
-     * @returns {Promise<{title: string, url: string}|null>}
-     */
-    async _searchWithAI(query) {
-        const client = this._getQwenClient();
-        if (!client) {
-            console.log('  ⚠️ QwenClient not available for AI search');
-            return null;
-        }
-
-        try {
-            const prompt = `carikan saya lagu ${query} dengan nama pencipta dengan format NAMANYA=(NamaPenciptanya) jangan berkata apapun cukup beritahu saya dengan format`;
-            
-            console.log('  🤖 Sending AI search request (thinking mode)...');
-            const response = await client.queryQwen(prompt, { newSession: true, thinkMode: 'thinking' });
-
-            if (!response.success || !response.result) {
-                console.log('  ⚠️ AI search returned no result');
-                return null;
-            }
-
-            const result = response.result.trim();
-            console.log(`  📝 AI response: ${result}`);
-
-            // Parse NAMANYA=(NamaPenciptanya) format
-            const match = result.match(/NAMANYA\s*=\s*\(?([^)\n]+)\)?/i);
-            if (match) {
-                const artistName = match[1].trim();
-                console.log(`  🎤 AI found artist: ${artistName}`);
-                
-                // Construct a YouTube search URL using the info
-                // Return as a search hint - caller will use ytsearch: with yt-dlp
-                return {
-                    title: `${query} - ${artistName}`,
-                    url: `ytsearch:${query} ${artistName}`,
-                    videoId: null,
-                    duration: null,
-                    source: 'ai-thinking'
-                };
-            }
-
-            console.log('  ⚠️ AI response did not match expected format');
-            return null;
-        } catch (err) {
-            console.error(`  ❌ AI search error: ${err.message}`);
-            return null;
-        }
+        throw new Error(`YouTube search gagal untuk: "${query}" — semua metode (play-dl, yt-search, youtube-sr) gagal`);
     }
 
 
