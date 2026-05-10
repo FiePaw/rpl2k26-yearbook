@@ -281,6 +281,23 @@ function showVideoSectionWhenReady() {
             if (memoriesContainer && memoriesContainer.children.length > 0) {
                 console.log('✅ Memories loaded, showing video section...');
                 videoSection.classList.remove('hidden');
+
+                // Prime the currently-active video immediately. The
+                // <video> elements were created while this section was
+                // display:none and some Chromium builds keep their
+                // decoder stuck in that state. Calling .load() once the
+                // element is actually laid out guarantees a fresh
+                // pipeline by the time the user scrolls into view.
+                // Using requestAnimationFrame so we run after the
+                // browser applies the layout from removing .hidden.
+                requestAnimationFrame(() => {
+                    const firstVideo = document.getElementById(`video-${currentIndex}`);
+                    if (firstVideo && !firstVideo._primed) {
+                        firstVideo._primed = true;
+                        try { firstVideo.load(); } catch (_) {}
+                        console.log(`🔄 Primed video ${currentIndex} after section reveal`);
+                    }
+                });
             } else {
                 // Retry after a short delay if memories aren't loaded yet
                 console.warn('⏳ Waiting for memories to load...');
@@ -753,43 +770,34 @@ async function initVideoCarousel() {
             initPlayerControlListeners();
             
             // ========== INTERSECTION OBSERVER FOR AUTO-PLAY ==========
-            // Auto-play video when video section enters viewport
+            // Auto-play video when video section enters viewport.
+            //
+            // Why this is trickier than it looks:
+            //   initVideoCarousel() builds <video> elements while
+            //   .video-gallery-section still has the `.hidden` class
+            //   (display:none) — we wait for memories to load first.
+            //   Some Chromium builds attach the video decoder lazily for
+            //   display:none elements: readyState can read HAVE_FUTURE_DATA
+            //   or even HAVE_ENOUGH_DATA, but the compositor never gets a
+            //   painted frame. Once the section becomes visible, calling
+            //   .play() on that stale pipeline plays audio (if any) but
+            //   the frame stays black and play/pause buttons "do nothing"
+            //   because there's no real media element state change.
+            //
+            //   The only reliable way to unstick it is a full .load()
+            //   which resets the HTMLMediaElement resource-selection
+            //   algorithm. requestVideoPlay() below does exactly that the
+            //   first time any element is asked to play.
             if (videoSection && 'IntersectionObserver' in window) {
-                // Wait until the video can actually render a frame before
-                // calling .play() — this prevents the "audio only / black
-                // frame" bug on the first video (iOS Safari + Chromium with
-                // preload='auto' race). We prefer `canplay`
-                // (HAVE_FUTURE_DATA) over `loadeddata` (HAVE_CURRENT_DATA)
-                // because some Safari builds fire `loadeddata` before the
-                // video decoder is actually ready.
-                const safePlay = (videoEl) => {
-                    if (!videoEl) return;
-                    const tryPlay = () => {
-                        const p = videoEl.play();
-                        if (p && typeof p.catch === 'function') {
-                            p.catch(e => console.warn(`⚠️ Auto-play failed:`, e.message));
-                        }
-                    };
-                    if (videoEl.readyState >= 3 /* HAVE_FUTURE_DATA */) {
-                        tryPlay();
-                    } else {
-                        videoEl.addEventListener('canplay', tryPlay, { once: true });
-                        // Kick loading in case preload='none' or the browser
-                        // hasn't started fetching yet. Safe to call even
-                        // when already loading.
-                        try { videoEl.load(); } catch (_) {}
-                    }
-                };
-
                 const videoObserver = new IntersectionObserver((entries) => {
                     entries.forEach((entry) => {
                         const currentVideo = document.getElementById(`video-${currentIndex}`);
-                        
+
                         if (entry.isIntersecting) {
                             // Section is visible - auto-play current video
                             if (currentVideo && currentVideo.paused) {
                                 console.log(`▶️ Section visible: Auto-playing video ${currentIndex}`);
-                                safePlay(currentVideo);
+                                requestVideoPlay(currentVideo);
                             }
                         } else {
                             // Section is not visible - pause video
@@ -861,22 +869,11 @@ function showVideo(index) {
             
             el.style.opacity = '1';
 
-            // Wait for the video to be decodable before play() to avoid
-            // audio-only playback on first transition. See comment on
-            // safePlay() above for why we use `canplay` instead of
-            // `loadeddata`.
-            const startPlayback = () => {
-                const p = el.play();
-                if (p && typeof p.catch === 'function') {
-                    p.catch(e => console.warn(`⚠️ Play error for video ${idx}:`, e.message));
-                }
-            };
-            if (el.readyState >= 3) {
-                startPlayback();
-            } else {
-                el.addEventListener('canplay', startPlayback, { once: true });
-                try { el.load(); } catch (_) {}
-            }
+            // First-play priming + decoder-stuck recovery is centralized
+            // in requestVideoPlay() (defined below). Using it here keeps
+            // behavior identical across observer auto-play, manual nav,
+            // keyboard space, and button clicks.
+            requestVideoPlay(el);
         } else if (idx === (index + 1) % videoEls.length) {
             // Next video: preload metadata only
             el.preload = 'metadata';
@@ -994,6 +991,34 @@ function formatTime(seconds) {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
+// Shared helper used by every "play now" path (play button, overlay play
+// button, keyboard space, observer auto-play). Ensures the very first
+// play attempt for a video element does a .load() to reset the decoder
+// pipeline — without this, a user clicking "play" while the element is
+// still stuck in the display:none-initialized black-frame state gets no
+// response at all.
+function requestVideoPlay(videoEl) {
+    if (!videoEl) return;
+    const doPlay = () => {
+        const p = videoEl.play();
+        if (p && typeof p.catch === 'function') {
+            p.catch(e => console.warn('⚠️ play() rejected:', e.message));
+        }
+    };
+    if (!videoEl._primed) {
+        videoEl._primed = true;
+        videoEl.addEventListener('canplay', doPlay, { once: true });
+        try { videoEl.load(); } catch (_) {}
+        return;
+    }
+    if (videoEl.readyState >= 3 /* HAVE_FUTURE_DATA */) {
+        doPlay();
+    } else {
+        videoEl.addEventListener('canplay', doPlay, { once: true });
+        try { videoEl.load(); } catch (_) {}
+    }
+}
+
 // ========== INITIALIZE PLAYER CONTROL LISTENERS ==========
 // Guard flag — this function is invoked from two places:
 //   1. After the video carousel finishes building (initVideoCarousel)
@@ -1016,7 +1041,7 @@ function initPlayerControlListeners() {
             if (!currentVideoEl) return;
             
             if (currentVideoEl.paused) {
-                currentVideoEl.play();
+                requestVideoPlay(currentVideoEl);
             } else {
                 currentVideoEl.pause();
             }
@@ -1031,7 +1056,7 @@ function initPlayerControlListeners() {
             if (!currentVideoEl) return;
             
             if (currentVideoEl.paused) {
-                currentVideoEl.play();
+                requestVideoPlay(currentVideoEl);
             } else {
                 currentVideoEl.pause();
             }
@@ -1147,7 +1172,7 @@ document.addEventListener('keydown', (e) => {
         if (!currentVideoEl) return;
         
         if (currentVideoEl.paused) {
-            currentVideoEl.play();
+            requestVideoPlay(currentVideoEl);
         } else {
             currentVideoEl.pause();
         }

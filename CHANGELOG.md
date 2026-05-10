@@ -9,6 +9,20 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.6.2] — 2026-05-10
+
+### Fixed
+- **Kolase — Video player hitam saat pertama kali scroll ke section, tombol play/pause tidak merespon, tapi prev/next langsung normal** : Bug ini muncul karena `<video>` elements dibuat oleh `initVideoCarousel()` ketika `.video-gallery-section` masih di-set `display: none` (menunggu memories gallery selesai loading). Pada sebagian build Chromium, decoder pipeline untuk video yang diciptakan dalam container `display:none` menjadi "lazy-attached" — `readyState` bisa melaporkan `HAVE_FUTURE_DATA` atau bahkan `HAVE_ENOUGH_DATA`, tapi compositor tidak pernah mendapat frame untuk di-render. Akibatnya saat user scroll ke section:
+  - IntersectionObserver memanggil `.play()` → audio jalan tapi frame tetap hitam.
+  - Klik play/pause tidak merespon karena handler hanya memanggil `.play()` polos pada pipeline yang stuck.
+  - Sementara Next/Prev bekerja normal karena jalur `showVideo()` kebetulan lewat cabang `.load()` fallback yang me-reset pipeline.
+- **Fix** :
+  - Tambah helper `requestVideoPlay(videoEl)` yang menjadi single chokepoint untuk semua request "play sekarang". Flag `_primed` per-element memastikan panggilan pertama **selalu** memicu `.load()` penuh — reset HTMLMediaElement resource-selection algorithm dan memaksa pipeline fresh — lalu `.play()` setelah `canplay`.
+  - Semua entry point memakai helper ini: IntersectionObserver auto-play, `showVideo()`, tombol play/pause (bar bawah & overlay tengah), spacebar keyboard.
+  - Sebagai pengaman tambahan: saat `.hidden` class dilepas dari `.video-gallery-section`, video element aktif di-prime via `requestAnimationFrame` + `.load()` agar pipeline di-reset **begitu** section punya layout, jauh sebelum user scroll turun. Menghilangkan race condition antara observer dan section reveal.
+
+---
+
 ## [2.6.1] — 2026-05-10
 
 ### Fixed
