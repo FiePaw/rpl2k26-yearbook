@@ -9,6 +9,13 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.7.2] — 2026-05-10
+
+### Fixed
+- **Music Downloader — Path cookies salah**: `music-downloader.js` menggunakan `path.join(__dirname, '../../youtube_cookies.txt')` yang resolve ke `src/youtube_cookies.txt` (tidak ada). Diperbaiki menjadi mencari di project root (`../../../youtube_cookies.txt`) lalu fallback ke `downloads/youtube_cookies.txt`. Method `listAvailableFormats()` juga diperbaiki path-nya.
+
+---
+
 ## [2.7.1] — 2026-05-10
 
 ### Fixed

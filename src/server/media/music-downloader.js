@@ -344,7 +344,7 @@ class MusicDownloader {
                 
                 const ytdlp = spawn('yt-dlp', [
                     '--list-formats',
-                    '--cookies', path.join(__dirname, '../../youtube_cookies.txt'),
+                    '--cookies', path.join(__dirname, '../../../youtube_cookies.txt'),
                     url
                 ]);
 
@@ -389,7 +389,10 @@ class MusicDownloader {
         return new Promise(async (resolve, reject) => {
             try {
                 // Path to cookies file
-                const cookiePath = path.join(__dirname, '../../youtube_cookies.txt');
+                // Look for cookies file: try root first, then downloads folder
+                const rootCookiePath = path.join(__dirname, '../../../youtube_cookies.txt');
+                const downloadsCookiePath = path.join(__dirname, '../../../downloads/youtube_cookies.txt');
+                const cookiePath = fsSync.existsSync(rootCookiePath) ? rootCookiePath : downloadsCookiePath;
                 const cookieExists = fsSync.existsSync(cookiePath);
                 
                 console.log(`🍪 Cookies file: ${cookiePath}`);
@@ -399,7 +402,7 @@ class MusicDownloader {
                     console.log('🔐 Using YouTube cookies to bypass bot detection & region locks');
                 } else {
                     console.log('⚠️ No cookies file found - downloads may fail on region-locked videos');
-                    console.log('   To fix: Place youtube_cookies.txt in root directory');
+                    console.log('   To fix: Place youtube_cookies.txt in project root or downloads/ folder');
                 }
                 
                 // Check for JavaScript runtime (needed for YouTube signature solving)
