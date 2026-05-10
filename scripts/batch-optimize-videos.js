@@ -8,11 +8,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const VideoOptimizer = require('./videoOptimizer');
+const VideoOptimizer = require('../src/server/media/videoOptimizer');
 
 async function batchOptimizeVideos() {
     const videoOptimizer = new VideoOptimizer();
-    const galleryDir = path.join(__dirname, 'OurGallery');
+    const galleryDir = path.join(__dirname, '../OurGallery');
     
     console.log('🎬 Batch Video Optimizer - Starting...');
     console.log(`📁 Gallery directory: ${galleryDir}\n`);

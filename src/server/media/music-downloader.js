@@ -19,8 +19,8 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const MetadataCache = require('./metadata-cache');
-const RateLimitHandler = require('./rate-limit-handler');
+const MetadataCache = require('../utils/metadata-cache');
+const RateLimitHandler = require('../utils/rate-limit-handler');
 
 class MusicDownloader {
     constructor(outputDir = 'downloads', cacheDir = 'metadata_cache') {
@@ -344,7 +344,7 @@ class MusicDownloader {
                 
                 const ytdlp = spawn('yt-dlp', [
                     '--list-formats',
-                    '--cookies', path.join(__dirname, 'youtube_cookies.txt'),
+                    '--cookies', path.join(__dirname, '../../youtube_cookies.txt'),
                     url
                 ]);
 
@@ -389,7 +389,7 @@ class MusicDownloader {
         return new Promise(async (resolve, reject) => {
             try {
                 // Path to cookies file
-                const cookiePath = path.join(__dirname, 'youtube_cookies.txt');
+                const cookiePath = path.join(__dirname, '../../youtube_cookies.txt');
                 const cookieExists = fsSync.existsSync(cookiePath);
                 
                 console.log(`🍪 Cookies file: ${cookiePath}`);

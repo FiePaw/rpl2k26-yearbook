@@ -2,7 +2,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-const DB_PATH = './database.json';
+const DB_PATH = '../data/database.json';
 
 async function resetDatabase() {
     try {

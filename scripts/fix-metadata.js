@@ -7,7 +7,7 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
 
-const MUSIC_DIR = path.join(__dirname, 'profile_music');
+const MUSIC_DIR = path.join(__dirname, '../profile_music');
 
 async function fixMetadataFiles() {
     try {

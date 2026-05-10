@@ -1,13 +1,13 @@
 /**
  * Lyrics Scraper Module
- * Fetch lyrics menggunakan AI API dengan Qwen (Primary) dan OpenAI (Secondary)
- * AI API: http://16.79.192.14:5500
+ * Fetch lyrics menggunakan Qwen AI via API baru
+ * AI API: http://108.137.15.61:9000
  */
 
-const AIAPILyricsFetcher = require('./ai-api-lyrics-fetcher');
+const AIAPILyricsFetcher = require('../ai/ai-api-lyrics-fetcher');
 
 class LyricsScraper {
-    constructor(aiApiUrl = 'http://16.79.192.14:5500') {
+    constructor(aiApiUrl = 'http://108.137.15.61:9000') {
         this.fetcher = new AIAPILyricsFetcher(aiApiUrl);
     }
 
