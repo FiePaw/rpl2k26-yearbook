@@ -382,20 +382,45 @@ function renderKolaseManagement() {
             <span><i class="fas fa-video"></i> ${data.totalVideos} Videos</span>
         </div>
 
-        <!-- Upload Section -->
+        <!-- Upload Photo Section -->
         <div class="kolase-upload-section">
-            <h4><i class="fas fa-cloud-upload-alt"></i> Upload File Baru</h4>
-            <div class="kolase-upload-area" id="kolaseDropZone">
-                <input type="file" id="kolaseFileInput" multiple accept="image/*,video/*" style="display:none">
-                <div class="kolase-upload-inner" onclick="document.getElementById('kolaseFileInput').click()">
-                    <i class="fas fa-plus-circle"></i>
-                    <p>Klik atau drag file foto/video ke sini</p>
-                    <small>Support: JPG, PNG, WEBP, MP4, WEBM (Max 500MB)</small>
+            <h4><i class="fas fa-camera"></i> Upload Foto</h4>
+            <div class="kolase-type-selector">
+                <label>Tipe Foto:</label>
+                <select id="kolasePhotoType">
+                    <option value="boy">Boy RPL</option>
+                    <option value="girl">Girl RPL</option>
+                    <option value="walas">With Teacher</option>
+                </select>
+            </div>
+            <div class="kolase-upload-area" id="kolasePhotoDropZone">
+                <input type="file" id="kolasePhotoInput" multiple accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">
+                <div class="kolase-upload-inner" onclick="document.getElementById('kolasePhotoInput').click()">
+                    <i class="fas fa-image"></i>
+                    <p>Klik atau drag foto ke sini</p>
+                    <small>Support: JPG, PNG, WEBP, GIF (Max 500MB)</small>
                 </div>
             </div>
-            <div id="kolaseUploadProgress" style="display:none">
-                <div class="upload-progress-bar"><div class="upload-progress-fill" id="kolaseProgressFill"></div></div>
-                <small id="kolaseUploadStatus">Uploading...</small>
+            <div id="kolasePhotoProgress" style="display:none">
+                <div class="upload-progress-bar"><div class="upload-progress-fill" id="kolasePhotoProgressFill"></div></div>
+                <small id="kolasePhotoStatus">Uploading...</small>
+            </div>
+        </div>
+
+        <!-- Upload Video Section -->
+        <div class="kolase-upload-section">
+            <h4><i class="fas fa-video"></i> Upload Video</h4>
+            <div class="kolase-upload-area" id="kolaseVideoDropZone">
+                <input type="file" id="kolaseVideoInput" multiple accept="video/mp4,video/webm,video/quicktime" style="display:none">
+                <div class="kolase-upload-inner" onclick="document.getElementById('kolaseVideoInput').click()">
+                    <i class="fas fa-film"></i>
+                    <p>Klik atau drag video ke sini</p>
+                    <small>Support: MP4, WEBM, MOV (Max 500MB)</small>
+                </div>
+            </div>
+            <div id="kolaseVideoProgress" style="display:none">
+                <div class="upload-progress-bar"><div class="upload-progress-fill" id="kolaseVideoProgressFill"></div></div>
+                <small id="kolaseVideoStatus">Uploading...</small>
             </div>
         </div>`;
 
@@ -437,38 +462,56 @@ function renderKolaseManagement() {
 }
 
 function setupKolaseUpload() {
-    const fileInput = document.getElementById('kolaseFileInput');
-    const dropZone = document.getElementById('kolaseDropZone');
+    const photoInput = document.getElementById('kolasePhotoInput');
+    const photoDropZone = document.getElementById('kolasePhotoDropZone');
+    const videoInput = document.getElementById('kolaseVideoInput');
+    const videoDropZone = document.getElementById('kolaseVideoDropZone');
 
-    if (fileInput) {
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) uploadKolaseFiles(e.target.files);
+    if (photoInput) {
+        photoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) uploadKolaseFiles(e.target.files, 'photo');
+        });
+    }
+    if (videoInput) {
+        videoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) uploadKolaseFiles(e.target.files, 'video');
         });
     }
 
-    if (dropZone) {
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-        dropZone.addEventListener('drop', (e) => {
+    [photoDropZone, videoDropZone].forEach(zone => {
+        if (!zone) return;
+        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            if (e.dataTransfer.files.length > 0) uploadKolaseFiles(e.dataTransfer.files);
+            zone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                const type = zone.id.includes('Photo') ? 'photo' : 'video';
+                uploadKolaseFiles(e.dataTransfer.files, type);
+            }
         });
-    }
+    });
 }
 
-async function uploadKolaseFiles(files) {
-    const progressContainer = document.getElementById('kolaseUploadProgress');
-    const progressFill = document.getElementById('kolaseProgressFill');
-    const statusEl = document.getElementById('kolaseUploadStatus');
+async function uploadKolaseFiles(files, type) {
+    const isPhoto = type === 'photo';
+    const progressContainer = document.getElementById(isPhoto ? 'kolasePhotoProgress' : 'kolaseVideoProgress');
+    const progressFill = document.getElementById(isPhoto ? 'kolasePhotoProgressFill' : 'kolaseVideoProgressFill');
+    const statusEl = document.getElementById(isPhoto ? 'kolasePhotoStatus' : 'kolaseVideoStatus');
 
     if (progressContainer) progressContainer.style.display = 'block';
-    if (statusEl) statusEl.textContent = `Uploading ${files.length} file(s)...`;
+    if (statusEl) statusEl.textContent = `Uploading ${files.length} ${type}(s)...`;
     if (progressFill) progressFill.style.width = '10%';
 
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
         formData.append('files', files[i]);
+    }
+    
+    // Add photoType for photos
+    if (isPhoto) {
+        const photoType = document.getElementById('kolasePhotoType')?.value || 'all';
+        formData.append('photoType', photoType);
     }
 
     try {
@@ -480,11 +523,10 @@ async function uploadKolaseFiles(files) {
         if (progressFill) progressFill.style.width = '90%';
         
         const data = await res.json();
-        if (data.success || data.files) {
+        if (data.success || data.files || data.photos || data.videos) {
             if (progressFill) progressFill.style.width = '100%';
-            if (statusEl) statusEl.textContent = `Upload berhasil! ${data.files?.length || files.length} file(s)`;
-            showToast(`${files.length} file(s) uploaded!`);
-            // Refresh kolase view after short delay
+            if (statusEl) statusEl.textContent = `Upload berhasil!`;
+            showToast(`${files.length} ${type}(s) uploaded!`);
             setTimeout(() => {
                 if (progressContainer) progressContainer.style.display = 'none';
                 renderKolaseManagement();

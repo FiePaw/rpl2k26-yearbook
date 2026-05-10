@@ -9,6 +9,15 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.0.2] — 2026-05-10
+
+### Fixed
+- **Admin Dashboard — Data realtime tanpa refresh**: Auto-refresh interval dipercepat ke 3 detik. Overview, Accounts, Visitors, Login History, dan Timeline selalu update otomatis. Tab Profiles & Kolase hanya re-render saat aktif (mencegah gangguan saat upload).
+- **Admin Dashboard — Kolase upload dipisah foto & video**: Tab Kolase sekarang memiliki 2 area upload terpisah — satu untuk foto (dengan selector tipe: Boy RPL, Girl RPL, With Teacher) dan satu untuk video. `photoType` dikirim ke server saat upload foto.
+- **Kolase — Foto tidak ter-crop**: `object-fit` pada `.memory-frame img` diubah dari `cover` ke `contain`. Foto sekarang ditampilkan utuh menyesuaikan bingkai tanpa terpotong. Background frame diberi warna agar area kosong tidak terlihat aneh.
+
+---
+
 ## [3.0.1] — 2026-05-10
 
 ### Fixed

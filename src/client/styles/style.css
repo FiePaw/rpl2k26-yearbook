@@ -3724,7 +3724,7 @@ body.has-main-content {
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: var(--transition);
     /* Use browser default ("auto") resampling for photos. `crisp-edges` is
        meant for pixel art and causes real photos to look pixelated / broken
@@ -3732,7 +3732,7 @@ body.has-main-content {
     image-rendering: auto;
     /* Enable srcset support */
     max-width: 100%;
-    height: auto;
+    background: var(--bg-card, #1a1a2e);
 }
 
 .memory-card:hover .memory-frame img {
