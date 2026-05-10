@@ -299,10 +299,12 @@ function renderProfileManagement() {
     const container = document.getElementById('profileMgmtList');
     if (!container) return;
 
-    // We need student list from accounts or fetch separately
-    // Use a fetch to get students
-    fetch(`${API_URL}/api/students`).then(r => r.json()).then(students => {
-        container.innerHTML = students.map(s => `
+    Promise.all([
+        fetch(`${API_URL}/api/students`).then(r => r.json()),
+        fetch(`${API_URL}/api/teachers/names`).then(r => r.json()).catch(() => [])
+    ]).then(([students, teachers]) => {
+        let html = '<h4 style="margin-bottom:0.8rem"><i class="fas fa-user-graduate"></i> Students</h4>';
+        html += students.map(s => `
             <div class="profile-mgmt-row">
                 <div class="pm-info">
                     <strong>${s.name}</strong>
@@ -312,63 +314,41 @@ function renderProfileManagement() {
                     ${s.message ? '<span class="badge badge-ok">Complete</span>' : '<span class="badge badge-warn">Incomplete</span>'}
                 </div>
                 <div class="pm-actions">
-                    <button class="btn-sm btn-edit" onclick="openEditProfile('${s.id}')"><i class="fas fa-edit"></i></button>
+                    <button class="btn-sm btn-edit" onclick="openEditProfile('${s.id}', 'student')"><i class="fas fa-edit"></i> Edit</button>
                 </div>
             </div>
         `).join('');
+
+        if (teachers && teachers.length > 0) {
+            html += '<h4 style="margin:1.5rem 0 0.8rem"><i class="fas fa-chalkboard-teacher"></i> Teachers</h4>';
+            html += teachers.map(t => `
+                <div class="profile-mgmt-row">
+                    <div class="pm-info">
+                        <strong>${t.name}</strong>
+                        <small>${t.id} &bull; Teacher</small>
+                    </div>
+                    <div class="pm-actions">
+                        <button class="btn-sm btn-edit" onclick="openEditProfile('${t.id}', 'teacher')"><i class="fas fa-edit"></i> Edit</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        container.innerHTML = html;
     }).catch(() => {
         container.innerHTML = '<p class="empty-msg">Failed to load profiles</p>';
     });
 }
 
-// Edit Profile Modal
-let editingStudentId = null;
-
-function openEditProfile(studentId) {
-    editingStudentId = studentId;
-    const modal = document.getElementById('editProfileModal');
-
-    fetch(`${API_URL}/api/students/${studentId}`).then(r => r.json()).then(s => {
-        document.getElementById('editName').value = s.name || '';
-        document.getElementById('editBirthday').value = s.birthday || '';
-        document.getElementById('editMessage').value = s.message || '';
-        document.getElementById('editNickname').value = s.nickname || '';
-        modal.classList.add('active');
-    }).catch(() => showToast('Failed to load student', 'error'));
+// Edit Profile — redirect to profile.html with admin edit mode
+function openEditProfile(id, type) {
+    // Navigate to the actual profile page in admin edit mode
+    // The profile page already has full editing UI (photo, audio, message, lyrics)
+    window.location.href = `profile?edit=${id}&type=${type || 'student'}`;
 }
 
 function closeEditProfile() {
     document.getElementById('editProfileModal')?.classList.remove('active');
-    editingStudentId = null;
-}
-
-async function saveEditProfile() {
-    if (!editingStudentId) return;
-    
-    const updates = {
-        name: document.getElementById('editName').value,
-        birthday: document.getElementById('editBirthday').value,
-        message: document.getElementById('editMessage').value,
-        nickname: document.getElementById('editNickname').value
-    };
-
-    try {
-        const res = await fetch(`${API_URL}/api/admin/student/${editingStudentId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates)
-        });
-        const data = await res.json();
-        if (data.success) {
-            showToast('Profile updated!');
-            closeEditProfile();
-            renderProfileManagement();
-        } else {
-            showToast(data.error || 'Update failed', 'error');
-        }
-    } catch (e) {
-        showToast('Network error', 'error');
-    }
 }
 
 // ========== KOLASE MANAGEMENT ==========
@@ -379,9 +359,27 @@ function renderKolaseManagement() {
     fetch(`${API_URL}/api/admin/kolase`).then(r => r.json()).then(data => {
         if (!data.success) throw new Error(data.error);
 
-        let html = `<div class="kolase-summary">
+        let html = `
+        <div class="kolase-summary">
             <span><i class="fas fa-image"></i> ${data.totalImages} Photos</span>
             <span><i class="fas fa-video"></i> ${data.totalVideos} Videos</span>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="kolase-upload-section">
+            <h4><i class="fas fa-cloud-upload-alt"></i> Upload File Baru</h4>
+            <div class="kolase-upload-area" id="kolaseDropZone">
+                <input type="file" id="kolaseFileInput" multiple accept="image/*,video/*" style="display:none">
+                <div class="kolase-upload-inner" onclick="document.getElementById('kolaseFileInput').click()">
+                    <i class="fas fa-plus-circle"></i>
+                    <p>Klik atau drag file foto/video ke sini</p>
+                    <small>Support: JPG, PNG, WEBP, MP4, WEBM (Max 500MB)</small>
+                </div>
+            </div>
+            <div id="kolaseUploadProgress" style="display:none">
+                <div class="upload-progress-bar"><div class="upload-progress-fill" id="kolaseProgressFill"></div></div>
+                <small id="kolaseUploadStatus">Uploading...</small>
+            </div>
         </div>`;
 
         html += '<h4><i class="fas fa-image"></i> Photos</h4><div class="kolase-grid">';
@@ -413,9 +411,76 @@ function renderKolaseManagement() {
         html += '</div>';
 
         container.innerHTML = html;
+
+        // Attach upload event listeners after render
+        setupKolaseUpload();
     }).catch(() => {
         container.innerHTML = '<p class="empty-msg">Failed to load kolase data</p>';
     });
+}
+
+function setupKolaseUpload() {
+    const fileInput = document.getElementById('kolaseFileInput');
+    const dropZone = document.getElementById('kolaseDropZone');
+
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) uploadKolaseFiles(e.target.files);
+        });
+    }
+
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) uploadKolaseFiles(e.dataTransfer.files);
+        });
+    }
+}
+
+async function uploadKolaseFiles(files) {
+    const progressContainer = document.getElementById('kolaseUploadProgress');
+    const progressFill = document.getElementById('kolaseProgressFill');
+    const statusEl = document.getElementById('kolaseUploadStatus');
+
+    if (progressContainer) progressContainer.style.display = 'block';
+    if (statusEl) statusEl.textContent = `Uploading ${files.length} file(s)...`;
+    if (progressFill) progressFill.style.width = '10%';
+
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/gallery/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (progressFill) progressFill.style.width = '90%';
+        
+        const data = await res.json();
+        if (data.success || data.files) {
+            if (progressFill) progressFill.style.width = '100%';
+            if (statusEl) statusEl.textContent = `Upload berhasil! ${data.files?.length || files.length} file(s)`;
+            showToast(`${files.length} file(s) uploaded!`);
+            // Refresh kolase view after short delay
+            setTimeout(() => {
+                if (progressContainer) progressContainer.style.display = 'none';
+                renderKolaseManagement();
+            }, 1500);
+        } else {
+            throw new Error(data.error || 'Upload failed');
+        }
+    } catch (e) {
+        if (progressFill) progressFill.style.width = '0%';
+        if (statusEl) statusEl.textContent = `Error: ${e.message}`;
+        showToast('Upload failed: ' + e.message, 'error');
+        setTimeout(() => { if (progressContainer) progressContainer.style.display = 'none'; }, 3000);
+    }
 }
 
 async function deleteKolaseFile(filename) {

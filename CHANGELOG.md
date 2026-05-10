@@ -9,6 +9,15 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.0.1] — 2026-05-10
+
+### Fixed
+- **Admin Dashboard — Halaman tidak bisa di-scroll**: Ditambahkan `overflow-y: auto !important` pada `html, body` dan `min-height: 100vh` pada `.admin-layout` agar seluruh halaman dashboard bisa di-scroll.
+- **Admin Dashboard — Kolase tidak bisa upload foto/video**: Ditambahkan area upload (drag & drop + file picker) di tab Kolase. Menggunakan endpoint `/api/gallery/upload` yang sudah ada. Support multi-file upload dengan progress bar.
+- **Admin Dashboard — Edit profile UI tidak sesuai**: Tombol "Edit" di tab Profiles sekarang me-redirect ke halaman `profile.html?edit=id&type=student/teacher` yang sudah memiliki UI lengkap (foto, audio, message, lyrics) — sama persis seperti halaman profile student/guru. Daftar guru juga ditampilkan di tab Profiles.
+
+---
+
 ## [3.0.0] — 2026-05-10
 
 ### Added — Admin Dashboard Major Refactor
