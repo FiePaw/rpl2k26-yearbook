@@ -6241,9 +6241,9 @@ select:focus {
    Semua rule di bawah ini hanya aktif di mobile.
 ═══════════════════════════════════════════════════════════════ */
 
-/* BASE: Sembunyikan .mobile-landing secara default (desktop) */
+/* BASE: Sembunyikan .mobile-landing secara default (desktop & semua ukuran) */
 .mobile-landing {
-    display: none;
+    display: none !important;
 }
 
 /* MOBILE: Tampilkan mobile layout, sembunyikan desktop layout */
@@ -6254,36 +6254,38 @@ select:focus {
         display: none !important;
     }
 
-    /* Tampilkan blok mobile */
+    /* Tampilkan blok mobile — OVERRIDE base rule */
     .mobile-landing {
         display: flex !important;
         flex-direction: column;
         width: 100%;
-        flex: 1;
-        min-height: 0;
+        height: 100%;
         overflow: hidden;
     }
 
-    /* Pastikan body tidak overflow */
+    /* Override body untuk landing */
     body {
         overflow: hidden;
         height: 100dvh;
     }
 
+    /* Landing page container — fill space between header and footer */
     .landing-page {
-        height: calc(100dvh - 60px - 55px); /* header 60px + footer 55px */
+        height: calc(100dvh - 60px - 55px) !important;
+        min-height: 0 !important;
         margin-top: 60px;
         margin-bottom: 0;
         overflow: hidden;
         display: flex;
         flex-direction: column;
         background: none;
+        padding: 0;
     }
 }
 
 @media (max-width: 480px) {
     .landing-page {
-        height: calc(100dvh - 50px - 50px); /* header 50px + footer 50px */
+        height: calc(100dvh - 50px - 50px) !important;
         margin-top: 50px;
     }
 }
@@ -6293,7 +6295,7 @@ select:focus {
 ─────────────────────────────── */
 .mobile-hero {
     position: relative;
-    flex: 1 1 0;
+    flex: 1 1 0%;
     min-height: 0;
     display: flex;
     align-items: flex-end;
@@ -6432,12 +6434,10 @@ select:focus {
     flex: 0 0 auto;
     background: #0d0d0d;
     border-top: 1px solid rgba(29,185,84,0.18);
-    padding: 0.85rem 0 0.85rem;
+    padding: 0.75rem 0;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
-    min-height: 180px;
-    z-index: 2;
+    gap: 0.5rem;
 }
 
 /* Label "Class RPL 2k26" */

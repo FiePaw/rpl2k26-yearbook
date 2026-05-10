@@ -135,22 +135,28 @@ initRotatingTitle();
 initMobileRotatingTitle();
 setupLoginPage();
 
-// Pre-cache JSON data and wait for it to complete
+// Pre-cache JSON data and load cards
 (async () => {
-    try {
-        const cacheSuccess = await preCacheJsonData();
-        console.log(`📦 Pre-cache result: ${cacheSuccess ? '✅ Success' : '⚠️ Failed (will fetch on-demand)'}`);
-    } catch (error) {
-        console.warn('⚠️ Pre-cache error:', error.message);
-    }
-
     const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
-        // Mobile: render horizontal card strip
+        // Mobile: start pre-cache AND render mobile cards in parallel
+        // Don't wait for pre-cache - loadMobileCards will fetch its own data if needed
+        preCacheJsonData().then(ok => {
+            console.log(`📦 Pre-cache: ${ok ? '✅' : '⚠️ fallback'}`);
+        }).catch(() => {});
+        
+        console.log('📱 Mobile detected, loading mobile cards...');
         loadMobileCards();
     } else {
-        // Desktop: vertical rotating carousel
+        // Desktop: wait for pre-cache then load carousel
+        try {
+            const cacheSuccess = await preCacheJsonData();
+            console.log(`📦 Pre-cache result: ${cacheSuccess ? '✅ Success' : '⚠️ Failed (will fetch on-demand)'}`);
+        } catch (error) {
+            console.warn('⚠️ Pre-cache error:', error.message);
+        }
+
         Promise.race([
             loadStudentCards(),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Loading timeout')), 8000))
@@ -836,7 +842,12 @@ function initMobileRotatingTitle() {
  */
 async function loadMobileCards() {
     const strip = document.getElementById('mobileCardsScroll');
-    if (!strip) return;
+    if (!strip) {
+        console.warn('⚠️ #mobileCardsScroll element not found');
+        return;
+    }
+
+    console.log('📱 loadMobileCards() called');
 
     // Tampilkan skeleton sementara data loading
     strip.innerHTML = Array(6).fill(0).map(() => `
