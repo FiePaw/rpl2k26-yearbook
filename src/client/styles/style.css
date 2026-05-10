@@ -6428,10 +6428,10 @@ select:focus {
     display: block;
 }
 
-/* Positions and rotations for each collage card */
+/* Positions and rotations for each collage card — spread across entire hero including center */
 .mobile-hero-collage .collage-card:nth-child(1) {
-    top: 8%;
-    right: 8%;
+    top: 6%;
+    right: 10%;
     transform: rotate(6deg);
     animation-delay: 0s, 0.5s;
     width: 80px;
@@ -6439,8 +6439,8 @@ select:focus {
 }
 
 .mobile-hero-collage .collage-card:nth-child(2) {
-    top: 5%;
-    left: 5%;
+    top: 8%;
+    left: 6%;
     transform: rotate(-8deg);
     animation-delay: 0.15s, 1.3s;
     width: 70px;
@@ -6448,8 +6448,8 @@ select:focus {
 }
 
 .mobile-hero-collage .collage-card:nth-child(3) {
-    top: 30%;
-    right: 5%;
+    top: 32%;
+    right: 8%;
     transform: rotate(4deg);
     animation-delay: 0.3s, 2s;
     width: 85px;
@@ -6457,8 +6457,8 @@ select:focus {
 }
 
 .mobile-hero-collage .collage-card:nth-child(4) {
-    bottom: 25%;
-    left: 3%;
+    top: 38%;
+    left: 12%;
     transform: rotate(-5deg);
     animation-delay: 0.45s, 3s;
     width: 75px;
@@ -6466,39 +6466,39 @@ select:focus {
 }
 
 .mobile-hero-collage .collage-card:nth-child(5) {
-    bottom: 8%;
-    right: 12%;
-    transform: rotate(8deg);
+    top: 50%;
+    left: 38%;
+    transform: rotate(3deg) translateX(-50%);
     animation-delay: 0.6s, 1.8s;
-    width: 80px;
-    height: 80px;
+    width: 82px;
+    height: 82px;
 }
 
 .mobile-hero-collage .collage-card:nth-child(6) {
-    bottom: 10%;
-    left: 15%;
+    top: 62%;
+    left: 8%;
     transform: rotate(-3deg);
     animation-delay: 0.75s, 2.5s;
-    width: 70px;
-    height: 70px;
+    width: 72px;
+    height: 72px;
 }
 
 .mobile-hero-collage .collage-card:nth-child(7) {
-    top: 50%;
-    left: 2%;
+    top: 58%;
+    right: 10%;
     transform: rotate(7deg);
     animation-delay: 0.9s, 3.5s;
-    width: 65px;
-    height: 65px;
+    width: 68px;
+    height: 68px;
 }
 
 .mobile-hero-collage .collage-card:nth-child(8) {
-    top: 55%;
-    right: 3%;
+    top: 75%;
+    left: 30%;
     transform: rotate(-6deg);
     animation-delay: 1.05s, 0.8s;
-    width: 72px;
-    height: 72px;
+    width: 74px;
+    height: 74px;
 }
 
 @keyframes collageFloat {
