@@ -409,9 +409,9 @@ function openCropModal(file, photoInput, photoPreview) {
             cropper.destroy();
         }
 
-        // Initialize Cropper.js with 3:4 aspect ratio (portrait for cards)
+        // Initialize Cropper.js with 1:1 aspect ratio (square, matches card photo container)
         cropper = new Cropper(cropImage, {
-            aspectRatio: 3 / 4,
+            aspectRatio: 1,
             viewMode: 1,
             dragMode: 'move',
             autoCropArea: 0.9,
