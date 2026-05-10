@@ -507,8 +507,16 @@ function playStudent(index) {
     // Update play-pause button
     updatePlayPauseButton();
     
-    // Load dan tampilkan lyrics jika ada
-    loadAndDisplayLyrics(student.id);
+    // Load dan tampilkan lyrics hanya jika student punya lagu
+    if (student.audioFile) {
+        loadAndDisplayLyrics(student.id);
+    } else {
+        // Sembunyikan lyrics container jika tidak ada lagu
+        const lyricsContainer = document.getElementById('playerLyricsKaraokeContainer');
+        if (lyricsContainer) {
+            lyricsContainer.style.display = 'none';
+        }
+    }
     
     // Play profile audio if available with trim times
     const trimData = {
@@ -1352,7 +1360,7 @@ function syncBerandaLyricsWithAudio() {
                 
                 // Auto-scroll to active line hanya jika tidak manual scroll
                 if (!lyricsManualScrolling && lyricsContainer) {
-                    line.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    line.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             } else if (currentTime >= actualEnd) {
                 line.classList.remove('active');

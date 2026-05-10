@@ -9,6 +9,16 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.8.3] — 2026-05-10
+
+### Fixed
+- **Beranda — Lyrics loading hanya untuk profile dengan lagu**: Loading lirik ("Sabar yakk lirik nya lagi dibuat" + timer) sekarang hanya ditampilkan untuk profile yang memiliki `audioFile`. Profile tanpa lagu tidak lagi menampilkan lyrics container.
+
+### Changed
+- **Beranda — Auto-scroll lyric aktif di tengah**: Lyric line yang sedang aktif sekarang di-scroll ke tengah container (mirip Spotify), sehingga baris aktif selalu berada di antara baris yang sudah lewat (past) dan yang akan datang (upcoming).
+
+---
+
 ## [2.8.2] — 2026-05-10
 
 ### Changed
