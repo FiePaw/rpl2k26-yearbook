@@ -202,11 +202,11 @@ async function preCacheJsonData() {
         
         try {
             const [studentRes, dbRes] = await Promise.all([
-                fetch(`../nameMurid.json?t=${timestamp}`, { 
+                fetch(`${API_URL}/api/students/names`, { 
                     cache: 'no-cache',
                     signal: controller.signal
                 }),
-                fetch(`../database.json?t=${timestamp}`, { 
+                fetch(`${API_URL}/api/students`, { 
                     cache: 'no-cache',
                     signal: controller.signal
                 })
@@ -215,8 +215,13 @@ async function preCacheJsonData() {
             clearTimeout(timeoutId);
             
             if (studentRes.ok && dbRes.ok) {
-                jsonDataCache.students = await studentRes.json();
-                jsonDataCache.database = await dbRes.json();
+                const studentsArr = await studentRes.json();
+                const studentsFullArr = await dbRes.json();
+                // API /api/students/names → [{id, name, nickname}]
+                // API /api/students       → [{id, name, nickname, photo, audioFile, ...}]
+                jsonDataCache.students = studentsArr;
+                // Bungkus dalam format {students:[...]} agar kompatibel dengan kode lama
+                jsonDataCache.database = { students: Array.isArray(studentsFullArr) ? studentsFullArr : [] };
                 jsonDataCache.lastFetchTime = Date.now();
                 jsonDataCache.isCaching = false;
                 
@@ -264,11 +269,11 @@ async function loadStudentCards() {
                 
                 try {
                     const [studentRes, dbRes] = await Promise.all([
-                        fetch(`../nameMurid.json?t=${timestamp}`, { 
+                        fetch(`${API_URL}/api/students/names`, { 
                             cache: 'no-cache',
                             signal: controller.signal
                         }),
-                        fetch(`../database.json?t=${timestamp}`, { 
+                        fetch(`${API_URL}/api/students`, { 
                             cache: 'no-cache',
                             signal: controller.signal
                         })
@@ -281,7 +286,9 @@ async function loadStudentCards() {
                     }
                     
                     allStudents = await studentRes.json();
-                    dbData = await dbRes.json();
+                    const studentsFullArr = await dbRes.json();
+                    // Bungkus agar kompatibel dengan kode lama yang akses dbData.students
+                    dbData = { students: Array.isArray(studentsFullArr) ? studentsFullArr : [] };
                     
                     // Store in cache for next time
                     jsonDataCache.students = allStudents;
@@ -850,11 +857,13 @@ async function loadMobileCards() {
         try {
             const ts = Date.now();
             const [sRes, dRes] = await Promise.all([
-                fetch(`../nameMurid.json?t=${ts}`, { cache: 'no-cache' }),
-                fetch(`../database.json?t=${ts}`, { cache: 'no-cache' })
+                fetch(`${API_URL}/api/students/names`, { cache: 'no-cache' }),
+                fetch(`${API_URL}/api/students`, { cache: 'no-cache' })
             ]);
             students = await sRes.json();
-            dbData   = await dRes.json();
+            const studentsFullArr = await dRes.json();
+            // Bungkus dalam format {students:[...]} agar kompatibel dengan kode lama
+            dbData = { students: Array.isArray(studentsFullArr) ? studentsFullArr : [] };
             jsonDataCache.students  = students;
             jsonDataCache.database  = dbData;
         } catch (err) {
