@@ -8,12 +8,12 @@ const { spawn } = require('child_process');
 const multer = require('multer');
 const axios = require('axios');
 const { parseFile } = require('music-metadata');
-const SpotifyDownloader = require('./spotify-downloader');
-const TikTokDownloader = require('./tiktok-downloader');
-const VideoOptimizer = require('./videoOptimizer');
-const LyricsScraper = require('./lyrics-scraper');
-const AIAPILyricsFetcher = require('./ai-api-lyrics-fetcher');
-const MusicDownloader = require('./music-downloader');
+const SpotifyDownloader = require('./src/server/media/spotify-downloader');
+const TikTokDownloader = require('./src/server/media/tiktok-downloader');
+const VideoOptimizer = require('./src/server/media/videoOptimizer');
+const LyricsScraper = require('./src/server/lyrics/lyrics-scraper');
+const AIAPILyricsFetcher = require('./src/server/ai/ai-api-lyrics-fetcher');
+const MusicDownloader = require('./src/server/media/music-downloader');
 
 const app = express();
 const PORT = 5000;
@@ -127,6 +127,9 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve client-side JS and CSS dari src/client/
+app.use('/src/client', express.static(path.join(__dirname, 'src/client')));
+
 // Middleware untuk routing file HTML tanpa extension
 app.use((req, res, next) => {
     // Jangan process API routes dan file dengan extension
@@ -164,10 +167,10 @@ app.use((req, res, next) => {
 });
 
 // Database file paths
-const DB_PATH = './database.json';
-const STUDENTS_PATH = './nameMurid.json';
-const TEACHERS_PATH = './nameGuru.json';
-const ADMIN_TRACKING_PATH = './adminbase.json';
+const DB_PATH = './data/database.json';
+const STUDENTS_PATH = './data/nameMurid.json';
+const TEACHERS_PATH = './data/nameGuru.json';
+const ADMIN_TRACKING_PATH = './data/adminbase.json';
 
 // Helper function to read JSON file
 async function readJSON(filePath) {
@@ -1101,7 +1104,7 @@ app.get('/profile_music/:filename', async (req, res) => {
 // ========== GALLERY ENDPOINTS ==========
 
 // Get memories database file path
-const MEMORIES_DB_PATH = './memories.json';
+const MEMORIES_DB_PATH = './data/memories.json';
 
 // Initialize memories database
 async function initializeMemoriesDatabase() {

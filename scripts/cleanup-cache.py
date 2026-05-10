@@ -8,13 +8,16 @@ import os
 import shutil
 from pathlib import Path
 
+# Root project = satu level di atas folder scripts/
+ROOT_DIR = Path(__file__).parent.parent
+
 def cleanup_yt_dlp_cache():
     """Remove yt-dlp cache directories"""
     cache_paths = [
         Path.home() / '.cache' / 'yt-dlp',  # Linux/Mac
         Path.home() / 'AppData' / 'Local' / 'yt-dlp',  # Windows
-        Path(__file__).parent / '.ytdlp_cache',
-        Path(__file__).parent / 'yt-dlp-cache',
+        ROOT_DIR / '.ytdlp_cache',
+        ROOT_DIR / 'yt-dlp-cache',
     ]
     
     for cache_path in cache_paths:
@@ -29,7 +32,7 @@ def cleanup_yt_dlp_cache():
 
 def cleanup_temp_files():
     """Remove temp files from profile_music directory"""
-    profile_music = Path(__file__).parent / 'profile_music'
+    profile_music = ROOT_DIR / 'profile_music'
     
     if not profile_music.exists():
         print("ℹ️  profile_music directory not found")
@@ -49,7 +52,7 @@ def cleanup_temp_files():
 
 def list_profile_music():
     """List all files in profile_music"""
-    profile_music = Path(__file__).parent / 'profile_music'
+    profile_music = ROOT_DIR / 'profile_music'
     
     if not profile_music.exists():
         print("ℹ️  profile_music directory not found")

@@ -11,8 +11,8 @@ const crypto = require('crypto');
 
 class VideoOptimizer {
     constructor() {
-        this.optimizedDir = path.join(__dirname, 'OurGallery', 'optimized');
-        this.cachesDir = path.join(__dirname, 'OurGallery', 'cache');
+        this.optimizedDir = path.join(__dirname, '../../../OurGallery', 'optimized');
+        this.cachesDir = path.join(__dirname, '../../../OurGallery', 'cache');
         
         // Ensure directories exist
         if (!fs.existsSync(this.optimizedDir)) {
