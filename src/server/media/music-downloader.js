@@ -21,6 +21,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const MetadataCache = require('../utils/metadata-cache');
 const RateLimitHandler = require('../utils/rate-limit-handler');
+const yts = require('yt-search');
 
 class MusicDownloader {
     constructor(outputDir = 'downloads', cacheDir = 'metadata_cache') {
@@ -165,6 +166,36 @@ class MusicDownloader {
         }
     }
 
+	async searchYoutube(query) {
+		try {
+			console.log(`🔎 Searching YouTube: "${query}"`);
+
+			const result = await yts(query);
+
+			if (!result.videos || result.videos.length === 0) {
+				throw new Error('No videos found');
+			}
+
+			// Ambil video pertama
+			const video = result.videos[0];
+
+			console.log(`✅ Found: ${video.title}`);
+			console.log(`🎬 URL: ${video.url}`);
+
+			return {
+				title: video.title,
+				url: video.url,
+				videoId: video.videoId,
+				duration: video.timestamp,
+				views: video.views
+			};
+
+		} catch (error) {
+			console.error(`❌ YouTube search error: ${error.message}`);
+			throw error;
+		}
+	}
+
     /**
      * Download dari Spotify (fetch metadata + search YouTube)
      * @param {string} spotifyUrl - Spotify URL
@@ -218,7 +249,8 @@ class MusicDownloader {
         for (const searchQuery of searchStrategies) {
             try {
                 console.log(`📥 Attempting download with: "${searchQuery}"`);
-                await this.downloadWithYtdlp(`ytsearch1:${searchQuery}`, this.outputDir);
+				const youtubeUrl = await this.searchYoutube(searchQuery);
+                await this.downloadWithYtdlp(youtubeUrl.url, this.outputDir);
                 
                 const fileName = await this.getDownloadedFileName(this.outputDir);
                 if (fileName) {
@@ -251,7 +283,8 @@ class MusicDownloader {
     async downloadFromYoutube(youtubeUrl) {
         console.log(`🎬 Direct YouTube download...`);
         
-        await this.downloadWithYtdlp(youtubeUrl, this.outputDir);
+		const youtubeUrls = await this.searchYoutube(searchQuery);
+        await this.downloadWithYtdlp(youtubeUrls.url, this.outputDir);
         
         const fileName = await this.getDownloadedFileName(this.outputDir);
         const filePath = path.join(this.outputDir, fileName);
@@ -287,7 +320,8 @@ class MusicDownloader {
         }
 
         console.log(`🔎 Searching YouTube: "${searchQuery}"`);
-        await this.downloadWithYtdlp(`ytsearch1:${searchQuery}`, this.outputDir);
+		const youtubeUrls = await this.searchYoutube(searchQuery);
+        await this.downloadWithYtdlp(youtubeUrls.url, this.outputDir);
         
         const fileName = await this.getDownloadedFileName(this.outputDir);
         const filePath = path.join(this.outputDir, fileName);
@@ -344,7 +378,7 @@ class MusicDownloader {
                 
                 const ytdlp = spawn('yt-dlp', [
                     '--list-formats',
-                    '--cookies', path.join(__dirname, '../../../youtube_cookies.txt'),
+                    '--cookies', path.join(__dirname, 'youtube_cookies.txt'),
                     url
                 ]);
 
@@ -389,10 +423,7 @@ class MusicDownloader {
         return new Promise(async (resolve, reject) => {
             try {
                 // Path to cookies file
-                // Look for cookies file: try root first, then downloads folder
-                const rootCookiePath = path.join(__dirname, '../../../youtube_cookies.txt');
-                const downloadsCookiePath = path.join(__dirname, '../../../downloads/youtube_cookies.txt');
-                const cookiePath = fsSync.existsSync(rootCookiePath) ? rootCookiePath : downloadsCookiePath;
+                const cookiePath = path.join(__dirname, 'youtube_cookies.txt');
                 const cookieExists = fsSync.existsSync(cookiePath);
                 
                 console.log(`🍪 Cookies file: ${cookiePath}`);
@@ -402,7 +433,7 @@ class MusicDownloader {
                     console.log('🔐 Using YouTube cookies to bypass bot detection & region locks');
                 } else {
                     console.log('⚠️ No cookies file found - downloads may fail on region-locked videos');
-                    console.log('   To fix: Place youtube_cookies.txt in project root or downloads/ folder');
+                    console.log('   To fix: Place youtube_cookies.txt in root directory');
                 }
                 
                 // Check for JavaScript runtime (needed for YouTube signature solving)
@@ -430,22 +461,14 @@ class MusicDownloader {
                 
                 // Build command with JS runtime support and flexible format selection
                 const ytdlpArgs = [
-                    '--no-update',
+                    '--remote-components', 'ejs:github',
+                    '--js-runtimes', 'node',
                     '--cookies', cookiePath,
-                    '--extractor-args', 'youtube:player_client=tv_downgraded,web_safari',
-                    '--extractor-args', `youtube:js_engine=${jsRuntime}`,  // Use detected JS runtime
-                    '--remote-components', 'ejs:github',  // Download EJS challenge solver for proper signature solving
-                    '--skip-unavailable-fragments',
-                    '--retries', '10',
-                    '--fragment-retries', '10',
-                    '--socket-timeout', '60',
-                    '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    // Format selection with fallback: try audio first, then best available
-                    '-f', 'bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio[ext=webm]/bestaudio/best',
-                    '-x',  // Extract audio only
+                    '--impersonate', 'Chrome-136', 
+                    '-f', 'ba',
+                    '-x',
                     '--audio-format', 'mp3',
-                    '--audio-quality', '192',
-                    '--no-warnings',
+                    '--audio-quality', '0',
                     '-o', path.join(outputPath, '%(title)s.%(ext)s'),
                     url
                 ];
