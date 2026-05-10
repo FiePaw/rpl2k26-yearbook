@@ -9,6 +9,16 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.6.4] — 2026-05-10
+
+### Fixed
+- **Profile — Lyric generation gagal dengan error "Please upload an audio file" padahal lagu sudah di-download** : Disebabkan oleh crash `TypeError: Cannot set properties of null (setting 'textContent')` di `updateAudioDurationDisplay()` (profile.js:1566). Fungsi ini mereferensikan elemen DOM (`studentAudioDuration`, `studentAudioTrimStart`, `studentAudioTrimEnd`, dll.) yang sudah tidak ada di `profile.html` — elemen-elemen tersebut sudah digantikan oleh Lyrics Section.
+  - **Fix 1:** `updateAudioDurationDisplay()` — tambah null-check untuk semua elemen trim/duration. Fungsi sekarang gracefully skip jika elemen tidak ditemukan, dan tetap lanjut ke `drawAudioWaveform()`.
+  - **Fix 2:** `syncTrimInputs()` — tambah null-check dan early return jika slider elements tidak ada.
+  - **Fix 3:** `generateStudentLyrics()` — sekarang menggunakan local `studentAudioPath` sebagai fallback ketika `student.audioFile` dari API bernilai null (kasus ketika lagu baru di-download tapi form belum di-save). Referensi `student.audioFile` di body request dan filename extraction juga diupdate ke variabel `audioFile` yang sudah resolved.
+
+---
+
 ## [2.6.3] — 2026-05-10
 
 ### Fixed

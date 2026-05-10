@@ -1560,39 +1560,47 @@ function updateAudioDurationDisplay() {
     const endInput = document.getElementById('studentAudioTrimEnd');
     const endInputNum = document.getElementById('studentAudioTrimEndInput');
     
-    if (player.duration && !isNaN(player.duration) && player.duration !== Infinity) {
-        console.log('📊 Setting audio duration:', player.duration);
-        
+    if (!player || (!player.duration) || isNaN(player.duration) || player.duration === Infinity) {
+        console.warn('⚠️ Invalid player or duration:', player?.duration);
+        return;
+    }
+
+    console.log('📊 Setting audio duration:', player.duration);
+    
+    // Update duration display if element exists
+    if (durationSpan) {
         durationSpan.textContent = formatTime(player.duration);
-        
-        // Set slider max value
-        const maxDuration = Math.floor(player.duration);
+    }
+    
+    const maxDuration = Math.floor(player.duration);
+    
+    // Update trim sliders if they exist (may not exist if Lyrics Section replaced Audio Trim)
+    if (startSlider && endSlider) {
         startSlider.max = maxDuration;
         endSlider.max = maxDuration;
         
         // Set end time default to full duration if not set or invalid
-        const currentEndVal = parseFloat(endInput.value);
+        const currentEndVal = parseFloat(endSlider.value);
         if (!currentEndVal || currentEndVal === 0 || currentEndVal > maxDuration) {
-            endInput.value = maxDuration;
-            endInputNum.value = maxDuration;
+            endSlider.value = maxDuration;
+            if (endInputNum) endInputNum.value = maxDuration;
             console.log('✅ End time set to:', maxDuration);
         }
         
         // Ensure start time doesn't exceed end time
         const currentStartVal = parseFloat(startSlider.value);
-        if (currentStartVal >= currentEndVal) {
+        if (currentStartVal >= parseFloat(endSlider.value)) {
             startSlider.value = 0;
-            document.getElementById('studentAudioTrimStartInput').value = 0;
+            const startInputNum = document.getElementById('studentAudioTrimStartInput');
+            if (startInputNum) startInputNum.value = 0;
             console.log('✅ Start time reset to 0');
         }
-        
-        // Draw waveform with slight delay to ensure canvas is ready
-        setTimeout(() => {
-            drawAudioWaveform();
-        }, 50);
-    } else {
-        console.warn('⚠️ Invalid player duration:', player.duration);
     }
+    
+    // Draw waveform with slight delay to ensure canvas is ready
+    setTimeout(() => {
+        drawAudioWaveform();
+    }, 50);
 }
 
 // Update trim info display with better UI
@@ -1646,6 +1654,11 @@ function syncTrimInputs() {
     const endSlider = document.getElementById('studentAudioTrimEnd');
     const startInput = document.getElementById('studentAudioTrimStartInput');
     const endInput = document.getElementById('studentAudioTrimEndInput');
+    
+    if (!startSlider || !endSlider || !startInput || !endInput) {
+        console.warn('⚠️ Trim slider elements not found, skipping sync');
+        return;
+    }
     
     // Sync from sliders to inputs
     startInput.value = startSlider.value;
@@ -5121,7 +5134,10 @@ async function generateStudentLyrics() {
 
         const student = await audioResponse.json();
         
-        if (!student.audioFile) {
+        // Use audioFile from API, or fallback to local studentAudioPath (for unsaved downloads)
+        const audioFile = student.audioFile || studentAudioPath;
+        
+        if (!audioFile) {
             popup.error('Please upload an audio file first');
             return;
         }
@@ -5132,7 +5148,7 @@ async function generateStudentLyrics() {
 
         // If form inputs are empty, try extract from filename
         if (!artistName || !songTitle) {
-            const filename = student.audioFile.split('/').pop();
+            const filename = audioFile.split('/').pop();
             const parsed = extractSongMetadata(filename);
             artistName = artistName || parsed.artist || student.name || '';
             songTitle = songTitle || parsed.title || filename || '';
@@ -5168,7 +5184,7 @@ async function generateStudentLyrics() {
                 },
                 body: JSON.stringify({
                     studentId: user.id,
-                    audioFile: student.audioFile,
+                    audioFile: audioFile,
                     artistName: artistName,
                     songTitle: songTitle
                 }),
