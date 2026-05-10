@@ -132,6 +132,7 @@ function rotateTitle() {
 // This ensures data is ready BEFORE loading screen hides
 console.log('🚀 Starting data preload during loading screen...');
 initRotatingTitle();
+initMobileRotatingTitle();
 setupLoginPage();
 
 // Pre-cache JSON data and wait for it to complete
@@ -142,19 +143,25 @@ setupLoginPage();
     } catch (error) {
         console.warn('⚠️ Pre-cache error:', error.message);
     }
-    
-    // Only after pre-cache attempt (success or fail), start loading cards
-    Promise.race([
-        loadStudentCards(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Loading timeout')), 8000))
-    ]).catch(error => {
-        console.error('❌ Error loading student cards:', error);
-        // Ensure cards container is visible even if loading fails
-        const container = document.getElementById('studentCardsContainer');
-        if (container) {
-            container.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary); font-size: 0.9rem; width: 100%; display: flex; align-items: center; justify-content: center; min-height: 180px;">⚠️ Unable to load cards</div>';
-        }
-    });
+
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+        // Mobile: render horizontal card strip
+        loadMobileCards();
+    } else {
+        // Desktop: vertical rotating carousel
+        Promise.race([
+            loadStudentCards(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Loading timeout')), 8000))
+        ]).catch(error => {
+            console.error('❌ Error loading student cards:', error);
+            const container = document.getElementById('studentCardsContainer');
+            if (container) {
+                container.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary); font-size: 0.9rem; width: 100%; display: flex; align-items: center; justify-content: center; min-height: 180px;">⚠️ Unable to load cards</div>';
+            }
+        });
+    }
 })();
 
 // Wait for loading screen to hide before considering page ready
@@ -780,4 +787,121 @@ function setupFormListeners() {
         const loginBtn = document.getElementById('loginBtn');
         loginBtn.innerHTML = `<i class="fas fa-user"></i> ${user.nickname}`;
     }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════
+//  MOBILE LANDING — rotating title + horizontal cards
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Rotating title khusus untuk element #rotatingTitleMobile
+ */
+function initMobileRotatingTitle() {
+    const el = document.getElementById('rotatingTitleMobile');
+    if (!el) return;
+
+    const textEl = el.querySelector('.mobile-title-text');
+    if (!textEl) return;
+
+    // Set teks awal (index 1, biar sync berbeda dengan desktop)
+    textEl.innerHTML = ROTATING_TITLES[1].replace(/<br>/g, ' ');
+
+    let mobileIdx = 1;
+
+    setInterval(() => {
+        // Fade out
+        textEl.style.transition = 'opacity 0.5s ease';
+        textEl.style.opacity = '0';
+
+        setTimeout(() => {
+            mobileIdx = (mobileIdx + 1) % ROTATING_TITLES.length;
+            // Hapus tag <br> — baris mobile lebih sempit, biarkan natural wrap
+            textEl.innerHTML = ROTATING_TITLES[mobileIdx].replace(/<br>/g, ' ');
+            textEl.style.opacity = '1';
+        }, 520);
+    }, TITLE_CONFIG.ROTATION_INTERVAL);
+}
+
+/**
+ * Load & render horizontal card strip di mobile
+ */
+async function loadMobileCards() {
+    const strip = document.getElementById('mobileCardsScroll');
+    if (!strip) return;
+
+    // Tampilkan skeleton sementara data loading
+    strip.innerHTML = Array(6).fill(0).map(() => `
+        <div class="mobile-card-skeleton">
+            <div class="skel-photo"></div>
+            <div class="skel-text"></div>
+            <div class="skel-text-sm"></div>
+        </div>
+    `).join('');
+
+    let students, dbData;
+
+    // Pakai cache kalau sudah ada
+    if (jsonDataCache.students && jsonDataCache.database) {
+        students = jsonDataCache.students;
+        dbData   = jsonDataCache.database;
+    } else {
+        try {
+            const ts = Date.now();
+            const [sRes, dRes] = await Promise.all([
+                fetch(`../nameMurid.json?t=${ts}`, { cache: 'no-cache' }),
+                fetch(`../database.json?t=${ts}`, { cache: 'no-cache' })
+            ]);
+            students = await sRes.json();
+            dbData   = await dRes.json();
+            jsonDataCache.students  = students;
+            jsonDataCache.database  = dbData;
+        } catch (err) {
+            console.warn('⚠️ Mobile cards fetch failed:', err.message);
+            strip.innerHTML = '<p style="padding:1rem;color:#B3B3B3;font-size:0.8rem;">⚠️ Gagal memuat data</p>';
+            return;
+        }
+    }
+
+    // Filter hanya student
+    const filtered = (Array.isArray(students) ? students : [])
+        .filter(s => s && s.id && s.id.startsWith('student_'));
+
+    if (filtered.length === 0) {
+        strip.innerHTML = '<p style="padding:1rem;color:#B3B3B3;font-size:0.8rem;">📝 Data tidak tersedia</p>';
+        return;
+    }
+
+    // Buat map foto
+    const photoMap = {};
+    (dbData?.students || []).forEach(p => {
+        if (p?.id) photoMap[p.id] = p.photo || null;
+    });
+
+    // Gradient fallback per index
+    const gradients = CARD_GRADIENTS;
+
+    // Render kartu
+    strip.innerHTML = filtered.map((s, i) => {
+        const photo = photoMap[s.id];
+        const photoStyle = photo
+            ? `background-image:url('${photo}');background-size:cover;background-position:center;`
+            : `background:${gradients[i % gradients.length]};`;
+
+        const shortName = s.name && s.name.length > 18
+            ? s.name.substring(0, 18) + '…'
+            : (s.name || '—');
+
+        return `
+        <div class="mobile-card" onclick="window.location.href='beranda'">
+            <div class="mobile-card-photo" style="${photoStyle}"></div>
+            <div class="mobile-card-info">
+                <p class="mobile-card-name">${shortName}</p>
+                <p class="mobile-card-class">RPL 2k26</p>
+            </div>
+        </div>`;
+    }).join('');
+
+    console.log(`📱 Mobile cards rendered: ${filtered.length} students`);
 }

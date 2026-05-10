@@ -27,6 +27,10 @@
     </header>
 
     <div class="landing-page">
+
+        <!-- ═══════════════════════════════════════════
+             DESKTOP LAYOUT  (> 768px, tidak berubah)
+        ════════════════════════════════════════════ -->
         <div class="landing-left">
             <div class="landing-content">
                 <h1 class="landing-title" id="rotatingTitle">
@@ -42,9 +46,46 @@
         </div>
         <div class="landing-cards-right">
             <div class="student-cards-container" id="studentCardsContainer">
-                <!-- Cards will be loaded dynamically here -->
+                <!-- Desktop: Cards loaded dynamically -->
             </div>
         </div>
+
+        <!-- ═══════════════════════════════════════════
+             MOBILE LAYOUT  (≤ 768px)
+        ════════════════════════════════════════════ -->
+        <div class="mobile-landing">
+
+            <!-- Hero Section -->
+            <div class="mobile-hero">
+                <div class="mobile-hero-bg"></div>
+                <div class="mobile-hero-content">
+                    <div class="mobile-badge">
+                        <i class="fas fa-compact-disc mobile-badge-icon"></i>
+                        <span>RPL 2k26 &bull; Music Edition</span>
+                    </div>
+                    <h1 class="mobile-hero-title" id="rotatingTitleMobile">
+                        <span class="mobile-title-text">Syntax Error Bisa Diperbaiki,<span class="mobile-highlight"> Waktu Bersama Tak Bisa Diulangi.</span></span>
+                    </h1>
+                    <button class="mobile-cta-btn" onclick="window.location.href='beranda'">
+                        <span>Beranda</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cards Strip — horizontal scroll -->
+            <div class="mobile-cards-section">
+                <div class="mobile-cards-label">
+                    <i class="fas fa-users"></i>
+                    <span>Class RPL 2k26</span>
+                </div>
+                <div class="mobile-cards-scroll" id="mobileCardsScroll">
+                    <!-- Mobile cards injected here by JS -->
+                </div>
+            </div>
+
+        </div><!-- /mobile-landing -->
+
     </div>
 
     <!-- Footer -->
