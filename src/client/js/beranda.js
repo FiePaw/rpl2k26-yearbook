@@ -1209,79 +1209,10 @@ async function loadAndDisplayLyrics(studentId) {
             console.warn('⚠️ Could not load cached lyrics:', cachedError.message);
         }
 
-        // PRIORITY 3: Search online using AZLyric as fallback
-        console.log('📌 Searching online for lyrics via AZLyric...');
-        const student = allStudents.find(s => s.id === studentId);
-        
-        if (!student) {
-            console.warn('⚠️ Student not found:', studentId);
-            lyricsContainer.style.display = 'none';
-            return;
-        }
-
-        // Extract artist and song title dari student name dan profile music
-        const artistName = student.name || 'Unknown Artist';
-        
-        // Try to get song title dari profile_music folder (jika ada)
-        let songTitle = null;
-        const profileMusic = student.audioFile;
-        if (profileMusic) {
-            // Extract title dari filename
-            const match = profileMusic.match(/profile_music\/(.+?)(?:\.|$)/);
-            if (match) {
-                songTitle = match[1].replace(/_/g, ' ').trim();
-                // Remove YouTube/TikTok video IDs in brackets (e.g., [xDuckgE8WeY])
-                songTitle = songTitle.replace(/\s*\[[a-zA-Z0-9_-]{11}\]\s*/g, ' ').trim();
-            }
-        }
-
-        if (!songTitle) {
-            console.log('⚠️ Could not determine song title');
-            lyricsContainer.style.display = 'none';
-            return;
-        }
-
-        console.log(`🔍 Searching for: "${songTitle}" by "${artistName}"`);
-
-        // Call search endpoint using AZLyric with abort signal
-        const searchResponse = await fetch(`${API_URL}/api/lyrics/search`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                title: songTitle,
-                artist: artistName
-            }),
-            signal: lyricsAbortController.signal
-        });
-
-        if (!searchResponse.ok) {
-            throw new Error(`Search failed with status ${searchResponse.status}`);
-        }
-
-        const searchData = await searchResponse.json();
-        console.log('📦 Received lyrics from AZLyric:', searchData);
-
-        if (searchData.success && searchData.segments && searchData.segments.length > 0) {
-            console.log(`✅ Found ${searchData.segments.length} lyrics segments`);
-            
-            displayLyricsSegments(searchData.segments, lyricsContent);
-            setupLyricsScrollDetection(lyricsContent);
-            syncBerandaLyricsWithAudio();
-            
-            // Update title untuk show sumber
-            const header = lyricsContainer.querySelector('.lyrics-karaoke-header');
-            if (header) {
-                header.innerHTML = `
-                    <i class="fas fa-music"></i>
-                    <span>Lyrics (AZLyric)</span>
-                `;
-            }
-        } else {
-            console.log('⚠️ No lyrics found:', searchData.message);
-            lyricsContainer.style.display = 'none';
-        }
+        // No lyrics found in database or cache — hide lyrics container
+        // Auto lyrics generation cycle will generate lyrics server-side
+        console.log('⚠️ No lyrics found for student (waiting for auto-generation cycle)');
+        lyricsContainer.style.display = 'none';
 
     } catch (error) {
         // Only handle non-abort errors

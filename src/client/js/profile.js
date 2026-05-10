@@ -790,6 +790,10 @@ function setupStudentForm(studentId) {
                         popup.success('Profile kamu udah jadi yuk liat!', () => {
                             window.location.href = 'admin-dashboard';
                         });
+                    } else {
+                        popup.success('Profile kamu udah jadi yuk liat!', () => {
+                            window.location.href = 'beranda';
+                        });
                     }
                 }, 2000);
             } else {

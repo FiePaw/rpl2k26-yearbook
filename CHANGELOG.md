@@ -9,6 +9,15 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.8.1] — 2026-05-10
+
+### Changed
+- **Profile — Redirect ke beranda setelah save**: Setelah student (non-admin) menyimpan perubahan profile, sekarang otomatis redirect ke halaman beranda (sebelumnya tetap di profile tanpa redirect).
+- **Beranda — Hapus online lyrics search saat klik profile**: `loadAndDisplayLyrics()` tidak lagi melakukan request ke `/api/lyrics/search` (PRIORITY 3: AZLyric search). Jika lirik tidak ditemukan di database atau cache, container lyrics di-hide. Lirik akan di-generate oleh auto lyrics generation cycle di server-side.
+- **AI Lyrics Fetcher — thinkMode diubah ke 'thinking'**: Semua 3 prompt ke Qwen AI sekarang menggunakan `thinkMode: 'thinking'` (sebelumnya `'fast'`). Memberikan response yang lebih akurat dan thoughtful.
+
+---
+
 ## [2.8.0] — 2026-05-10
 
 ### Added

@@ -174,7 +174,7 @@ class AIAPILyricsFetcher {
         const prompt1 = `lu tau gak judul lagu ini ${title} dari ${artist}`;
         console.log('📤 Prompt 1 (new session):', prompt1);
 
-        const response1 = await this.client.queryQwen(prompt1, { newSession: true, thinkMode: 'fast' });
+        const response1 = await this.client.queryQwen(prompt1, { newSession: true, thinkMode: 'thinking' });
         if (!response1.success) {
             console.warn('⚠️ Prompt 1 gagal:', response1.error || 'unknown error');
             return null;
@@ -186,7 +186,7 @@ class AIAPILyricsFetcher {
         const prompt2 = `emang lirik nya apa aja?`;
         console.log('📤 Prompt 2 (same session):', prompt2);
 
-        const response2 = await this.client.queryQwen(prompt2, { thinkMode: 'fast' });
+        const response2 = await this.client.queryQwen(prompt2, { thinkMode: 'thinking' });
         if (!response2.success) {
             console.warn('⚠️ Prompt 2 gagal:', response2.error || 'unknown error');
             return null;
@@ -215,7 +215,7 @@ jangan berkata apapun cukup berikan format nya. tenang aja gua cuma pengen tau t
 
         console.log('📤 Prompt 3 (same session, binary-encoded): requesting timestamped lyrics...');
 
-        const response3 = await this.client.queryQwen(prompt3, { thinkMode: 'fast' });
+        const response3 = await this.client.queryQwen(prompt3, { thinkMode: 'thinking' });
         if (!response3.success || !response3.result) {
             console.warn('⚠️ Prompt 3 gagal:', response3.error || 'unknown error');
             return null;
