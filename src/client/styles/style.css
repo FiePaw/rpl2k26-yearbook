@@ -385,8 +385,6 @@ body.has-main-content {
 @media (max-width: 768px) {
     .landing-page {
         flex-direction: column;
-        height: auto;
-        min-height: auto;
         padding: 0;
         margin-top: 60px;
         margin-bottom: 0;
@@ -432,13 +430,8 @@ body.has-main-content {
     .landing-page {
         margin-top: 50px;
         margin-bottom: 0;
-        height: auto;
         padding: 0;
         flex-direction: column;
-    }
-
-    body {
-        padding-bottom: 50px;
     }
 
     .landing-left {
@@ -3346,12 +3339,13 @@ body.has-main-content {
 .teacher-detail-form {
     background: var(--bg-secondary);
     border-radius: 20px;
-    padding: 3rem;
+    padding: 2.5rem;
     margin-bottom: 3rem;
     box-shadow: var(--shadow);
     position: relative;
     animation: slideInForm 0.5s ease;
     opacity: 1 !important;
+    overflow: hidden;
 }
 
 @keyframes slideInForm {
@@ -3369,61 +3363,92 @@ body.has-main-content {
     position: absolute;
     top: 1.5rem;
     right: 1.5rem;
-    background: none;
+    background: rgba(0,0,0,0.3);
     border: none;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     color: var(--text-primary);
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 0.6rem;
     transition: var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    z-index: 10;
 }
 
 .close-detail-form:hover {
     color: var(--accent-color);
+    background: rgba(0,0,0,0.5);
     transform: rotate(90deg);
 }
 
 .teacher-detail-content {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr;
-    gap: 3rem;
-    align-items: center;
+    display: flex;
+    flex-direction: row;
+    gap: 2.5rem;
+    align-items: flex-start;
     opacity: 1 !important;
 }
 
 .teacher-detail-photo {
+    flex: 0 0 280px;
+    max-width: 280px;
     position: relative;
     opacity: 1 !important;
 }
 
 .teacher-detail-photo img {
     width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
     border-radius: 15px;
     box-shadow: var(--shadow);
     opacity: 1 !important;
+    display: block;
 }
 
 .teacher-detail-info {
-    padding: 1rem;
+    flex: 1;
+    min-width: 0;
+    padding: 0.5rem 0;
     opacity: 1 !important;
 }
 
 .teacher-detail-info h2 {
-    font-size: 2.5rem;
-    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    margin-bottom: 1rem;
     margin-top: 0.5rem;
     opacity: 1 !important;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.teacher-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(29, 185, 84, 0.15);
+    color: var(--primary-color);
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.teacher-badge i {
+    font-size: 0.8rem;
 }
 
 .teacher-message-box {
     background: var(--bg-main);
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: 15px;
     border-left: 4px solid var(--primary-color);
-    margin-top: 2rem;
+    margin-top: 1.5rem;
     opacity: 1 !important;
 }
 
@@ -3445,9 +3470,31 @@ body.has-main-content {
 .teacher-message-box p {
     margin: 0;
     line-height: 1.8;
-    font-size: 1.05rem;
+    font-size: 1rem;
     color: var(--text-secondary);
     opacity: 1 !important;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Tablet adjustments for teacher detail */
+@media (max-width: 1024px) {
+    .teacher-detail-form {
+        padding: 2rem;
+    }
+
+    .teacher-detail-content {
+        gap: 2rem;
+    }
+
+    .teacher-detail-photo {
+        flex: 0 0 220px;
+        max-width: 220px;
+    }
+
+    .teacher-detail-info h2 {
+        font-size: 1.6rem;
+    }
 }
 
 /* Mobile adjustments for teacher detail */
@@ -3459,33 +3506,53 @@ body.has-main-content {
     }
     
     .teacher-detail-content {
-        grid-template-columns: 1fr;
+        flex-direction: column;
         gap: 1.5rem;
+        align-items: center;
         opacity: 1 !important;
+    }
+
+    .teacher-detail-photo {
+        flex: 0 0 auto;
+        max-width: 200px;
+        width: 200px;
+    }
+
+    .teacher-detail-photo img {
+        aspect-ratio: 1 / 1;
+        border-radius: 50%;
     }
     
     .teacher-detail-info {
         padding: 0;
+        text-align: center;
         opacity: 1 !important;
     }
     
     .teacher-detail-info h2 {
-        font-size: 1.8rem;
-        margin-bottom: 1rem;
+        font-size: 1.5rem;
+        margin-bottom: 0.75rem;
         margin-top: 0;
         opacity: 1 !important;
     }
+
+    .teacher-badge {
+        margin: 0 auto 0.5rem;
+    }
     
     .teacher-message-box {
-        padding: 1.5rem;
-        margin-top: 1.5rem;
+        padding: 1.25rem;
+        margin-top: 1rem;
         opacity: 1 !important;
+        text-align: left;
     }
     
     .close-detail-form {
         top: 1rem;
         right: 1rem;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
+        width: 35px;
+        height: 35px;
     }
 }
 
@@ -6174,7 +6241,12 @@ select:focus {
    Semua rule di bawah ini hanya aktif di mobile.
 ═══════════════════════════════════════════════════════════════ */
 
-/* Sembunyikan elemen desktop di mobile, dan sebaliknya */
+/* BASE: Sembunyikan .mobile-landing secara default (desktop) */
+.mobile-landing {
+    display: none;
+}
+
+/* MOBILE: Tampilkan mobile layout, sembunyikan desktop layout */
 @media (max-width: 768px) {
     /* Sembunyikan kolom-kolom desktop */
     .landing-left,
@@ -6184,10 +6256,11 @@ select:focus {
 
     /* Tampilkan blok mobile */
     .mobile-landing {
-        display: flex;
+        display: flex !important;
         flex-direction: column;
         width: 100%;
-        min-height: 100%;
+        flex: 1;
+        min-height: 0;
         overflow: hidden;
     }
 
@@ -6215,19 +6288,12 @@ select:focus {
     }
 }
 
-/* Sembunyikan .mobile-landing di desktop */
-@media (min-width: 769px) {
-    .mobile-landing {
-        display: none !important;
-    }
-}
-
 /* ───────────────────────────────
    Mobile Hero Section
 ─────────────────────────────── */
 .mobile-hero {
     position: relative;
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-height: 0;
     display: flex;
     align-items: flex-end;
@@ -6370,6 +6436,8 @@ select:focus {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
+    min-height: 180px;
+    z-index: 2;
 }
 
 /* Label "Class RPL 2k26" */
