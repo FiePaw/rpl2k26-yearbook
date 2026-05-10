@@ -24,7 +24,7 @@ function initDashboard() {
     initTheme();
     setupNavTabs();
     setupEventListeners();
-    loadDashboard();
+    loadDashboardFull();
     startAutoRefresh();
 }
 
@@ -59,6 +59,8 @@ function setupNavTabs() {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             const target = document.getElementById(`tab-${currentTab}`);
             if (target) target.classList.add('active');
+            // Load tab-specific data on switch
+            onTabSwitch(currentTab);
         });
     });
 }
@@ -96,8 +98,16 @@ async function loadDashboard() {
     }
 }
 
+// Initial full load (includes profiles & kolase once)
+async function loadDashboardFull() {
+    await loadDashboard();
+    renderProfileManagement();
+    renderKolaseManagement();
+}
+
 function startAutoRefresh() {
-    autoRefreshInterval = setInterval(loadDashboard, 5000);
+    // Realtime update every 3 seconds — no manual refresh needed
+    autoRefreshInterval = setInterval(loadDashboard, 3000);
 }
 
 function stopAutoRefresh() {
@@ -113,8 +123,15 @@ function renderAll() {
     renderAccounts();
     renderLoginHistory();
     renderTimeline();
-    renderProfileManagement();
-    renderKolaseManagement();
+    // Only re-render profiles/kolase when user is on that tab (avoid flicker & upload interruption)
+    if (currentTab === 'profiles') renderProfileManagement();
+    if (currentTab === 'kolase') renderKolaseManagement();
+}
+
+// Also render tab-specific data when switching tabs
+function onTabSwitch(tab) {
+    if (tab === 'profiles') renderProfileManagement();
+    if (tab === 'kolase') renderKolaseManagement();
 }
 
 // ========== SUMMARY STATS ==========
