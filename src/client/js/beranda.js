@@ -1209,10 +1209,34 @@ async function loadAndDisplayLyrics(studentId) {
             console.warn('⚠️ Could not load cached lyrics:', cachedError.message);
         }
 
-        // No lyrics found in database or cache — hide lyrics container
+        // No lyrics found in database or cache — show waiting message with timer
         // Auto lyrics generation cycle will generate lyrics server-side
         console.log('⚠️ No lyrics found for student (waiting for auto-generation cycle)');
-        lyricsContainer.style.display = 'none';
+        
+        // Show waiting message with realtime timer
+        const startTime = Date.now();
+        lyricsContent.innerHTML = `
+            <div class="lyrics-loading" style="flex-direction: column; gap: 0.8rem; padding: 2rem 1rem;">
+                <div class="lyrics-loading-spinner"></div>
+                <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-color);">Sabar yakk lirik nya lagi dibuat</span>
+                <span id="lyricsWaitTimer" style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">00:00</span>
+            </div>
+        `;
+        
+        // Start realtime timer
+        const timerEl = document.getElementById('lyricsWaitTimer');
+        if (timerEl) {
+            const timerInterval = setInterval(() => {
+                if (!document.getElementById('lyricsWaitTimer')) {
+                    clearInterval(timerInterval);
+                    return;
+                }
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const secs = (elapsed % 60).toString().padStart(2, '0');
+                timerEl.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
 
     } catch (error) {
         // Only handle non-abort errors
@@ -1236,15 +1260,9 @@ function displayLyricsSegments(segments, container) {
         const start = seg.start !== undefined ? seg.start : 0;
         const end = seg.end !== undefined ? seg.end : start + 5;
         
-        // Format timestamp for display
-        const startMin = Math.floor(start / 60);
-        const startSec = Math.floor(start % 60);
-        const timeStr = `[${startMin}:${startSec.toString().padStart(2, '0')}]`;
-        
         return `
         <div class="lyric-line" data-index="${idx}" data-start="${start}" data-end="${end}">
             <span class="lyric-text">${(seg.text || '').trim()}</span>
-            <span class="lyric-time">${timeStr}</span>
         </div>
     `;
     }).join('');

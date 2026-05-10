@@ -9,6 +9,15 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.8.2] — 2026-05-10
+
+### Changed
+- **Beranda — Lyrics waiting state**: Jika profile memiliki lagu tapi lirik belum tersedia, tampilkan pesan "Sabar yakk lirik nya lagi dibuat" dengan timer realtime (MM:SS) yang berjalan. Sebelumnya container lyrics di-hide.
+- **Beranda — Lyric line style Spotify**: `.lyric-line.active` sekarang menggunakan style mirip Spotify — teks putih terang, font lebih besar (1.15rem), bold (700), scale up sedikit (1.02), text-shadow glow. Line yang belum/sudah lewat menggunakan warna putih redup (opacity-based).
+- **Beranda — Hapus lyric-time**: Timestamp `[MM:SS]` di setiap baris lirik dihapus dari tampilan. Sekarang hanya menampilkan teks lirik saja (lebih clean seperti Spotify).
+
+---
+
 ## [2.8.1] — 2026-05-10
 
 ### Changed

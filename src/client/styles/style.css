@@ -5865,35 +5865,35 @@ select:focus {
 }
 
 .lyric-line {
-    padding: 0.6rem 0.8rem;
-    border-radius: 0.3rem;
-    transition: all 0.2s ease;
+    padding: 0.8rem 1rem;
+    border-radius: 0.4rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.4);
     background: transparent;
     user-select: text;
+    font-weight: 500;
+    letter-spacing: 0.01em;
 }
 
 .lyric-line:hover {
-    background: rgba(29, 185, 84, 0.1);
-    color: var(--primary-color);
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .lyric-line.active {
-    background: rgba(29, 185, 84, 0.3);
-    color: var(--primary-color);
-    font-weight: 600;
-    border-left: 3px solid var(--primary-color);
-    padding-left: 0.5rem;
-    transform: translateX(2px);
-    box-shadow: 0 2px 8px rgba(29, 185, 84, 0.2);
+    color: #ffffff;
+    font-size: 1.15rem;
+    font-weight: 700;
+    transform: scale(1.02);
+    padding: 0.9rem 1rem;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
 }
 
 .lyric-line.past {
-    opacity: 0.5;
-    color: var(--text-muted, #666);
+    color: rgba(255, 255, 255, 0.25);
+    font-weight: 400;
 }
 
 .lyrics-empty-message {
@@ -6088,8 +6088,12 @@ select:focus {
     }
 
     .lyric-line {
-        padding: 0.5rem 0.6rem;
-        font-size: 0.85rem;
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    .lyric-line.active {
+        font-size: 1rem;
     }
 
     .lyrics-karaoke-header {
