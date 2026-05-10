@@ -988,7 +988,7 @@ async function loadHeroCollageCards() {
     // Render collage cards
     container.innerHTML = selectedPhotos.map((photoUrl, i) => `
         <div class="collage-card" style="animation-delay: ${i * 0.15}s, ${i * 0.15}s;">
-            <img src="${photoUrl}" alt="" loading="lazy" draggable="false">
+            <img src="${photoUrl}" alt="" loading="lazy" decoding="async" draggable="false">
         </div>
     `).join('');
 

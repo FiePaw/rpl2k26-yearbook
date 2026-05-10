@@ -206,7 +206,9 @@ function displayGalleryImages(imagesToDisplay) {
             <div class="memory-frame">
                 <img 
                     alt="${cleanName}" 
-                    loading="lazy" 
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
                     class="gallery-img loading" 
                     data-index="${image.index}"
                     style="background-color: ${placeholderColor};"
@@ -216,7 +218,6 @@ function displayGalleryImages(imagesToDisplay) {
                     <p>A moment to remember</p>
                 </div>
             </div>
-            <div class="polaroid-effect"></div>
         `;
         
         // Append card to container immediately (shows placeholder first)
@@ -308,57 +309,52 @@ function loadDefaultMemories() {
     container.innerHTML = `
         <div class="memory-card memory-large">
             <div class="memory-frame">
-                <img src="https://via.placeholder.com/800x600?text=Memory+1" alt="Memory 1">
+                <img src="https://via.placeholder.com/800x600?text=Memory+1" alt="Memory 1" loading="lazy" decoding="async">
                 <div class="memory-overlay">
                     <h3>First Day of Class</h3>
                     <p>The beginning of our journey</p>
                 </div>
             </div>
-            <div class="polaroid-effect"></div>
         </div>
 
         <div class="memory-card memory-medium">
             <div class="memory-frame">
-                <img src="https://via.placeholder.com/600x600?text=Memory+2" alt="Memory 2">
+                <img src="https://via.placeholder.com/600x600?text=Memory+2" alt="Memory 2" loading="lazy" decoding="async">
                 <div class="memory-overlay">
                     <h3>School Events</h3>
                     <p>Together we shine</p>
                 </div>
             </div>
-            <div class="polaroid-effect"></div>
         </div>
 
         <div class="memory-card memory-medium">
             <div class="memory-frame">
-                <img src="https://via.placeholder.com/600x600?text=Memory+3" alt="Memory 3">
+                <img src="https://via.placeholder.com/600x600?text=Memory+3" alt="Memory 3" loading="lazy" decoding="async">
                 <div class="memory-overlay">
                     <h3>Field Trip</h3>
                     <p>Adventures outside classroom</p>
                 </div>
             </div>
-            <div class="polaroid-effect"></div>
         </div>
 
         <div class="memory-card memory-small">
             <div class="memory-frame">
-                <img src="https://via.placeholder.com/400x400?text=Memory+4" alt="Memory 4">
+                <img src="https://via.placeholder.com/400x400?text=Memory+4" alt="Memory 4" loading="lazy" decoding="async">
                 <div class="memory-overlay">
                     <h3>Sports Day</h3>
                     <p>Competing with spirit</p>
                 </div>
             </div>
-            <div class="polaroid-effect"></div>
         </div>
 
         <div class="memory-card memory-small">
             <div class="memory-frame">
-                <img src="https://via.placeholder.com/400x400?text=Memory+5" alt="Memory 5">
+                <img src="https://via.placeholder.com/400x400?text=Memory+5" alt="Memory 5" loading="lazy" decoding="async">
                 <div class="memory-overlay">
                     <h3>Graduation Day</h3>
                     <p>The end of a chapter</p>
                 </div>
             </div>
-            <div class="polaroid-effect"></div>
         </div>
     `;
 }
@@ -615,8 +611,17 @@ async function initVideoCarousel() {
             videos.forEach((video, index) => {
                 const videoEl = document.createElement('video');
                 videoEl.id = `video-${index}`;
-                videoEl.muted = false; // Default: unmuted (user can mute via controls)
-                videoEl.controls = true; // Enable native controls for volume/fullscreen
+                // Start MUTED so browsers allow autoplay; user can unmute via controls
+                videoEl.muted = true;
+                videoEl.defaultMuted = true;
+                videoEl.setAttribute('muted', '');
+                // Inline playback (critical for iOS Safari — without this, video becomes audio-only)
+                videoEl.playsInline = true;
+                videoEl.setAttribute('playsinline', '');
+                videoEl.setAttribute('webkit-playsinline', '');
+                // Keep native controls off — we have custom controls. Native controls over custom = double UI & conflicts
+                videoEl.controls = false;
+                videoEl.disablePictureInPicture = true;
                 
                 // ========== PRELOADING STRATEGY ==========
                 // Current video (index 0): preload='auto' (download full content)
@@ -761,6 +766,25 @@ async function initVideoCarousel() {
             // ========== INTERSECTION OBSERVER FOR AUTO-PLAY ==========
             // Auto-play video when video section enters viewport
             if (videoSection && 'IntersectionObserver' in window) {
+                // Wait until video has decoded ≥1 frame before play() to avoid
+                // the "audio only, no picture" bug on first video.
+                const safePlay = (videoEl) => {
+                    if (!videoEl) return;
+                    const tryPlay = () => {
+                        const p = videoEl.play();
+                        if (p && typeof p.catch === 'function') {
+                            p.catch(e => console.warn(`⚠️ Auto-play failed:`, e.message));
+                        }
+                    };
+                    if (videoEl.readyState >= 2 /* HAVE_CURRENT_DATA */) {
+                        tryPlay();
+                    } else {
+                        videoEl.addEventListener('loadeddata', tryPlay, { once: true });
+                        // Kick loading in case preload='none'
+                        try { videoEl.load(); } catch (_) {}
+                    }
+                };
+
                 const videoObserver = new IntersectionObserver((entries) => {
                     entries.forEach((entry) => {
                         const currentVideo = document.getElementById(`video-${currentIndex}`);
@@ -769,9 +793,7 @@ async function initVideoCarousel() {
                             // Section is visible - auto-play current video
                             if (currentVideo && currentVideo.paused) {
                                 console.log(`▶️ Section visible: Auto-playing video ${currentIndex}`);
-                                currentVideo.play().catch(e => {
-                                    console.warn(`⚠️ Auto-play failed:`, e.message);
-                                });
+                                safePlay(currentVideo);
                             }
                         } else {
                             // Section is not visible - pause video
@@ -839,9 +861,20 @@ function showVideo(index) {
             el.classList.add('active');
             
             el.style.opacity = '1';
-            el.play().catch(e => {
-                console.warn(`⚠️ Play error for video ${idx}:`, e.message);
-            });
+
+            // Wait for video to be decodable before play() to avoid audio-only
+            const startPlayback = () => {
+                const p = el.play();
+                if (p && typeof p.catch === 'function') {
+                    p.catch(e => console.warn(`⚠️ Play error for video ${idx}:`, e.message));
+                }
+            };
+            if (el.readyState >= 2) {
+                startPlayback();
+            } else {
+                el.addEventListener('loadeddata', startPlayback, { once: true });
+                try { el.load(); } catch (_) {}
+            }
         } else if (idx === (index + 1) % videoEls.length) {
             // Next video: preload metadata only
             el.preload = 'metadata';
@@ -987,16 +1020,56 @@ function initPlayerControlListeners() {
     // Volume Control
     const volumeSlider = document.getElementById('volumeSlider');
     const volumeBtn = document.getElementById('volumeBtn');
+
+    // Set initial volume UI state to reflect default MUTED start
+    if (volumeBtn) {
+        volumeBtn.querySelector('i').className = 'fas fa-volume-mute';
+    }
     if (volumeSlider) {
+        volumeSlider.value = 0;
+
         volumeSlider.addEventListener('input', (e) => {
             const volume = e.target.value / 100;
             const videos = document.querySelectorAll('video');
-            videos.forEach(v => v.volume = volume);
-            
+            videos.forEach(v => {
+                v.volume = volume;
+                // User manually adjusts volume => unmute
+                if (volume > 0) {
+                    v.muted = false;
+                    v.removeAttribute('muted');
+                } else {
+                    v.muted = true;
+                }
+            });
+
             // Update volume icon
             if (volumeBtn) {
                 const icon = volume === 0 ? 'fa-volume-mute' : volume < 0.5 ? 'fa-volume-down' : 'fa-volume-up';
                 volumeBtn.querySelector('i').className = `fas ${icon}`;
+            }
+        });
+    }
+
+    // Click on volume button to toggle mute
+    if (volumeBtn) {
+        volumeBtn.addEventListener('click', () => {
+            const currentVideoEl = document.getElementById(`video-${currentIndex}`);
+            if (!currentVideoEl) return;
+
+            if (currentVideoEl.muted || currentVideoEl.volume === 0) {
+                // Unmute — restore slider to 100
+                document.querySelectorAll('video').forEach(v => {
+                    v.muted = false;
+                    v.removeAttribute('muted');
+                    v.volume = 1;
+                });
+                if (volumeSlider) volumeSlider.value = 100;
+                volumeBtn.querySelector('i').className = 'fas fa-volume-up';
+            } else {
+                // Mute
+                document.querySelectorAll('video').forEach(v => { v.muted = true; });
+                if (volumeSlider) volumeSlider.value = 0;
+                volumeBtn.querySelector('i').className = 'fas fa-volume-mute';
             }
         });
     }

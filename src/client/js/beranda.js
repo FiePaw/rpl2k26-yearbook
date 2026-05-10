@@ -230,7 +230,7 @@ function createStudentCard(student) {
     card.innerHTML = `
         <div class="card-photo-section">
             <div class="card-photo-frame">
-                <img src="${photoUrl}" alt="${altText}">
+                <img src="${photoUrl}" alt="${altText}" loading="lazy" decoding="async">
                 <div class="play-overlay">
                     <div class="play-btn">
                         <i class="fas fa-play"></i>

@@ -9,6 +9,33 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.6.0] — 2026-05-10
+
+### Fixed
+- **Kolase — Video Carousel "first video audio-only" bug** : Video pertama kadang hanya keluar suara tanpa gambar di sebagian browser (terutama iOS Safari dan saat autoplay via IntersectionObserver). Penyebab gabungan: atribut `playsinline` tidak ada, `muted` tidak di-set (autoplay ditolak), dan `.play()` dipanggil sebelum browser decode frame pertama.
+  - `<video>` sekarang dibuat dengan `muted=true` + `playsinline` + `webkit-playsinline` sejak awal.
+  - `controls=false` (menghindari bentrok dengan custom Spotify-style controls).
+  - IntersectionObserver dan `showVideo()` kini menunggu `readyState >= HAVE_CURRENT_DATA` (atau event `loadeddata`) sebelum `.play()` → tidak ada lagi situasi "audio jalan, video masih blank".
+  - Tombol volume dan slider diinisialisasi ke state **muted** (ikon `fa-volume-mute`, slider = 0); toggle / slider akan unmute otomatis saat user berinteraksi.
+
+### Changed
+- **Kolase — Memory Card** : `.polaroid-effect` dihapus dari template card (baik versi dinamis via API maupun fallback default) dan CSS rule nya juga dihapus dari `style.css`. Tampilan kartu kini lebih clean.
+- **Fix (beranda) fotonya ikutan diupdate dari iterasi sebelumnya** — changelog ini melengkapi commit sebelumnya agar tercatat.
+
+### Performance
+- **App-wide image optimization** : Menambah file baru `src/client/js/image-optimizer.js` yang:
+  - Meng-upgrade setiap `<img>` tanpa atribut `loading` menjadi `loading="lazy"` + `decoding="async"` + `fetchpriority="low"`.
+  - Memakai `MutationObserver` untuk menangkap gambar yang di-inject dinamis (student cards, teacher cards, gallery, carousel, cropper preview, popup, dsb).
+  - Menghormati author intent: img yang sudah set `loading` atau ditandai `data-eager` / `fetchpriority="high"` **tidak** disentuh.
+- Di-load pada semua halaman: `index.html`, `beranda.html`, `kolase.html`, `wali-kelas.html`, `profile.html`, `admin-dashboard.html`.
+- `beranda.js` — student card: `<img>` sekarang memiliki `loading="lazy" decoding="async"` (sebelumnya eager).
+- `wali-kelas.js` — teacher card: sama (`loading="lazy" decoding="async"`).
+- `landing.js` — mobile hero collage: menambah `decoding="async"`.
+- `kolase.js` — memory card: menambah `decoding="async"` + `fetchpriority="low"` ke gambar galeri yang sudah lazy.
+- Efek: halaman yang menampilkan banyak foto (beranda, kolase, wali-kelas) tidak lagi mem-block main thread untuk dekoding gambar off-screen → scroll lebih halus, initial paint lebih cepat.
+
+---
+
 ## [2.5.0] — 2026-05-10
 
 ### Added

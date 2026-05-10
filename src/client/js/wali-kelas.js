@@ -138,7 +138,7 @@ function createTeacherCard(teacher) {
     card.innerHTML = `
         <div class="card-photo-section">
             <div class="card-photo-frame">
-                <img src="${photoUrl}" alt="${teacher.name}">
+                <img src="${photoUrl}" alt="${teacher.name}" loading="lazy" decoding="async">
                 <div class="play-overlay">
                     <div class="play-btn">
                         <i class="fas fa-star"></i>
