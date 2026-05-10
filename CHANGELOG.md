@@ -9,6 +9,20 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.6.1] — 2026-05-10
+
+### Fixed
+- **Kolase — Video player controls double-bound** : `initPlayerControlListeners()` dipasang dua kali (sekali dari dalam `initVideoCarousel` setelah video dibuat, sekali dari `DOMContentLoaded`). Setiap tombol (play/pause, volume, slider, progress bar, fullscreen) meregistrasi handler-nya dua kali. Efeknya paling terasa di tombol volume: satu klik = mute lalu unmute lagi dalam tick yang sama → tombol terlihat "tidak merespon". Ditambahkan guard `_playerControlListenersBound` agar listener hanya diikat satu kali.
+- **Kolase — Video pertama kadang audio-only (iteration 2)** : Event `loadeddata` (HAVE_CURRENT_DATA) ternyata kadang fire sebelum decoder iOS Safari benar-benar siap render frame, sehingga `.play()` tetap memulai audio tanpa gambar. Diganti ke `canplay` (HAVE_FUTURE_DATA) di kedua titik: IntersectionObserver auto-play dan `showVideo()`. `videoEl.load()` tetap dipanggil untuk memaksa fetch saat `preload='none'`.
+- **Kolase — Auto-rotate 40 detik memotong video yang baru di-pilih manual** : Timer `setInterval(38000)` berjalan terus-menerus tanpa pernah direset. Jika user menekan Next / swipe pada detik ke-20, video baru hanya dapat ~18 detik sebelum fade-out. Timer di-refactor menjadi `scheduleAutoRotate()` yang di-reset setiap kali `showVideo()` dipanggil (yaitu semua entry point navigasi: next/prev/keyboard/swipe).
+
+### Performance
+- **Image quality — Hilangkan artefak "pecah"/pixelated di memory frame** : `image-rendering: crisp-edges` + `-webkit-optimize-contrast` pada `.memory-frame img` dihapus. Kedua properti ini dirancang untuk pixel-art, bukan foto — di Firefox dan Safari ia menonaktifkan bilinear/bicubic resampling sehingga foto yang di-downscale terlihat kotak-kotak. Dikembalikan ke `image-rendering: auto`.
+- **Image quality — Hilangkan blur di layar retina** : `generateImageSrcset()` di `kolase.js` dan `profile.js` sebelumnya mengembalikan string `"URL 1x, URL 2x"` padahal server belum menyediakan variant ukuran. Browser retina memilih versi "2x" lalu merender-nya di setengah ukuran natural → gambar tampak blur. Sekarang mengembalikan string kosong; pemanggil akan fallback ke atribut `src` di resolusi natural.
+- **Image priority — Jangan paksa `fetchpriority="low"` untuk semua img** : `image-optimizer.js` sebelumnya memaksa `fetchpriority="low"` pada setiap `<img>` yang belum di-opt-out. Ini merugikan LCP image (hero landing, beranda card pertama). Sekarang hanya menerapkan `loading="lazy"` + `decoding="async"` — sudah cukup untuk defer gambar off-screen, tanpa mendeprioritize gambar above-the-fold.
+
+---
+
 ## [2.6.0] — 2026-05-10
 
 ### Fixed

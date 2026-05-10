@@ -27,25 +27,14 @@ let currentFilter = 'all'; // Track current filter
  * @returns {string} - srcset string for different screen sizes
  */
 function generateImageSrcset(imageUrl) {
-    // If URL doesn't have extension or is a placeholder, return as-is
-    if (!imageUrl || !imageUrl.includes('.')) {
-        return imageUrl;
-    }
-    
-    // Extract base URL and extension
-    const lastDotIndex = imageUrl.lastIndexOf('.');
-    const baseUrl = imageUrl.substring(0, lastDotIndex);
-    const ext = imageUrl.substring(lastDotIndex);
-    
-    // Generate URLs for different sizes with original as fallback
-    // Note: These variants may not exist on server yet
-    // If they don't exist, browser will fall back to src attribute
-    const srcset = [
-        `${imageUrl} 1x`,
-        `${imageUrl} 2x`
-    ].join(', ');
-    
-    return srcset;
+    // Server doesn't generate _small / _medium / _large variants yet, so we
+    // intentionally return an empty string. Declaring the SAME url as both
+    // `1x` and `2x` (our previous behavior) caused retina browsers to pick
+    // "2x" and render the image at half natural size → visibly blurry.
+    // Returning '' lets the browser use the plain `src` attribute at its
+    // natural resolution, which is the correct behavior until real variants
+    // are produced on the server.
+    return '';
 }
 
 /**
@@ -766,8 +755,13 @@ async function initVideoCarousel() {
             // ========== INTERSECTION OBSERVER FOR AUTO-PLAY ==========
             // Auto-play video when video section enters viewport
             if (videoSection && 'IntersectionObserver' in window) {
-                // Wait until video has decoded ≥1 frame before play() to avoid
-                // the "audio only, no picture" bug on first video.
+                // Wait until the video can actually render a frame before
+                // calling .play() — this prevents the "audio only / black
+                // frame" bug on the first video (iOS Safari + Chromium with
+                // preload='auto' race). We prefer `canplay`
+                // (HAVE_FUTURE_DATA) over `loadeddata` (HAVE_CURRENT_DATA)
+                // because some Safari builds fire `loadeddata` before the
+                // video decoder is actually ready.
                 const safePlay = (videoEl) => {
                     if (!videoEl) return;
                     const tryPlay = () => {
@@ -776,11 +770,13 @@ async function initVideoCarousel() {
                             p.catch(e => console.warn(`⚠️ Auto-play failed:`, e.message));
                         }
                     };
-                    if (videoEl.readyState >= 2 /* HAVE_CURRENT_DATA */) {
+                    if (videoEl.readyState >= 3 /* HAVE_FUTURE_DATA */) {
                         tryPlay();
                     } else {
-                        videoEl.addEventListener('loadeddata', tryPlay, { once: true });
-                        // Kick loading in case preload='none'
+                        videoEl.addEventListener('canplay', tryPlay, { once: true });
+                        // Kick loading in case preload='none' or the browser
+                        // hasn't started fetching yet. Safe to call even
+                        // when already loading.
                         try { videoEl.load(); } catch (_) {}
                     }
                 };
@@ -810,29 +806,32 @@ async function initVideoCarousel() {
                 videoObserver.observe(videoSection);
                 console.log('✅ Video auto-play observer initialized');
             }
-            // Rotate to next video every 40 seconds if currently playing
-            // Fade-out animation starts at 38 seconds (2 second fade-out)
-            // (If video ends before 40s, 'ended' event handler will trigger nextVideo)
-            setInterval(() => {
-                const currentVideo = document.getElementById(`video-${currentIndex}`);
-                if (currentVideo && !currentVideo.paused) {
-                    console.log(`⏱️ Auto-rotate timer: Fade-out animation starting...`);
-                    
-                    // ========== FADE-OUT ANIMATION (2 seconds) ==========
-                    // Remove any existing fade-out class first
-                    currentVideo.classList.remove('video-fade-out');
-                    
-                    // Trigger fade-out animation
-                    currentVideo.classList.add('video-fade-out');
-                    console.log(`🌫️ Video ${currentIndex}: Fade-out started (2 seconds)`);
-                    
-                    // After 2 seconds of fade-out, rotate to next video
-                    setTimeout(() => {
-                        currentVideo.classList.remove('video-fade-out');
-                        nextVideo();
-                    }, 2000);
+            // Rotate to the next video every 40s **if still playing**.
+            // Fade-out starts at 38s (2s fade), then nextVideo().
+            // If the user manually navigates (prev/next/swipe), we restart
+            // this timer so the user doesn't lose their freshly-picked
+            // video half-way through.
+            const AUTO_ROTATE_MS = 38000;
+            const scheduleAutoRotate = () => {
+                if (window._videoAutoRotateTimer) {
+                    clearInterval(window._videoAutoRotateTimer);
                 }
-            }, 38000); // Trigger at 38 seconds (38s + 2s fade = 40s total)
+                window._videoAutoRotateTimer = setInterval(() => {
+                    const currentVideo = document.getElementById(`video-${currentIndex}`);
+                    if (currentVideo && !currentVideo.paused) {
+                        console.log(`⏱️ Auto-rotate: Fade-out animation starting...`);
+                        currentVideo.classList.remove('video-fade-out');
+                        currentVideo.classList.add('video-fade-out');
+                        setTimeout(() => {
+                            currentVideo.classList.remove('video-fade-out');
+                            nextVideo();
+                        }, 2000);
+                    }
+                }, AUTO_ROTATE_MS);
+            };
+            // Expose so showVideo() / manual nav can restart the countdown
+            window._resetVideoAutoRotate = scheduleAutoRotate;
+            scheduleAutoRotate();
         } else {
             console.error('❌ No videos found in API response');
         }
@@ -862,17 +861,20 @@ function showVideo(index) {
             
             el.style.opacity = '1';
 
-            // Wait for video to be decodable before play() to avoid audio-only
+            // Wait for the video to be decodable before play() to avoid
+            // audio-only playback on first transition. See comment on
+            // safePlay() above for why we use `canplay` instead of
+            // `loadeddata`.
             const startPlayback = () => {
                 const p = el.play();
                 if (p && typeof p.catch === 'function') {
                     p.catch(e => console.warn(`⚠️ Play error for video ${idx}:`, e.message));
                 }
             };
-            if (el.readyState >= 2) {
+            if (el.readyState >= 3) {
                 startPlayback();
             } else {
-                el.addEventListener('loadeddata', startPlayback, { once: true });
+                el.addEventListener('canplay', startPlayback, { once: true });
                 try { el.load(); } catch (_) {}
             }
         } else if (idx === (index + 1) % videoEls.length) {
@@ -895,6 +897,13 @@ function showVideo(index) {
     currentIndex = index;
     updateVideoInfo();
     updatePlayerControls();
+
+    // Restart the 40s auto-rotate countdown so that a video the user just
+    // picked (via next/prev/swipe/keyboard) plays for its full window
+    // instead of possibly getting cut off a few seconds in.
+    if (typeof window._resetVideoAutoRotate === 'function') {
+        window._resetVideoAutoRotate();
+    }
 }
 
 function nextVideo() {
@@ -986,7 +995,19 @@ function formatTime(seconds) {
 }
 
 // ========== INITIALIZE PLAYER CONTROL LISTENERS ==========
+// Guard flag — this function is invoked from two places:
+//   1. After the video carousel finishes building (initVideoCarousel)
+//   2. On DOMContentLoaded (fallback if script loaded late)
+// Without a guard, every button (play, volume, fullscreen, progress) bound
+// its handler twice. Volume toggle would mute → unmute within the same
+// click tick and appeared unresponsive; play/pause would flip twice.
+let _playerControlListenersBound = false;
+
 function initPlayerControlListeners() {
+    if (_playerControlListenersBound) {
+        return;
+    }
+    _playerControlListenersBound = true;
     // Play/Pause Button
     const playPauseBtn = document.getElementById('playPauseBtn');
     if (playPauseBtn) {

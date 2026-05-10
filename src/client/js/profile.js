@@ -286,10 +286,11 @@ let studentAudioMetadata = null;  // Store metadata (artist, title) from audio f
  * @returns {string} - srcset string (currently returns empty, variants not yet generated)
  */
 function generateImageSrcset(imageUrl) {
-    // Placeholder for future implementation when server generates variants
-    // Currently just returns original URL with density descriptor
-    if (!imageUrl) return '';
-    return `${imageUrl} 1x, ${imageUrl} 2x`;
+    // Server doesn't produce size variants yet. Declaring the same URL as
+    // both `1x` and `2x` (previous behavior) made retina browsers downscale
+    // the image and render it blurry. Return '' so pages fall back to the
+    // plain `src` at native resolution.
+    return '';
 }
 
 /**

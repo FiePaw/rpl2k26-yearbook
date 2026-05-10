@@ -52,10 +52,12 @@
             if (!img.hasAttribute('decoding')) {
                 img.decoding = 'async';
             }
-            // Hint the browser these are not critical to first paint.
-            if (!img.hasAttribute('fetchpriority')) {
-                img.setAttribute('fetchpriority', 'low');
-            }
+            // Deliberately do NOT set fetchpriority="low" here. Previous
+            // behavior ("force low on every img") hurt the hero / LCP image
+            // on landing + beranda because the browser deprioritized the
+            // very image the user is waiting to see. Real above-the-fold
+            // imagery should render at natural priority; offscreen images
+            // are already deferred by `loading="lazy"`, which is enough.
         } catch (_) {
             /* older browsers ignore */
         }

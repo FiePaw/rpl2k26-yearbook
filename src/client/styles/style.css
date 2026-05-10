@@ -3726,9 +3726,10 @@ body.has-main-content {
     height: 100%;
     object-fit: cover;
     transition: var(--transition);
-    /* Responsive image optimization */
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
+    /* Use browser default ("auto") resampling for photos. `crisp-edges` is
+       meant for pixel art and causes real photos to look pixelated / broken
+       on Firefox and Safari when downscaled. */
+    image-rendering: auto;
     /* Enable srcset support */
     max-width: 100%;
     height: auto;
