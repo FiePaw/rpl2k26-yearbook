@@ -1,17 +1,21 @@
 /**
- * Music Downloader Module - Refactored Version
+ * Music Downloader Module - Refactored Version v2.8.0
  * 
  * Menggabungkan:
  * - Metadata Cache System (mengurangi API calls 90%)
  * - Rate Limit Handler (graceful error handling)
  * - Smart Platform Detection (Spotify/YouTube/YouTube Music)
  * - Spotify oEmbed API (tanpa authentication, tidak ada rate limit)
+ * - Cookie Rotation (multiple cookies, auto-rotate on invalid/expired)
+ * - Fallback YouTube Search (play-dl → yt-search → youtube-sr → AI thinking)
  * 
  * Mengatasi masalah:
  * ✅ Rate limit issue dari spotdl
  * ✅ No API calls untuk cached tracks
  * ✅ Graceful fallback jika metadata gagal
  * ✅ Works dengan existing server.js API
+ * ✅ Rotating cookies untuk bypass expired/invalid cookies
+ * ✅ Multiple fallback search methods
  */
 
 const axios = require('axios');
@@ -21,7 +25,16 @@ const path = require('path');
 const { spawn } = require('child_process');
 const MetadataCache = require('../utils/metadata-cache');
 const RateLimitHandler = require('../utils/rate-limit-handler');
-const yts = require('yt-search');
+const CookieRotator = require('../utils/cookie-rotator');
+
+// Optional dependencies - loaded with try/catch
+let playDl = null;
+let ytSearch = null;
+let youtubeSr = null;
+
+try { playDl = require('play-dl'); } catch (e) { /* not installed */ }
+try { ytSearch = require('yt-search'); } catch (e) { /* not installed */ }
+try { youtubeSr = require('youtube-sr'); } catch (e) { /* not installed */ }
 
 class MusicDownloader {
     constructor(outputDir = 'downloads', cacheDir = 'metadata_cache') {
@@ -31,6 +44,13 @@ class MusicDownloader {
         this.rateLimitHandler = new RateLimitHandler();
         this.pythonCmd = null; // Will be detected on first use
         
+        // Initialize cookie rotator - uses cookies/ directory at project root
+        const projectRoot = path.join(__dirname, '..', '..', '..');
+        this.cookieRotator = new CookieRotator(path.join(projectRoot, 'cookies'));
+        
+        // QwenClient for AI fallback search (lazy loaded)
+        this._qwenClient = null;
+
         // Ensure output directory exists
         if (!fsSync.existsSync(outputDir)) {
             fsSync.mkdirSync(outputDir, { recursive: true });
@@ -38,35 +58,41 @@ class MusicDownloader {
     }
 
     /**
+     * Get or create QwenClient for AI fallback search
+     */
+    _getQwenClient() {
+        if (!this._qwenClient) {
+            try {
+                const QwenClient = require('../ai/AIAPI');
+                this._qwenClient = new QwenClient('http://108.137.15.61:9000', 60000);
+            } catch (e) {
+                console.error('❌ Failed to load QwenClient:', e.message);
+            }
+        }
+        return this._qwenClient;
+    }
+
+
+    /**
      * Detect which Python command is available (python, python3, python2, etc)
-     * Needed for Linux compatibility (python3 vs python)
-     * @returns {Promise<string>} Python command (python3, python, etc)
      */
     async getPythonCommand() {
-        // If already detected, return cached value
-        if (this.pythonCmd) {
-            return this.pythonCmd;
-        }
+        if (this.pythonCmd) return this.pythonCmd;
 
         const { execSync } = require('child_process');
         const pythonCandidates = ['python3', 'python', 'python2'];
 
         for (const pythonCmd of pythonCandidates) {
             try {
-                execSync(`${pythonCmd} --version`, { 
-                    stdio: 'pipe',
-                    timeout: 2000 
-                });
+                execSync(`${pythonCmd} --version`, { stdio: 'pipe', timeout: 2000 });
                 console.log(`✓ Found Python: ${pythonCmd}`);
                 this.pythonCmd = pythonCmd;
                 return pythonCmd;
             } catch (error) {
-                // This command doesn't exist, try next
                 continue;
             }
         }
 
-        // If no Python found, throw error with helpful message
         throw new Error(
             'Python tidak ditemukan! Install Python dengan:\n' +
             '  Ubuntu/Debian: sudo apt-get install python3 python3-pip\n' +
@@ -79,7 +105,7 @@ class MusicDownloader {
     /**
      * Download lagu dari URL (smart platform detection)
      * @param {string} url - Spotify/YouTube/YouTube Music URL
-     * @param {string} artist - Optional artist name untuk Spotify (untuk search yang lebih akurat)
+     * @param {string} artist - Optional artist name untuk Spotify
      * @returns {Promise<object>} { success, fileName, filePath, source, message }
      */
     async download(url, artist = null) {
@@ -88,22 +114,17 @@ class MusicDownloader {
                 throw new Error('URL harus disediakan');
             }
 
-            // Validate URL format
             if (!this.isValidUrl(url)) {
                 throw new Error('URL tidak valid. Gunakan Spotify, YouTube, atau YouTube Music link');
             }
 
             console.log(`🎵 Download request: ${url}${artist ? ` (artist: ${artist})` : ''}`);
 
-            // Check rate limit status
             if (this.rateLimitHandler.isRateLimited()) {
                 const waitTime = this.rateLimitHandler.getWaitTime();
-                const message = `⏱️ Rate limited. Tunggu ${waitTime}s sebelum coba lagi.\n` +
-                    `💡 Tip: Metadata untuk lagu populer sudah di-cache, coba lagu yang lain dulu`;
-                throw new Error(message);
+                throw new Error(`⏱️ Rate limited. Tunggu ${waitTime}s sebelum coba lagi.`);
             }
 
-            // Platform detection
             const isSpotify = /spotify\.com/i.test(url);
             const isYoutube = /youtube\.com|youtu\.be/i.test(url);
             const isYoutubeMusic = /music\.youtube\.com/i.test(url);
@@ -112,10 +133,10 @@ class MusicDownloader {
 
             if (isSpotify) {
                 result = await this.downloadFromSpotify(url, artist);
-            } else if (isYoutube) {
-                result = await this.downloadFromYoutube(url);
             } else if (isYoutubeMusic) {
                 result = await this.downloadFromYoutubeMusic(url);
+            } else if (isYoutube) {
+                result = await this.downloadFromYoutube(url);
             }
 
             if (!result.fileName) {
@@ -128,7 +149,6 @@ class MusicDownloader {
         } catch (error) {
             console.error(`❌ Download error: ${error.message}`);
             
-            // Check if it's a Python/yt-dlp error
             if (error.message.includes('Python tidak ditemukan') || 
                 error.message.includes('ENOENT') || 
                 error.code === 'ENOENT' ||
@@ -139,9 +159,6 @@ class MusicDownloader {
                         `Linux (Ubuntu/Debian):\n` +
                         `  sudo apt-get install python3 python3-pip\n` +
                         `  pip3 install yt-dlp\n\n` +
-                        `Fedora:\n` +
-                        `  sudo dnf install python3 python3-pip\n` +
-                        `  pip3 install yt-dlp\n\n` +
                         `macOS:\n` +
                         `  brew install python3\n` +
                         `  pip3 install yt-dlp`,
@@ -149,58 +166,164 @@ class MusicDownloader {
                 };
             }
             
-            // Check if it's a rate limit error
             const errorHandling = this.rateLimitHandler.handleError(error);
             if (errorHandling.isRateLimit) {
-                return {
-                    success: false,
-                    message: errorHandling.message,
-                    isRateLimit: true
-                };
+                return { success: false, message: errorHandling.message, isRateLimit: true };
             }
 
-            return {
-                success: false,
-                message: error.message
-            };
+            return { success: false, message: error.message };
         }
     }
 
-	async searchYoutube(query) {
-		try {
-			console.log(`🔎 Searching YouTube: "${query}"`);
 
-			const result = await yts(query);
+    /**
+     * Search YouTube with multiple fallback methods:
+     * 1. play-dl
+     * 2. yt-search
+     * 3. youtube-sr
+     * 4. AI thinking mode (Qwen) as last resort
+     * 
+     * @param {string} query - Search query
+     * @returns {Promise<{title: string, url: string, videoId: string}>}
+     */
+    async searchYoutube(query) {
+        console.log(`🔎 Searching YouTube: "${query}"`);
 
-			if (!result.videos || result.videos.length === 0) {
-				throw new Error('No videos found');
-			}
+        // Method 1: play-dl
+        if (playDl) {
+            try {
+                console.log('  📡 Trying play-dl...');
+                const results = await playDl.search(query, { limit: 1, source: { youtube: 'video' } });
+                if (results && results.length > 0) {
+                    const video = results[0];
+                    console.log(`  ✅ [play-dl] Found: ${video.title}`);
+                    return {
+                        title: video.title,
+                        url: video.url,
+                        videoId: video.id,
+                        duration: video.durationRaw,
+                        source: 'play-dl'
+                    };
+                }
+            } catch (err) {
+                console.log(`  ⚠️ [play-dl] Failed: ${err.message}`);
+            }
+        } else {
+            console.log('  ⏭️ play-dl not installed, skipping...');
+        }
 
-			// Ambil video pertama
-			const video = result.videos[0];
+        // Method 2: yt-search
+        if (ytSearch) {
+            try {
+                console.log('  📡 Trying yt-search...');
+                const result = await ytSearch(query);
+                if (result.videos && result.videos.length > 0) {
+                    const video = result.videos[0];
+                    console.log(`  ✅ [yt-search] Found: ${video.title}`);
+                    return {
+                        title: video.title,
+                        url: video.url,
+                        videoId: video.videoId,
+                        duration: video.timestamp,
+                        views: video.views,
+                        source: 'yt-search'
+                    };
+                }
+            } catch (err) {
+                console.log(`  ⚠️ [yt-search] Failed: ${err.message}`);
+            }
+        } else {
+            console.log('  ⏭️ yt-search not installed, skipping...');
+        }
 
-			console.log(`✅ Found: ${video.title}`);
-			console.log(`🎬 URL: ${video.url}`);
+        // Method 3: youtube-sr
+        if (youtubeSr) {
+            try {
+                console.log('  📡 Trying youtube-sr...');
+                const YouTube = youtubeSr.default || youtubeSr;
+                const results = await YouTube.search(query, { limit: 1, type: 'video' });
+                if (results && results.length > 0) {
+                    const video = results[0];
+                    console.log(`  ✅ [youtube-sr] Found: ${video.title}`);
+                    return {
+                        title: video.title,
+                        url: video.url,
+                        videoId: video.id,
+                        duration: video.durationFormatted,
+                        source: 'youtube-sr'
+                    };
+                }
+            } catch (err) {
+                console.log(`  ⚠️ [youtube-sr] Failed: ${err.message}`);
+            }
+        } else {
+            console.log('  ⏭️ youtube-sr not installed, skipping...');
+        }
 
-			return {
-				title: video.title,
-				url: video.url,
-				videoId: video.videoId,
-				duration: video.timestamp,
-				views: video.views
-			};
+        // Method 4: AI Thinking Mode (Qwen) as last resort
+        console.log('  📡 All search methods failed, trying AI thinking mode...');
+        const aiResult = await this._searchWithAI(query);
+        if (aiResult) {
+            return aiResult;
+        }
 
-		} catch (error) {
-			console.error(`❌ YouTube search error: ${error.message}`);
-			throw error;
-		}
-	}
+        throw new Error(`YouTube search gagal untuk: "${query}" — semua metode (play-dl, yt-search, youtube-sr, AI) gagal`);
+    }
+
+    /**
+     * AI-powered YouTube search fallback using Qwen thinking mode.
+     * @param {string} query - Song name to search
+     * @returns {Promise<{title: string, url: string}|null>}
+     */
+    async _searchWithAI(query) {
+        const client = this._getQwenClient();
+        if (!client) {
+            console.log('  ⚠️ QwenClient not available for AI search');
+            return null;
+        }
+
+        try {
+            const prompt = `carikan saya lagu ${query} dengan nama pencipta dengan format NAMANYA=(NamaPenciptanya) jangan berkata apapun cukup beritahu saya dengan format`;
+            
+            console.log('  🤖 Sending AI search request (thinking mode)...');
+            const response = await client.queryQwen(prompt, { newSession: true, thinkMode: 'thinking' });
+
+            if (!response.success || !response.result) {
+                console.log('  ⚠️ AI search returned no result');
+                return null;
+            }
+
+            const result = response.result.trim();
+            console.log(`  📝 AI response: ${result}`);
+
+            // Parse NAMANYA=(NamaPenciptanya) format
+            const match = result.match(/NAMANYA\s*=\s*\(?([^)\n]+)\)?/i);
+            if (match) {
+                const artistName = match[1].trim();
+                console.log(`  🎤 AI found artist: ${artistName}`);
+                
+                // Construct a YouTube search URL using the info
+                // Return as a search hint - caller will use ytsearch: with yt-dlp
+                return {
+                    title: `${query} - ${artistName}`,
+                    url: `ytsearch:${query} ${artistName}`,
+                    videoId: null,
+                    duration: null,
+                    source: 'ai-thinking'
+                };
+            }
+
+            console.log('  ⚠️ AI response did not match expected format');
+            return null;
+        } catch (err) {
+            console.error(`  ❌ AI search error: ${err.message}`);
+            return null;
+        }
+    }
+
 
     /**
      * Download dari Spotify (fetch metadata + search YouTube)
-     * @param {string} spotifyUrl - Spotify URL
-     * @param {string} artist - Optional artist name untuk search yang lebih akurat
-     * @returns {Promise<object>} Download result
      */
     async downloadFromSpotify(spotifyUrl, artist = null) {
         const trackId = this.extractSpotifyTrackId(spotifyUrl);
@@ -210,47 +333,37 @@ class MusicDownloader {
 
         console.log(`🔍 Spotify track ID: ${trackId}`);
 
-        // Check cache first
         let metadata = await this.metadataCache.getCached(spotifyUrl);
         
-        // If not cached, fetch from Spotify API
         if (!metadata) {
             console.log(`📡 Fetching metadata dari Spotify API...`);
             metadata = await this.getSpotifyMetadata(trackId);
-            
             if (metadata) {
-                // Cache untuk next time
                 await this.metadataCache.cache(spotifyUrl, metadata);
             }
         }
 
-        // Prepare search queries dengan fallback strategies
         const title = metadata?.title || `spotify:track:${trackId}`;
         const searchStrategies = [];
         
-        // Strategy 1: Artist + Title (jika artist disediakan)
         if (artist && title) {
             searchStrategies.push(`${artist} - ${title}`);
             console.log(`🎤 Using provided artist: "${artist}"`);
         }
         
-        // Strategy 2: Just Title
         searchStrategies.push(title);
         
-        // Strategy 3: Fallback Spotify track ID
         if (!artist) {
             searchStrategies.push(`spotify:track:${trackId}`);
         }
 
         console.log(`🔎 Search strategies: ${searchStrategies.join(' | ')}`);
 
-        // Try each search strategy
-        let downloading = false;
         for (const searchQuery of searchStrategies) {
             try {
                 console.log(`📥 Attempting download with: "${searchQuery}"`);
-				const youtubeUrl = await this.searchYoutube(searchQuery);
-                await this.downloadWithYtdlp(youtubeUrl.url, this.outputDir);
+                const youtubeResult = await this.searchYoutube(searchQuery);
+                await this.downloadWithYtdlp(youtubeResult.url, this.outputDir);
                 
                 const fileName = await this.getDownloadedFileName(this.outputDir);
                 if (fileName) {
@@ -271,20 +384,16 @@ class MusicDownloader {
             }
         }
 
-        // Jika semua strategy gagal
         throw new Error(`Tidak bisa download lagu ini dari YouTube dengan strategies: ${searchStrategies.join(', ')}`);
     }
 
     /**
      * Download langsung dari YouTube
-     * @param {string} youtubeUrl - YouTube URL
-     * @returns {Promise<object>} Download result
      */
     async downloadFromYoutube(youtubeUrl) {
         console.log(`🎬 Direct YouTube download...`);
         
-		const youtubeUrls = await this.searchYoutube(searchQuery);
-        await this.downloadWithYtdlp(youtubeUrls.url, this.outputDir);
+        await this.downloadWithYtdlp(youtubeUrl, this.outputDir);
         
         const fileName = await this.getDownloadedFileName(this.outputDir);
         const filePath = path.join(this.outputDir, fileName);
@@ -299,29 +408,13 @@ class MusicDownloader {
     }
 
     /**
-     * Download dari YouTube Music (search di YouTube biasa)
-     * @param {string} youtubeMusic Url - YouTube Music URL
-     * @returns {Promise<object>} Download result
+     * Download dari YouTube Music
      */
-    async downloadFromYoutubeMusic(youtubeMuslcUrl) {
-        console.log(`📱 YouTube Music URL terdeteksi, searching di YouTube...`);
+    async downloadFromYoutubeMusic(youtubeMusicUrl) {
+        console.log(`📱 YouTube Music URL terdeteksi, downloading directly...`);
         
-        // Extract search parameter dari URL
-        let searchQuery = 'music';
-        try {
-            const urlParams = new URL(youtubeMuslcUrl).searchParams;
-            if (urlParams.has('v')) {
-                searchQuery = urlParams.get('v');
-            } else if (urlParams.has('list')) {
-                searchQuery = urlParams.get('list');
-            }
-        } catch (e) {
-            // URL parsing error, use default
-        }
-
-        console.log(`🔎 Searching YouTube: "${searchQuery}"`);
-		const youtubeUrls = await this.searchYoutube(searchQuery);
-        await this.downloadWithYtdlp(youtubeUrls.url, this.outputDir);
+        // YouTube Music URLs can be downloaded directly via yt-dlp
+        await this.downloadWithYtdlp(youtubeMusicUrl, this.outputDir);
         
         const fileName = await this.getDownloadedFileName(this.outputDir);
         const filePath = path.join(this.outputDir, fileName);
@@ -336,9 +429,7 @@ class MusicDownloader {
     }
 
     /**
-     * Detect available JavaScript runtimes (Node, Deno, Bun)
-     * untuk YouTube signature solving
-     * @returns {Promise<string|null>} Runtime command atau null
+     * Detect available JavaScript runtimes for YouTube signature solving
      */
     async getJavaScriptRuntime() {
         const { execSync } = require('child_process');
@@ -346,10 +437,7 @@ class MusicDownloader {
 
         for (const runtime of runtimes) {
             try {
-                execSync(`${runtime} --version`, { 
-                    stdio: 'pipe',
-                    timeout: 2000 
-                });
+                execSync(`${runtime} --version`, { stdio: 'pipe', timeout: 2000 });
                 console.log(`✅ Found JavaScript runtime: ${runtime}`);
                 return runtime;
             } catch (error) {
@@ -357,31 +445,24 @@ class MusicDownloader {
             }
         }
 
-        console.log('⚠️ No JavaScript runtime found!');
-        console.log('   Install one to enable YouTube signature solving:');
-        console.log('   - Deno:   https://deno.land/');
-        console.log('   - Node:   https://nodejs.org/');
-        console.log('   - Bun:    https://bun.sh/');
-        
+        console.log('⚠️ No JavaScript runtime found for signature solving');
         return null;
     }
 
     /**
      * List available formats untuk debugging
-     * @param {string} url - URL untuk di-check
-     * @returns {Promise<void>}
      */
     async listAvailableFormats(url) {
         return new Promise((resolve, reject) => {
             try {
                 console.log(`\n📋 Listing available formats for: ${url}`);
                 
-                const ytdlp = spawn('yt-dlp', [
-                    '--list-formats',
-                    '--cookies', path.join(__dirname, 'youtube_cookies.txt'),
-                    url
-                ]);
+                const cookiePath = this.cookieRotator.getCurrentCookie();
+                const args = ['--list-formats'];
+                if (cookiePath) args.push('--cookies', cookiePath);
+                args.push(url);
 
+                const ytdlp = spawn('yt-dlp', args);
                 let stdout = '';
                 let stderr = '';
 
@@ -392,9 +473,7 @@ class MusicDownloader {
                 });
 
                 ytdlp.stderr.on('data', (data) => {
-                    const output = data.toString();
-                    stderr += output;
-                    console.log(output);
+                    stderr += data.toString();
                 });
 
                 ytdlp.on('close', (code) => {
@@ -403,78 +482,69 @@ class MusicDownloader {
                 });
 
                 ytdlp.on('error', (err) => {
-                    console.error('❌ Error listing formats:', err.message);
                     reject(err);
                 });
             } catch (error) {
-                console.error('❌ Error:', error.message);
                 reject(error);
             }
         });
     }
 
+
     /**
-     * Download menggunakan yt-dlp CLI langsung dengan JavaScript runtime untuk signature solving
-     * @param {string} url - URL untuk download (bisa YouTube atau ytsearch:)
+     * Download menggunakan yt-dlp CLI dengan cookie rotation.
+     * Jika cookie invalid/expired, otomatis rotate ke cookie berikutnya dan retry.
+     * 
+     * @param {string} url - URL untuk download
      * @param {string} outputPath - Output directory
+     * @param {number} retryCount - Internal retry counter
      * @returns {Promise<void>}
      */
-    async downloadWithYtdlp(url, outputPath) {
+    async downloadWithYtdlp(url, outputPath, retryCount = 0) {
+        const MAX_COOKIE_RETRIES = 3;
+
         return new Promise(async (resolve, reject) => {
             try {
-                // Path to cookies file
-                const cookiePath = path.join(__dirname, 'youtube_cookies.txt');
-                const cookieExists = fsSync.existsSync(cookiePath);
+                // Get current cookie from rotator
+                const cookiePath = this.cookieRotator.getCurrentCookie();
                 
-                console.log(`🍪 Cookies file: ${cookiePath}`);
-                console.log(`🍪 Cookies exist: ${cookieExists ? 'YES ✅' : 'NO ❌'}`);
-                
-                if (cookieExists) {
-                    console.log('🔐 Using YouTube cookies to bypass bot detection & region locks');
+                if (cookiePath) {
+                    console.log(`🍪 Using cookie: ${path.basename(cookiePath)}`);
                 } else {
-                    console.log('⚠️ No cookies file found - downloads may fail on region-locked videos');
-                    console.log('   To fix: Place youtube_cookies.txt in root directory');
+                    console.log('⚠️ No cookies available - downloads may fail');
                 }
                 
-                // Check for JavaScript runtime (needed for YouTube signature solving)
-                console.log('\n🔍 Checking for JavaScript runtime (for YouTube signature solving)...');
+                // Check for JavaScript runtime
                 const jsRuntime = await this.getJavaScriptRuntime();
                 
                 if (!jsRuntime) {
-                    console.error('\n❌ CRITICAL: No JavaScript runtime found!');
-                    console.error('   YouTube requires JavaScript to solve signature challenges.');
-                    console.error('   Without it, only low-quality formats (storyboard) are available.\n');
-                    console.error('   INSTALL DENO (recommended):');
-                    console.error('   $ choco install deno');
-                    console.error('   Or: $ scoop install deno');
-                    console.error('   Or: https://deno.land/\n');
-                    
+                    console.error('❌ No JavaScript runtime found for YouTube signatures');
                     throw new Error('JavaScript runtime not found - cannot solve YouTube signatures');
                 }
                 
-                // Debug: List available formats first
-                try {
-                    await this.listAvailableFormats(url);
-                } catch (err) {
-                    console.log('⚠️ Could not list formats (this is ok, continuing with download)');
-                }
-                
-                // Build command with JS runtime support and flexible format selection
+                // Build yt-dlp arguments
                 const ytdlpArgs = [
                     '--remote-components', 'ejs:github',
                     '--js-runtimes', 'node',
-                    '--cookies', cookiePath,
-                    '--impersonate', 'Chrome-136', 
+                ];
+
+                // Add cookies if available
+                if (cookiePath) {
+                    ytdlpArgs.push('--cookies', cookiePath);
+                }
+
+                ytdlpArgs.push(
+                    '--impersonate', 'Chrome-136',
                     '-f', 'ba',
                     '-x',
                     '--audio-format', 'mp3',
                     '--audio-quality', '0',
                     '-o', path.join(outputPath, '%(title)s.%(ext)s'),
                     url
-                ];
+                );
                 
-                console.log(`\n📥 Starting yt-dlp directly...`);
-                console.log(`🔧 JavaScript Runtime: ${jsRuntime}`);
+                console.log(`\n📥 Starting yt-dlp...`);
+                console.log(`🔧 JS Runtime: ${jsRuntime}`);
                 console.log(`📍 URL: ${url}`);
                 console.log(`💾 Output: ${path.join(outputPath, '%(title)s.%(ext)s')}\n`);
                 
@@ -495,37 +565,40 @@ class MusicDownloader {
                     console.log(`[yt-dlp] ${output.trim()}`);
                 });
 
-                ytdlp.on('close', (code) => {
+                ytdlp.on('close', async (code) => {
                     if (code === 0) {
                         console.log('\n✅ yt-dlp download completed successfully');
                         resolve(stdout);
                     } else {
                         const fullError = stderr || stdout || 'yt-dlp download failed';
                         console.log(`\n❌ yt-dlp exit code: ${code}`);
-                        console.log(`❌ Error: ${fullError}`);
                         
-                        // Check if it's a format availability issue
-                        if (fullError.includes('Requested format is not available')) {
-                            console.log('\n📋 Daftar format yang tersedia untuk URL ini:');
-                            console.log('💡 Coba gunakan format lain atau periksa apakah URL masih valid\n');
+                        // Check if error is cookie-related (invalid/expired)
+                        const isCookieError = this._isCookieError(fullError);
+                        
+                        if (isCookieError && cookiePath && retryCount < MAX_COOKIE_RETRIES) {
+                            console.log(`\n🔄 Cookie appears invalid/expired, rotating...`);
+                            this.cookieRotator.markInvalid(cookiePath);
                             
-                            // Don't reject immediately - let calling code handle the error
-                            reject(new Error(`Format not available: ${fullError}`));
-                        } else {
-                            reject(new Error(fullError));
+                            const nextCookie = this.cookieRotator.getCurrentCookie();
+                            if (nextCookie) {
+                                console.log(`🍪 Retrying with: ${path.basename(nextCookie)} (attempt ${retryCount + 1}/${MAX_COOKIE_RETRIES})`);
+                                try {
+                                    const result = await this.downloadWithYtdlp(url, outputPath, retryCount + 1);
+                                    resolve(result);
+                                } catch (retryErr) {
+                                    reject(retryErr);
+                                }
+                                return;
+                            }
                         }
+                        
+                        reject(new Error(fullError));
                     }
                 });
 
                 ytdlp.on('error', (err) => {
                     console.error('\n❌ Failed to execute yt-dlp:', err.message);
-                    
-                    if (err.code === 'ENOENT') {
-                        console.error('❌ yt-dlp not found!');
-                        console.error('   Install it with: pip install yt-dlp');
-                        console.error('   Or use: pip3 install yt-dlp');
-                    }
-                    
                     reject(err);
                 });
             } catch (error) {
@@ -536,9 +609,31 @@ class MusicDownloader {
     }
 
     /**
+     * Check if an error message indicates cookie issues (invalid/expired).
+     * @param {string} errorMsg - Error message from yt-dlp
+     * @returns {boolean}
+     */
+    _isCookieError(errorMsg) {
+        const cookieErrorPatterns = [
+            /cookie/i,
+            /login required/i,
+            /sign in/i,
+            /403.*forbidden/i,
+            /consent/i,
+            /bot.*detected/i,
+            /captcha/i,
+            /authentication/i,
+            /session.*expired/i,
+            /unable to extract/i,
+            /this video is not available/i
+        ];
+        
+        return cookieErrorPatterns.some(pattern => pattern.test(errorMsg));
+    }
+
+
+    /**
      * Fetch metadata dari Spotify oEmbed API (no authentication needed)
-     * @param {string} trackId - Spotify track ID
-     * @returns {Promise<object|null>} Metadata atau null
      */
     async getSpotifyMetadata(trackId) {
         try {
@@ -564,8 +659,6 @@ class MusicDownloader {
 
     /**
      * Extract Spotify track ID dari URL
-     * @param {string} spotifyUrl - Spotify URL
-     * @returns {string|null} Track ID atau null
      */
     extractSpotifyTrackId(spotifyUrl) {
         const match = spotifyUrl.match(/\/track\/([a-zA-Z0-9]+)/);
@@ -574,8 +667,6 @@ class MusicDownloader {
 
     /**
      * Get nama file yang baru didownload dari folder
-     * @param {string} outputPath - Output directory
-     * @returns {Promise<string|null>} Filename atau null
      */
     async getDownloadedFileName(outputPath) {
         try {
@@ -596,8 +687,6 @@ class MusicDownloader {
 
     /**
      * Validate URL format
-     * @param {string} url - URL to validate
-     * @returns {boolean} True jika valid
      */
     isValidUrl(url) {
         const patterns = [
@@ -611,7 +700,6 @@ class MusicDownloader {
 
     /**
      * Get cache statistics
-     * @returns {Promise<object>} Cache stats
      */
     async getCacheStats() {
         return await this.metadataCache.getStats();
@@ -619,7 +707,6 @@ class MusicDownloader {
 
     /**
      * Clear all cache
-     * @returns {Promise<boolean>} Success atau failure
      */
     async clearCache() {
         return await this.metadataCache.clearCache();
@@ -627,15 +714,20 @@ class MusicDownloader {
 
     /**
      * Get rate limit status
-     * @returns {object} Current rate limit status
      */
     getRateLimitStatus() {
         return this.rateLimitHandler.getStatus();
     }
 
     /**
+     * Get cookie rotator status
+     */
+    getCookieStatus() {
+        return this.cookieRotator.getStatus();
+    }
+
+    /**
      * Get list file yang sudah didownload
-     * @returns {Promise<array>} List file MP3
      */
     async getDownloadedFiles() {
         try {
@@ -643,7 +735,7 @@ class MusicDownloader {
             return files
                 .filter(f => f.endsWith('.mp3'))
                 .sort()
-                .reverse(); // Newest first
+                .reverse();
         } catch (error) {
             return [];
         }
@@ -651,12 +743,9 @@ class MusicDownloader {
 
     /**
      * Delete file dari download folder
-     * @param {string} fileName - File to delete
-     * @returns {Promise<boolean>} Success atau failure
      */
     async deleteFile(fileName) {
         try {
-            // Security check - prevent path traversal
             const filePath = path.join(this.outputDir, fileName);
             if (!filePath.startsWith(this.outputDir)) {
                 throw new Error('Invalid file path');

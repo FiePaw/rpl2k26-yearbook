@@ -2436,7 +2436,7 @@ initializeDatabase().then(() => {
                 console.log('📊 Admin tracking system initialized');
 
                 // ========== AUTO LYRICS GENERATION CYCLE ==========
-                console.log('🎵 Starting auto lyrics generation cycle (every 60s)');
+                console.log('🎵 Starting auto lyrics generation cycle (every 5 minutes)');
                 
                 let isLyricsCycleRunning = false;
 
@@ -2514,7 +2514,8 @@ initializeDatabase().then(() => {
                                 console.error(`❌ Error generating lyrics for student ${student.id}:`, err.message);
                             }
 
-                            // Process ONE student at a time - wait before next to avoid overloading Qwen
+                            // Process ONE student at a time - rate limiter handles 1~2 min jeda
+                            // Additional 5s buffer for safety
                             await new Promise(resolve => setTimeout(resolve, 5000));
                         }
 
@@ -2527,15 +2528,15 @@ initializeDatabase().then(() => {
                     }
                 }
 
-                // Run first cycle after 30 seconds (let server fully start)
+                // Run first cycle after 60 seconds (let server fully start)
                 setTimeout(() => {
                     autoLyricsGenerationCycle();
-                }, 30000);
+                }, 60000);
 
-                // Then run every 60 seconds
+                // Then run every 5 minutes (300000ms)
                 setInterval(() => {
                     autoLyricsGenerationCycle();
-                }, 60000);
+                }, 300000);
             });
         });
     });

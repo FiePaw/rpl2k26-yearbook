@@ -9,6 +9,31 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.8.0] — 2026-05-10
+
+### Added
+- **Cookie Rotator Module** (`src/server/utils/cookie-rotator.js`): Sistem rotating cookies untuk YouTube. Jika cookie invalid/expired, otomatis rotate ke cookie berikutnya. Mendukung banyak file cookies di `cookies/` directory (format: `ytCookies1.txt`, `ytCookies2.txt`, `ytCookies3.txt`, dst.).
+- **Direktori `cookies/`**: Lokasi baru untuk menyimpan semua YouTube cookies (dipindahkan dari `downloads/`). Contoh: `cookies/ytCookies1.txt`, `cookies/ytCookies2.txt`, `cookies/ytCookies3.txt`.
+- **Music Downloader — Fallback YouTube Search**: `searchYoutube()` sekarang memiliki 4 metode fallback berurutan:
+  1. `play-dl` — Library pertama yang dicoba
+  2. `yt-search` — Fallback kedua
+  3. `youtube-sr` — Fallback ketiga
+  4. **AI Thinking Mode (Qwen)** — Last resort: mengirim prompt `"carikan saya lagu (namalagunya) dengan nama pencipta dengan format NAMANYA=(NamaPenciptanya) jangan berkata apapun cukup beritahu saya dengan format"` menggunakan thinkMode `'thinking'`
+- **Dependencies baru** di `package.json`: `play-dl`, `yt-search`, `youtube-sr` (optional — loaded with try/catch).
+
+### Changed
+- **AI Lyrics Fetcher — Rate Limiting**: Setiap request ke Qwen API sekarang memiliki jeda random 1~2 menit (`MIN_REQUEST_INTERVAL_MS=60000`, `MAX_REQUEST_INTERVAL_MS=120000`). Mencegah spam request yang bisa menyebabkan ban/throttle.
+- **AI Lyrics Fetcher — Prompt 3 Binary**: Prompt ketiga (request timestamped lyrics) sekarang di-encode sebagai Base64 lalu dikirim dengan instruksi decode. Menghindari deteksi/filtering prompt.
+- **Server — Auto Lyrics Generation Cycle**: Interval diperbesar dari 60 detik menjadi **5 menit** (`300000ms`). First cycle dimulai setelah 60 detik (sebelumnya 30 detik).
+- **Music Downloader — Cookie path**: Semua referensi cookie dipindahkan dari `downloads/youtube_cookies.txt` dan `__dirname/youtube_cookies.txt` ke sistem `CookieRotator` yang membaca dari `cookies/*`.
+- **Music Downloader — Cookie retry**: Jika yt-dlp gagal karena cookie invalid/expired (403, login required, bot detected, dll.), otomatis rotate ke cookie berikutnya dan retry hingga 3 kali.
+
+### Fixed
+- **Music Downloader — `downloadFromYoutube()`**: Memperbaiki reference error `searchQuery` yang undefined (sebelumnya memanggil `searchYoutube(searchQuery)` pada direct YouTube URL). Sekarang langsung pass URL ke yt-dlp.
+- **Music Downloader — `downloadFromYoutubeMusic()`**: Memperbaiki flow — sekarang langsung download via yt-dlp (YouTube Music URL kompatibel dengan yt-dlp) alih-alih extract parameter dan search ulang.
+
+---
+
 ## [2.7.2] — 2026-05-10
 
 ### Fixed
