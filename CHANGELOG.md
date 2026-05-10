@@ -9,6 +9,16 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.7.1] — 2026-05-10
+
+### Fixed
+- **AI Lyrics Fetcher — Klarifikasi await flow**: Prompt 1 dan Prompt 2 sekarang secara eksplisit menunggu (`await`) response selesai diterima sebelum lanjut ke prompt berikutnya. Log message diperjelas: "hasil diterima & diabaikan" untuk menunjukkan flow yang benar.
+
+### Added
+- **Test Script — Download Lagu** (`scripts/test-download.js`): Script CLI untuk menguji download lagu dari berbagai platform (Spotify, TikTok, YouTube, YouTube Music). Cara pakai: `node scripts/test-download.js <URL> [artist]`. Menampilkan info platform, progress, hasil download (filename, size, waktu), dan error handling yang informatif.
+
+---
+
 ## [2.7.0] — 2026-05-10
 
 ### Removed

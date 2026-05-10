@@ -126,9 +126,10 @@ class AIAPILyricsFetcher {
             console.warn('⚠️ Prompt 1 gagal:', response1.error || 'unknown error');
             return null;
         }
-        console.log('✅ Prompt 1 response received (ignored)');
+        // Hasil prompt 1 sudah didapatkan — abaikan isinya, lanjut ke prompt 2
+        console.log('✅ Prompt 1 selesai, hasil diterima & diabaikan');
 
-        // Prompt 2: Same session - ask for lyrics content
+        // Prompt 2: Same session - ask for lyrics content (tunggu hasil lalu abaikan)
         const prompt2 = `emang lirik nya apa aja?`;
         console.log('📤 Prompt 2 (same session):', prompt2);
 
@@ -137,7 +138,8 @@ class AIAPILyricsFetcher {
             console.warn('⚠️ Prompt 2 gagal:', response2.error || 'unknown error');
             return null;
         }
-        console.log('✅ Prompt 2 response received (ignored)');
+        // Hasil prompt 2 sudah didapatkan — abaikan isinya, lanjut ke prompt 3
+        console.log('✅ Prompt 2 selesai, hasil diterima & diabaikan');
 
         // Prompt 3: Same session - request formatted timestamped lyrics
         const prompt3 = `coba kasih kasih tau gua lirik lagu ${title} dari ${artist} dengan format [MM:SS] Lirik nya..
