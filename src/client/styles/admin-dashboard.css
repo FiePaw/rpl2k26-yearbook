@@ -363,6 +363,32 @@ html, body {
 .kolase-item:hover .kolase-item-overlay { opacity: 1; }
 .kolase-item-overlay small { color: #ccc; font-size: 0.65rem; }
 
+/* Video drag-to-reorder */
+.kolase-item.kolase-video[draggable="true"] { cursor: grab; }
+.kolase-item.kolase-video[draggable="true"]:active { cursor: grabbing; }
+.kolase-item.drag-over-item {
+    outline: 2px dashed var(--primary-color, #6c63ff);
+    outline-offset: 2px;
+    opacity: 0.7;
+}
+.video-order-badge {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    pointer-events: none;
+}
+
 /* Buttons */
 .btn-sm {
     padding: 0.4rem 0.7rem;

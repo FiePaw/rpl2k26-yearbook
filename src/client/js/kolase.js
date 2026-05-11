@@ -1972,11 +1972,13 @@ document.addEventListener('touchend', (e) => {
     // Saat user scroll ke bawah dan video section sudah terlihat + mentok bawah
     // → tunggu 2 detik → tampilkan konfirmasi masuk reels
     let atBottomTimer = null; // unused, kept for safety
-    let hintShowing = false;
+    let hintShowing  = false;
+    let hintShowTime = 0;
 
     function showEnterHint() {
         if (hintShowing || reelsActive) return;
         hintShowing = true;
+        hintShowTime = Date.now(); // catat waktu hint muncul
 
         // Set state awal: kecil + transparan (popup dari tengah layar)
         anime.set(enterHintEl, { scale: 0.7, opacity: 0 });
@@ -1995,6 +1997,9 @@ document.addEventListener('touchend', (e) => {
 
     function cancelEnterHint() {
         if (!hintShowing) return;
+        // Grace period: abaikan cancel dalam 600ms setelah hint muncul
+        // (menghindari rubber-band animation yang memicu scroll event sesaat)
+        if (Date.now() - hintShowTime < 600) return;
         hintShowing = false;
 
         // Scale down + fade out

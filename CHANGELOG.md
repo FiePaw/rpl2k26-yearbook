@@ -9,6 +9,69 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.3.2] — 2026-05-11
+
+### Added — Admin: Pin Foto ke Urutan Teratas (`admin-dashboard.js`, `admin-dashboard.css`)
+- Setiap kartu foto di tab Kolase sekarang memiliki tombol **pin** (ikon thumbtack) di area overlay.
+- Klik pin → foto dipindah ke urutan paling atas di halaman kolase untuk semua user; klik lagi → unpin.
+- Foto yang di-pin ditandai dengan **badge kuning** di pojok kanan atas kartu dan **outline kuning** pada border kartu (`is-pinned` class).
+- Ditambah fungsi `togglePinPhoto(filename, pin)` yang memanggil `PATCH /api/admin/kolase/pin/:filename`.
+- Ditambah CSS: `.btn-pin`, `.btn-pin-active`, `.photo-pin-badge`, `.kolase-item.is-pinned`.
+- Server endpoint `PATCH /api/admin/kolase/pin/:filename` sudah ada sejak sebelumnya dan sudah aktif digunakan.
+
+### Changed — Admin: Limit Tampil Foto Grid Dinaikkan (`admin-dashboard.js`)
+- Grid foto di tab Kolase sebelumnya hanya menampilkan **20 foto** pertama (`slice(0, 20)`).
+- Sekarang dinaikkan menjadi **50 foto** (`slice(0, 50)`) agar semua foto bisa diakses dan di-pin tanpa harus delete dulu.
+
+---
+
+## [3.3.1] — 2026-05-11
+
+### Added — Admin: Drag-to-Reorder Video & Ubah Tipe Foto (`admin-dashboard.js`, `admin-dashboard.css`, `server.js`)
+
+#### Ubah Tipe Foto
+- Setiap kartu foto di grid Kolase sekarang menampilkan `<select>` dropdown (Boy / Girl / Walas / All) menggantikan badge statis yang tidak bisa diedit.
+- Perubahan tersimpan langsung via `PATCH /api/admin/kolase/photo/:filename` — warna dropdown ikut berubah sesuai tipe.
+- Ditambah endpoint baru `PATCH /api/admin/kolase/photo/:filename` di `server.js` yang memperbarui `photoType` di `database.json`.
+
+#### Drag-to-Reorder Video
+- Video grid sekarang mendukung **drag & drop** untuk mengubah urutan tayang video di halaman kolase.
+- Setiap kartu video menampilkan **nomor urut** (badge bulat pojok kiri atas) dan ikon grip.
+- Setelah drag, tombol **"Simpan Urutan"** muncul — klik untuk menyimpan urutan ke server via `POST /api/admin/kolase/reorder-videos`.
+- Ditambah endpoint `POST /api/admin/kolase/reorder-videos` di `server.js` yang menyimpan array `videoOrder` ke `database.json`.
+- `GET /api/gallery/videos` dan `GET /api/admin/kolase` keduanya sekarang membaca `videoOrder` dan mengurutkan video sesuai pilihan admin.
+- Ditambah CSS: `.drag-over-item` (outline dashed saat hover), `.video-order-badge`.
+
+---
+
+## [3.3.0] — 2026-05-11
+
+### Fixed — Reels Enter Hint Menghilang Setelah Muncul (`kolase.js`)
+- **Penyebab**: Rubber-band animation (`translateY`) yang dipicu bersamaan dengan `showEnterHint()` menyebabkan `scroll` event terpicu sesaat setelahnya. Scroll event memanggil `cancelEnterHint()` karena `isSnappedAtVideoSection()` sementara return `false` (halaman bergerak), sehingga hint langsung menghilang sebelum user sempat melihatnya.
+- **Fix**: Ditambah variabel `hintShowTime` yang dicatat saat `showEnterHint()` dipanggil. Di `cancelEnterHint()` ditambah **grace period 600ms** — jika dipanggil sebelum 600ms berlalu sejak hint muncul, cancel diabaikan. Ini cukup untuk menunggu rubber-band selesai tanpa menghalangi user meng-cancel secara manual.
+
+---
+
+## [3.2.5] — 2026-05-11
+
+### Fixed — Mobile ≤430px: Tampilan Kolase, Login Modal & Music Footer (`style.css`, `kolase.html`)
+
+#### Halaman Kolase — Page Header & Filter Buttons
+- Ditambah `@media (max-width: 430px)` di `<style>` inline `kolase.html`.
+- `.page-header h1` dikecilkan dari `1.8rem` → `1.35rem`; `.page-header p` dari `1rem` → `0.82rem`.
+- Tombol filter (`.photo-filter-btn`) — padding, font-size, dan border-radius dikurangi via `!important` untuk override inline style.
+- Div pembungkus tombol filter diberi class `memories-filter-container` untuk memudahkan targeting CSS.
+
+#### Landing Page — Login Modal Tabs
+- Ditambah `@media (max-width: 430px)` di `style.css` untuk `.tab-btn`: padding dikurangi ke `0.55rem 0.5rem`, font-size ke `0.78rem`, border-radius ke `10px`.
+
+#### Semua Halaman — Music Footer
+- Di `@media (max-width: 430px)`, `.footer-center` dan `.footer-right` disembunyikan (`display: none !important`).
+- Hanya `footer-left` (ikon headphone + teks "RPL Class of 2026") yang tampil di mobile kecil.
+- Berlaku otomatis untuk semua halaman: beranda, kolase, wali-kelas, profile.
+
+---
+
 ## [3.2.4] — 2026-05-11
 
 ### Changed — `reels-enter-hint` Posisi & Animasi Diubah ke Tengah Layar (`style.css`, `kolase.js`)

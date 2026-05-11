@@ -9,6 +9,12 @@
           "firstUsed": "2026-05-10T22:52:55.010Z",
           "lastUsed": "2026-05-10T22:52:55.010Z",
           "count": 1
+        },
+        {
+          "ip": "110.138.133.139",
+          "firstUsed": "2026-05-11T10:14:47.973Z",
+          "lastUsed": "2026-05-11T10:14:47.973Z",
+          "count": 1
         }
       ],
       "logs": [
@@ -107,10 +113,214 @@
           "details": "Logged out",
           "ip": "203.55.81.2",
           "timestamp": "2026-05-11T00:08:43.302Z"
+        },
+        {
+          "action": "login",
+          "details": "Logged in as student",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T10:14:47.973Z"
         }
       ],
       "firstSeen": "2026-05-10T22:52:55.009Z",
-      "lastActive": "2026-05-11T00:08:43.302Z"
+      "lastActive": "2026-05-11T10:14:47.973Z"
+    },
+    "student_001": {
+      "name": "ALMA RADITYA KHALID",
+      "type": "student",
+      "ips": [
+        {
+          "ip": "125.167.49.235",
+          "firstUsed": "2026-05-11T10:48:58.626Z",
+          "lastUsed": "2026-05-11T10:49:22.903Z",
+          "count": 2
+        },
+        {
+          "ip": "110.138.133.139",
+          "firstUsed": "2026-05-11T14:36:08.276Z",
+          "lastUsed": "2026-05-11T14:36:08.276Z",
+          "count": 1
+        }
+      ],
+      "logs": [
+        {
+          "action": "login",
+          "details": "Logged in as student",
+          "ip": "125.167.49.235",
+          "timestamp": "2026-05-11T10:48:58.626Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: ALMA RADITYA KHALID",
+          "ip": "125.167.49.235",
+          "timestamp": "2026-05-11T10:49:07.905Z"
+        },
+        {
+          "action": "login",
+          "details": "Logged in as student",
+          "ip": "125.167.49.235",
+          "timestamp": "2026-05-11T10:49:22.903Z"
+        },
+        {
+          "action": "login",
+          "details": "Logged in as student",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T14:36:08.276Z"
+        },
+        {
+          "action": "profile_update",
+          "details": "Updated own profile",
+          "ip": "unknown",
+          "timestamp": "2026-05-11T14:37:16.849Z"
+        }
+      ],
+      "firstSeen": "2026-05-11T10:48:58.626Z",
+      "lastActive": "2026-05-11T14:37:16.849Z"
+    },
+    "admin": {
+      "name": "Admin",
+      "type": "admin",
+      "ips": [
+        {
+          "ip": "125.167.49.235",
+          "firstUsed": "2026-05-11T10:58:38.795Z",
+          "lastUsed": "2026-05-11T10:58:38.795Z",
+          "count": 1
+        },
+        {
+          "ip": "110.138.133.139",
+          "firstUsed": "2026-05-11T11:05:41.515Z",
+          "lastUsed": "2026-05-11T11:05:41.515Z",
+          "count": 1
+        },
+        {
+          "ip": "180.247.62.135",
+          "firstUsed": "2026-05-11T11:29:43.240Z",
+          "lastUsed": "2026-05-11T11:34:09.522Z",
+          "count": 2
+        }
+      ],
+      "logs": [
+        {
+          "action": "login",
+          "details": "Logged in as admin",
+          "ip": "125.167.49.235",
+          "timestamp": "2026-05-11T10:58:38.795Z"
+        },
+        {
+          "action": "login",
+          "details": "Logged in as admin",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T11:05:41.515Z"
+        },
+        {
+          "action": "login",
+          "details": "Logged in as admin",
+          "ip": "180.247.62.135",
+          "timestamp": "2026-05-11T11:29:43.240Z"
+        },
+        {
+          "action": "logout",
+          "details": "Logged out",
+          "ip": "180.247.62.135",
+          "timestamp": "2026-05-11T11:32:59.350Z"
+        },
+        {
+          "action": "login",
+          "details": "Logged in as admin",
+          "ip": "180.247.62.135",
+          "timestamp": "2026-05-11T11:34:09.522Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T12:38:47.281Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T12:39:21.165Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T12:39:33.632Z"
+        },
+        {
+          "action": "logout",
+          "details": "Logged out",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T14:35:57.144Z"
+        }
+      ],
+      "firstSeen": "2026-05-11T10:58:38.795Z",
+      "lastActive": "2026-05-11T14:35:57.144Z"
+    },
+    "student_031": {
+      "name": "RAFIE YULOUANSYAH RIZQI",
+      "type": "student",
+      "ips": [
+        {
+          "ip": "110.138.133.139",
+          "firstUsed": "2026-05-11T12:34:28.224Z",
+          "lastUsed": "2026-05-11T12:34:28.224Z",
+          "count": 1
+        }
+      ],
+      "logs": [
+        {
+          "action": "login",
+          "details": "Logged in as student",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T12:34:28.224Z"
+        },
+        {
+          "action": "profile_update",
+          "details": "Updated own profile",
+          "ip": "unknown",
+          "timestamp": "2026-05-11T12:35:34.451Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T12:35:45.412Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: REYHAN IQHBAR BAYHAQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T12:39:27.607Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T12:39:28.964Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: REYHAN IQHBAR BAYHAQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T12:43:09.637Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T12:43:11.054Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: REYHAN IQHBAR BAYHAQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-11T12:47:06.726Z"
+        }
+      ],
+      "firstSeen": "2026-05-11T12:34:28.224Z",
+      "lastActive": "2026-05-11T12:47:06.726Z"
     }
   },
   "visitorIPs": [
@@ -197,11 +407,89 @@
       "page": "/api/track/logout",
       "accountId": null,
       "timestamp": "2026-05-11T00:08:43.302Z"
+    },
+    {
+      "ip": "125.167.49.235",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "timestamp": "2026-05-11T10:49:07.904Z"
+    },
+    {
+      "ip": "129.150.47.234",
+      "page": "/api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php",
+      "accountId": null,
+      "timestamp": "2026-05-11T10:54:20.068Z"
+    },
+    {
+      "ip": "180.247.62.135",
+      "page": "/api/track/logout",
+      "accountId": null,
+      "timestamp": "2026-05-11T11:32:59.350Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "timestamp": "2026-05-11T12:35:45.412Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "timestamp": "2026-05-11T12:38:47.281Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "timestamp": "2026-05-11T12:39:21.165Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "timestamp": "2026-05-11T12:39:27.607Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "timestamp": "2026-05-11T12:39:28.964Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "timestamp": "2026-05-11T12:39:33.631Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "timestamp": "2026-05-11T12:43:09.636Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "timestamp": "2026-05-11T12:43:11.054Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "timestamp": "2026-05-11T12:47:06.726Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/logout",
+      "accountId": null,
+      "timestamp": "2026-05-11T14:35:57.144Z"
     }
   ],
   "topVisited": {
     "student_001": {
-      "count": 6,
+      "count": 14,
       "visitors": [
         {
           "ip": "110.138.133.139",
@@ -232,11 +520,51 @@
           "ip": "unknown",
           "accountId": null,
           "timestamp": "2026-05-10T23:14:22.635Z"
+        },
+        {
+          "ip": "125.167.49.235",
+          "accountId": "student_001",
+          "timestamp": "2026-05-11T10:48:58.626Z"
+        },
+        {
+          "ip": "125.167.49.235",
+          "accountId": "student_001",
+          "timestamp": "2026-05-11T10:49:07.905Z"
+        },
+        {
+          "ip": "125.167.49.235",
+          "accountId": "student_001",
+          "timestamp": "2026-05-11T10:49:22.903Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T10:49:35.583Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T14:21:25.970Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_001",
+          "timestamp": "2026-05-11T14:36:08.276Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T14:36:23.053Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T14:37:06.838Z"
         }
       ]
     },
     "student_002": {
-      "count": 36,
+      "count": 42,
       "visitors": [
         {
           "ip": "unknown",
@@ -417,6 +745,36 @@
           "ip": "unknown",
           "accountId": null,
           "timestamp": "2026-05-10T23:51:02.658Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_002",
+          "timestamp": "2026-05-11T10:14:47.973Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T10:15:00.714Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:29:34.394Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:29:57.104Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:31:38.845Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:33:52.927Z"
         }
       ]
     },
@@ -436,20 +794,127 @@
       ]
     },
     "student_032": {
-      "count": 1,
+      "count": 4,
       "visitors": [
         {
           "ip": "45.66.35.33",
           "accountId": "student_002",
           "timestamp": "2026-05-10T23:08:31.848Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-11T12:39:27.607Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-11T12:43:09.637Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-11T12:47:06.726Z"
+        }
+      ]
+    },
+    "student_031": {
+      "count": 15,
+      "visitors": [
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-11T12:34:28.224Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:34:39.701Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:35:13.011Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:35:45.405Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-11T12:35:45.412Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:38:47.271Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "admin",
+          "timestamp": "2026-05-11T12:38:47.281Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "admin",
+          "timestamp": "2026-05-11T12:39:21.165Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:39:21.166Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-11T12:39:28.964Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:39:28.966Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "admin",
+          "timestamp": "2026-05-11T12:39:33.632Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:39:33.633Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-11T12:43:11.054Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T12:43:11.056Z"
+        }
+      ]
+    },
+    "admin": {
+      "count": 1,
+      "visitors": [
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-11T14:34:52.041Z"
         }
       ]
     }
   },
   "accessTimeline": {
-    "12": 24,
+    "10": 2,
+    "11": 1,
+    "12": 33,
     "13": 32,
-    "14": 19,
+    "14": 20,
     "16": 52,
     "17": 6,
     "19": 2,
@@ -600,13 +1065,76 @@
       "name": "ALYA HANIN NAFISA",
       "ip": "185.220.101.190",
       "timestamp": "2026-05-10T22:52:55.010Z"
+    },
+    {
+      "userId": "student_002",
+      "type": "student",
+      "name": "ALYA HANIN NAFISA",
+      "ip": "110.138.133.139",
+      "timestamp": "2026-05-11T10:14:47.973Z"
+    },
+    {
+      "userId": "student_001",
+      "type": "student",
+      "name": "ALMA RADITYA KHALID",
+      "ip": "125.167.49.235",
+      "timestamp": "2026-05-11T10:48:58.626Z"
+    },
+    {
+      "userId": "student_001",
+      "type": "student",
+      "name": "ALMA RADITYA KHALID",
+      "ip": "125.167.49.235",
+      "timestamp": "2026-05-11T10:49:22.903Z"
+    },
+    {
+      "userId": "admin",
+      "type": "admin",
+      "name": "Admin",
+      "ip": "125.167.49.235",
+      "timestamp": "2026-05-11T10:58:38.795Z"
+    },
+    {
+      "userId": "admin",
+      "type": "admin",
+      "name": "Admin",
+      "ip": "110.138.133.139",
+      "timestamp": "2026-05-11T11:05:41.515Z"
+    },
+    {
+      "userId": "admin",
+      "type": "admin",
+      "name": "Admin",
+      "ip": "180.247.62.135",
+      "timestamp": "2026-05-11T11:29:43.240Z"
+    },
+    {
+      "userId": "admin",
+      "type": "admin",
+      "name": "Admin",
+      "ip": "180.247.62.135",
+      "timestamp": "2026-05-11T11:34:09.522Z"
+    },
+    {
+      "userId": "student_031",
+      "type": "student",
+      "name": "RAFIE YULOUANSYAH RIZQI",
+      "ip": "110.138.133.139",
+      "timestamp": "2026-05-11T12:34:28.224Z"
+    },
+    {
+      "userId": "student_001",
+      "type": "student",
+      "name": "ALMA RADITYA KHALID",
+      "ip": "110.138.133.139",
+      "timestamp": "2026-05-11T14:36:08.276Z"
     }
   ],
   "pageVisits": {
-    "student_001": 147,
-    "student_002": 47,
+    "student_001": 155,
+    "student_002": 53,
     "student_003": 3,
-    "student_031": 7,
+    "student_031": 22,
     "student_012": 2,
     "student_013": 2,
     "student_018": 3,
@@ -615,15 +1143,16 @@
     "student_023": 2,
     "student_024": 3,
     "student_025": 2,
-    "student_032": 4,
+    "student_032": 7,
     "student_034": 3,
     "student_038": 3,
-    "student_041": 2
+    "student_041": 2,
+    "admin": 1
   },
   "profileUpdates": {
     "student_002": 7,
     "student_003": 1,
-    "student_001": 8,
+    "student_001": 9,
     "student_012": 1,
     "student_013": 1,
     "student_018": 2,
@@ -636,14 +1165,14 @@
     "student_034": 1,
     "student_038": 2,
     "student_041": 1,
-    "student_031": 1
+    "student_031": 2
   },
   "summary": {
-    "totalAccounts": 1,
-    "totalVisits": 235,
-    "totalUpdates": 33,
-    "uniqueIPs": 6,
-    "totalLogins": 23,
-    "lastUpdated": "2026-05-11T10:01:14.803Z"
+    "totalAccounts": 4,
+    "totalVisits": 268,
+    "totalUpdates": 35,
+    "uniqueIPs": 9,
+    "totalLogins": 32,
+    "lastUpdated": "2026-05-11T14:51:37.103Z"
   }
 }

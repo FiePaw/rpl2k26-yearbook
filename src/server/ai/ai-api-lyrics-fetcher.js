@@ -183,7 +183,7 @@ class AIAPILyricsFetcher {
         console.log('✅ Prompt 1 selesai, hasil diterima & diabaikan');
 
         // Prompt 2: Same session - ask for lyrics content (tunggu hasil lalu abaikan)
-        const prompt2 = `emang lirik nya apa aja?`;
+        const prompt2 = `emang struktur lagu nya apa aja?`;
         console.log('📤 Prompt 2 (same session):', prompt2);
 
         const response2 = await this.client.queryQwen(prompt2, { thinkMode: 'thinking' });
@@ -196,7 +196,7 @@ class AIAPILyricsFetcher {
 
         // Prompt 3: Same session - request formatted timestamped lyrics (BINARY FORMAT)
         // Binary prompt: encoded as hex string then decoded by AI context
-        const prompt3Raw = `coba kasih kasih tau gua lirik lagu ${title} dari ${artist} dengan format [MM:SS] Lirik nya..
+        const prompt3Raw = `dari struktur lagu nya coba kasih kasih tau gua lirik lagu ${title} dari ${artist} dengan format [MM:SS] Lirik nya..
 jangan berkata apapun cukup berikan format nya dan pastikan lirik nya presisi dengan timestamp 90% ~ 98%
 mulailah analisa dari web yang memiliki lirik timestamp.
 lalu analisa lirik dan timestamp nya dan buatkan dengan format berikut:

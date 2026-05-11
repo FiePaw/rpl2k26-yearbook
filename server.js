@@ -1612,8 +1612,22 @@ app.get('/api/gallery/videos', async (req, res) => {
             }
         }
         
-        // Sort by modification time (newest first)
+        // Sort by modification time (newest first) then apply custom order if any
         videos.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+        try {
+            const databasePath = path.join(__dirname, 'database.json');
+            const dbData = await fs.readFile(databasePath, 'utf8');
+            const database = JSON.parse(dbData);
+            if (database.videoOrder && Array.isArray(database.videoOrder) && database.videoOrder.length > 0) {
+                const orderMap = {};
+                database.videoOrder.forEach((fn, i) => { orderMap[fn] = i; });
+                videos.sort((a, b) => {
+                    const ia = orderMap[a.filename] ?? 9999;
+                    const ib = orderMap[b.filename] ?? 9999;
+                    return ia - ib;
+                });
+            }
+        } catch { /* no custom order */ }
         
         res.json({
             success: true,
@@ -2776,12 +2790,30 @@ app.get('/api/admin/kolase', async (req, res) => {
             }
         }
         
+        // Apply custom video order if stored in database.json
+        let sortedVideos = videos.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+        try {
+            const databasePath = path.join(__dirname, 'database.json');
+            const dbData = await fs.readFile(databasePath, 'utf8');
+            const database = JSON.parse(dbData);
+            if (database.videoOrder && Array.isArray(database.videoOrder) && database.videoOrder.length > 0) {
+                const orderMap = {};
+                database.videoOrder.forEach((fn, i) => { orderMap[fn] = i; });
+                sortedVideos = sortedVideos.sort((a, b) => {
+                    const ia = orderMap[a.filename] ?? 9999;
+                    const ib = orderMap[b.filename] ?? 9999;
+                    return ia - ib;
+                });
+            }
+        } catch { /* no custom order */ }
+
         res.json({
             success: true,
             images: images.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt)),
-            videos: videos.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt)),
+            videos: sortedVideos,
             totalImages: images.length,
-            totalVideos: videos.length
+            totalVideos: videos.length,
+            videoOrder: (() => { try { const db = JSON.parse(require('fs').readFileSync(path.join(__dirname, 'database.json'), 'utf8')); return db.videoOrder || []; } catch { return []; } })()
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -2805,6 +2837,83 @@ app.delete('/api/admin/kolase/:filename', async (req, res) => {
         if (error.code === 'ENOENT') {
             return res.status(404).json({ success: false, error: 'File not found' });
         }
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Admin: update photoType for a specific image
+app.patch('/api/admin/kolase/photo/:filename', async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const { photoType } = req.body;
+        const allowed = ['boy', 'girl', 'walas', 'all'];
+        if (!allowed.includes(photoType)) {
+            return res.status(400).json({ success: false, error: 'Invalid photoType' });
+        }
+
+        const databasePath = path.join(__dirname, 'database.json');
+        let database = { galleries: [] };
+        try {
+            const data = await fs.readFile(databasePath, 'utf8');
+            database = JSON.parse(data);
+            if (!database.galleries) database.galleries = [];
+        } catch { /* new db */ }
+
+        // Update photoType in every gallery entry that references this filename
+        let updated = false;
+        database.galleries.forEach(gallery => {
+            if (gallery.photos && Array.isArray(gallery.photos)) {
+                gallery.photos.forEach(photo => {
+                    const fn = photo.url ? photo.url.split('/').pop() : photo.name;
+                    if (fn === filename) {
+                        gallery.photoType = photoType;
+                        photo.photoType  = photoType;
+                        updated = true;
+                    }
+                });
+            }
+        });
+
+        // If file exists in gallery dir but has no metadata entry yet, create one
+        if (!updated) {
+            database.galleries.push({
+                id: Date.now().toString(),
+                title: filename,
+                date: new Date().toISOString().split('T')[0],
+                description: '',
+                photoType: photoType,
+                photos: [{ url: `/OurGallery/${filename}`, name: filename, photoType }],
+                videos: [],
+                uploadedAt: new Date().toISOString()
+            });
+        }
+
+        await fs.writeFile(databasePath, JSON.stringify(database, null, 2));
+        res.json({ success: true, filename, photoType });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Admin: save custom video order
+app.post('/api/admin/kolase/reorder-videos', async (req, res) => {
+    try {
+        const { order } = req.body; // array of filenames in desired order
+        if (!Array.isArray(order)) {
+            return res.status(400).json({ success: false, error: 'order must be an array' });
+        }
+
+        const databasePath = path.join(__dirname, 'database.json');
+        let database = { galleries: [] };
+        try {
+            const data = await fs.readFile(databasePath, 'utf8');
+            database = JSON.parse(data);
+        } catch { /* new db */ }
+
+        database.videoOrder = order;
+        await fs.writeFile(databasePath, JSON.stringify(database, null, 2));
+        res.json({ success: true, order });
+    } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });

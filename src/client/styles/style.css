@@ -7390,3 +7390,45 @@ select:focus {
     #reels-dots { display: none !important; }
 }
 /* ====== END MOBILE REELS MODE ====== */
+
+/* ====== MOBILE ≤430px FIXES ====== */
+@media (max-width: 430px) {
+
+    /* --- Login Tabs: tombol lebih kecil & rapat --- */
+    .login-tabs {
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .tab-btn {
+        padding: 0.55rem 0.5rem;
+        font-size: 0.78rem;
+        gap: 0.3rem;
+        border-radius: 10px;
+    }
+
+    .tab-btn i {
+        font-size: 0.82rem;
+    }
+
+    /* --- Music Footer: hanya tampilkan footer-left --- */
+    .music-footer {
+        padding: 1rem;
+        margin-top: 2rem;
+    }
+
+    .footer-content {
+        justify-content: flex-start;
+        gap: 0;
+    }
+
+    .footer-center,
+    .footer-right {
+        display: none !important;
+    }
+
+    .footer-left {
+        width: auto;
+    }
+}
+/* ====== END MOBILE ≤430px FIXES ====== */

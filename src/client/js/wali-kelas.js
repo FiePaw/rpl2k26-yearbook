@@ -155,12 +155,12 @@ function createTeacherCard(teacher) {
             </div>
             <div class="card-footer">
                 <h3>${teacher.name}</h3>
-                <p>${gradeLabel} Homeroom Teacher</p>
+                <p>${gradeLabel} Wali kelas</p>
             </div>
         </div>
         <div class="card-info">
             <h3>${teacher.name}</h3>
-            <p>${gradeLabel} Homeroom Teacher</p>
+            <p>${gradeLabel} Wali kelas</p>
         </div>
     `;
     
@@ -173,13 +173,13 @@ function createTeacherCard(teacher) {
 function showTeacherDetail(teacher) {
     const form = document.getElementById('teacherDetailForm');
     const photoUrl = teacher.photo || 'https://via.placeholder.com/400x400?text=' + encodeURIComponent(teacher.name);
-    const gradeLabel = teacher.grade === 'grade10' ? 'Grade 10' : 
-                       teacher.grade === 'grade11' ? 'Grade 11' : 'Grade 12';
+    const gradeLabel = teacher.grade === 'grade10' ? 'Kelas 10' : 
+                       teacher.grade === 'grade11' ? 'Kelas 11' : 'Kelas 12';
     
     document.getElementById('detailPhoto').src = photoUrl;
     document.getElementById('detailName').textContent = teacher.name;
-    document.getElementById('detailGrade').textContent = gradeLabel + ' Homeroom Teacher';
-    document.getElementById('detailMessage').textContent = teacher.message || 'No message yet...';
+    document.getElementById('detailGrade').textContent = gradeLabel + ' Wali kelas';
+    document.getElementById('detailMessage').textContent = teacher.message || 'Belom ada pesan kesan nya...';
     
     form.style.display = 'block';
 }

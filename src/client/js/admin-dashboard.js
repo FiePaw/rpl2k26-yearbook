@@ -397,7 +397,7 @@ function renderKolaseManagement() {
                 <div class="kolase-upload-inner" onclick="document.getElementById('kolasePhotoInput').click()">
                     <i class="fas fa-image"></i>
                     <p>Klik atau drag foto ke sini</p>
-                    <small>Support: JPG, PNG, WEBP, GIF &bull; Maks <strong>10 foto</strong> per upload</small>
+                    <small>Support: JPG, PNG, WEBP, GIF &bull; Maks <strong>20 foto</strong> per upload</small>
                 </div>
             </div>
             <div id="kolasePhotoProgress" style="display:none">
@@ -444,17 +444,35 @@ function renderKolaseManagement() {
         const gridArea = document.getElementById('kolaseGridArea');
         if (!gridArea) return;
 
-        let gridHtml = '<h4><i class="fas fa-image"></i> Photos</h4><div class="kolase-grid">';
-        data.images.slice(0, 20).forEach(img => {
+        // ---- PHOTOS ----
+        let gridHtml = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+            <h4 style="margin:0"><i class="fas fa-image"></i> Photos</h4>
+            <small style="color:var(--text-secondary)">${data.images.length} foto</small>
+        </div>
+        <div class="kolase-grid">`;
+        data.images.slice(0, 50).forEach(img => {
             const typeLabel = { boy: 'Boy', girl: 'Girl', walas: 'Walas', all: 'All' }[img.photoType] || img.photoType || '?';
             const typeColor = { boy: '#00bcd4', girl: '#FF6B6B', walas: '#FFC107', all: '#aaa' }[img.photoType] || '#aaa';
+            const isPinned  = !!img.pinned;
             gridHtml += `
-                <div class="kolase-item">
+                <div class="kolase-item${isPinned ? ' is-pinned' : ''}" data-filename="${img.filename}">
+                    ${isPinned ? '<div class="photo-pin-badge"><i class="fas fa-thumbtack"></i></div>' : ''}
                     <img src="${img.url}" loading="lazy" alt="${img.filename}">
                     <div class="kolase-item-overlay">
-                        <small>${img.filename.substring(0, 20)}...</small>
-                        <div style="display:flex;gap:4px;align-items:center;">
-                            <span style="font-size:0.6rem;padding:1px 5px;border-radius:3px;background:${typeColor}22;color:${typeColor};border:1px solid ${typeColor};font-weight:700;">${typeLabel}</span>
+                        <small>${img.filename.substring(0, 18)}…</small>
+                        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+                            <select class="photo-type-select" data-filename="${img.filename}"
+                                style="font-size:0.62rem;padding:1px 3px;border-radius:4px;border:1.5px solid ${typeColor};background:${typeColor}22;color:${typeColor};font-weight:700;cursor:pointer;max-width:72px;">
+                                <option value="boy"  ${img.photoType==='boy'  ?'selected':''}>Boy</option>
+                                <option value="girl" ${img.photoType==='girl' ?'selected':''}>Girl</option>
+                                <option value="walas"${img.photoType==='walas'?'selected':''}>Walas</option>
+                                <option value="all"  ${img.photoType==='all'  ?'selected':''}>All</option>
+                            </select>
+                            <button class="btn-sm ${isPinned ? 'btn-pin-active' : 'btn-pin'}" title="${isPinned ? 'Unpin' : 'Pin ke atas'}"
+                                onclick="togglePinPhoto('${img.filename}', ${!isPinned})">
+                                <i class="fas fa-thumbtack"></i>
+                            </button>
                             <button class="btn-sm btn-danger" onclick="deleteKolaseFile('${img.filename}')"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
@@ -463,13 +481,26 @@ function renderKolaseManagement() {
         });
         gridHtml += '</div>';
 
-        gridHtml += '<h4 style="margin-top:1.5rem"><i class="fas fa-video"></i> Videos</h4><div class="kolase-grid">';
-        data.videos.slice(0, 10).forEach(vid => {
+        // ---- VIDEOS (drag-to-reorder) ----
+        gridHtml += `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:1.5rem 0 0.4rem;">
+            <h4 style="margin:0"><i class="fas fa-video"></i> Videos <small style="font-weight:400;font-size:0.75rem;color:var(--text-secondary)">— drag untuk ubah urutan</small></h4>
+            <button id="saveVideoOrderBtn" class="btn-action btn-save" style="font-size:0.75rem;padding:0.3rem 0.75rem;display:none;" onclick="saveVideoOrder()">
+                <i class="fas fa-save"></i> Simpan Urutan
+            </button>
+        </div>
+        <div class="kolase-grid kolase-video-sortable" id="videoSortableGrid">`;
+        data.videos.forEach((vid, idx) => {
             gridHtml += `
-                <div class="kolase-item kolase-video">
+                <div class="kolase-item kolase-video" draggable="true" data-filename="${vid.filename}" data-idx="${idx}"
+                     style="cursor:grab;position:relative;">
+                    <div class="video-order-badge">${idx + 1}</div>
                     <video src="${vid.url}" muted preload="metadata"></video>
                     <div class="kolase-item-overlay">
-                        <small>${vid.filename.substring(0, 20)}...</small>
+                        <div style="display:flex;align-items:center;gap:4px;">
+                            <i class="fas fa-grip-vertical" style="opacity:.6;font-size:0.7rem;"></i>
+                            <small>${vid.filename.substring(0, 18)}…</small>
+                        </div>
                         <button class="btn-sm btn-danger" onclick="deleteKolaseFile('${vid.filename}')"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
@@ -478,10 +509,91 @@ function renderKolaseManagement() {
         gridHtml += '</div>';
 
         gridArea.innerHTML = gridHtml;
+
+        // ---- Bind photo-type change handlers ----
+        gridArea.querySelectorAll('.photo-type-select').forEach(sel => {
+            sel.addEventListener('change', async function() {
+                const fn  = this.dataset.filename;
+                const pt  = this.value;
+                const col = { boy:'#00bcd4', girl:'#FF6B6B', walas:'#FFC107', all:'#aaa' }[pt] || '#aaa';
+                this.style.borderColor  = col;
+                this.style.background   = col + '22';
+                this.style.color        = col;
+                try {
+                    const res  = await fetch(`${API_URL}/api/admin/kolase/photo/${encodeURIComponent(fn)}`,
+                        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ photoType: pt }) });
+                    const json = await res.json();
+                    if (json.success) showToast(`Tipe foto diubah ke "${pt}"`);
+                    else showToast(json.error || 'Gagal ubah tipe', 'error');
+                } catch { showToast('Network error', 'error'); }
+            });
+        });
+
+        // ---- Drag-to-reorder logic for videos ----
+        initVideoSortable();
+
     }).catch(() => {
         const gridArea = document.getElementById('kolaseGridArea');
         if (gridArea) gridArea.innerHTML = '<p class="empty-msg">Failed to load kolase data</p>';
     });
+}
+
+function initVideoSortable() {
+    const grid = document.getElementById('videoSortableGrid');
+    if (!grid) return;
+    let dragSrc = null;
+
+    grid.querySelectorAll('.kolase-item.kolase-video').forEach(item => {
+        item.addEventListener('dragstart', function(e) {
+            dragSrc = this;
+            e.dataTransfer.effectAllowed = 'move';
+            this.style.opacity = '0.4';
+        });
+        item.addEventListener('dragend', function() {
+            this.style.opacity = '1';
+            grid.querySelectorAll('.kolase-item').forEach(i => i.classList.remove('drag-over-item'));
+        });
+        item.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            grid.querySelectorAll('.kolase-item').forEach(i => i.classList.remove('drag-over-item'));
+            this.classList.add('drag-over-item');
+        });
+        item.addEventListener('drop', function(e) {
+            e.preventDefault();
+            if (dragSrc === this) return;
+            const allItems = [...grid.querySelectorAll('.kolase-item.kolase-video')];
+            const srcIdx  = allItems.indexOf(dragSrc);
+            const destIdx = allItems.indexOf(this);
+            if (srcIdx < destIdx) grid.insertBefore(dragSrc, this.nextSibling);
+            else grid.insertBefore(dragSrc, this);
+            // Update order badges
+            grid.querySelectorAll('.kolase-item.kolase-video').forEach((el, i) => {
+                const badge = el.querySelector('.video-order-badge');
+                if (badge) badge.textContent = i + 1;
+            });
+            const btn = document.getElementById('saveVideoOrderBtn');
+            if (btn) btn.style.display = 'inline-flex';
+        });
+    });
+}
+
+async function saveVideoOrder() {
+    const grid = document.getElementById('videoSortableGrid');
+    if (!grid) return;
+    const order = [...grid.querySelectorAll('.kolase-item.kolase-video')].map(el => el.dataset.filename);
+    try {
+        const res  = await fetch(`${API_URL}/api/admin/kolase/reorder-videos`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order }) });
+        const json = await res.json();
+        if (json.success) {
+            showToast('Urutan video disimpan!');
+            const btn = document.getElementById('saveVideoOrderBtn');
+            if (btn) btn.style.display = 'none';
+        } else {
+            showToast(json.error || 'Gagal simpan urutan', 'error');
+        }
+    } catch { showToast('Network error', 'error'); }
 }
 
 function setupKolaseUpload() {
@@ -518,7 +630,7 @@ function setupKolaseUpload() {
 
 async function uploadKolaseFiles(files, type) {
     const isPhoto = type === 'photo';
-    const MAX_PHOTOS = 10;
+    const MAX_PHOTOS = 20;
     const MAX_VIDEOS = 5;
     const maxAllowed = isPhoto ? MAX_PHOTOS : MAX_VIDEOS;
 
@@ -589,6 +701,20 @@ async function deleteKolaseFile(filename) {
     } catch (e) {
         showToast('Network error', 'error');
     }
+}
+
+async function togglePinPhoto(filename, pin) {
+    try {
+        const res  = await fetch(`${API_URL}/api/admin/kolase/pin/${encodeURIComponent(filename)}`,
+            { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pinned: pin }) });
+        const json = await res.json();
+        if (json.success) {
+            showToast(pin ? '📌 Foto di-pin ke atas!' : 'Pin dilepas');
+            renderKolaseManagement();
+        } else {
+            showToast(json.error || 'Gagal pin foto', 'error');
+        }
+    } catch { showToast('Network error', 'error'); }
 }
 
 // ========== UTILITY ==========
