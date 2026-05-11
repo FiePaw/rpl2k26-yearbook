@@ -169,30 +169,8 @@ class MusicDownloader {
     async searchYoutube(query) {
         console.log(`🔎 Searching YouTube: "${query}"`);
 
-        // Method 1: play-dl
-        if (playDl) {
-            try {
-                console.log('  📡 Trying play-dl...');
-                const results = await playDl.search(query, { limit: 1, source: { youtube: 'video' } });
-                if (results && results.length > 0) {
-                    const video = results[0];
-                    console.log(`  ✅ [play-dl] Found: ${video.title}`);
-                    return {
-                        title: video.title,
-                        url: video.url,
-                        videoId: video.id,
-                        duration: video.durationRaw,
-                        source: 'play-dl'
-                    };
-                }
-            } catch (err) {
-                console.log(`  ⚠️ [play-dl] Failed: ${err.message}`);
-            }
-        } else {
-            console.log('  ⏭️ play-dl not installed, skipping...');
-        }
 
-        // Method 2: yt-search
+        // Method 1: yt-search
         if (ytSearch) {
             try {
                 console.log('  📡 Trying yt-search...');
@@ -214,6 +192,29 @@ class MusicDownloader {
             }
         } else {
             console.log('  ⏭️ yt-search not installed, skipping...');
+        }
+
+        // Method 2: play-dl
+        if (playDl) {
+            try {
+                console.log('  📡 Trying play-dl...');
+                const results = await playDl.search(query, { limit: 1, source: { youtube: 'video' } });
+                if (results && results.length > 0) {
+                    const video = results[0];
+                    console.log(`  ✅ [play-dl] Found: ${video.title}`);
+                    return {
+                        title: video.title,
+                        url: video.url,
+                        videoId: video.id,
+                        duration: video.durationRaw,
+                        source: 'play-dl'
+                    };
+                }
+            } catch (err) {
+                console.log(`  ⚠️ [play-dl] Failed: ${err.message}`);
+            }
+        } else {
+            console.log('  ⏭️ play-dl not installed, skipping...');
         }
 
         // Method 3: youtube-sr

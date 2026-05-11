@@ -1179,7 +1179,7 @@
                 <div class="profile-header">
                     <i class="fas fa-user-edit"></i>
                     <h1>Ganti Setelan Profile</h1>
-                    <p>Buat pesan dan kesan yang niat ya!</p>
+                    <p>Buat pesan dan kesan yang niat yee!</p>
                 </div>
 
                 <!-- Student Profile Form -->
@@ -1191,12 +1191,12 @@
                                     <img id="photoPreview" src="https://via.placeholder.com/300x300?text=Upload+Photo" alt="Preview">
                                     <div class="upload-overlay">
                                         <i class="fas fa-camera"></i>
-                                        <span>Click to upload</span>
+                                        <span>Klik Tombol Buat Upload</span>
                                     </div>
                                 </div>
                                 <input type="file" id="photoInput" accept="image/*" style="display:none;">
                                 <button type="button" class="btn-upload" onclick="document.getElementById('photoInput').click()">
-                                    <i class="fas fa-upload"></i> Upload Photo
+                                    <i class="fas fa-upload"></i> Upload Poto
                                 </button>
                             </div>
 
@@ -1213,14 +1213,14 @@
 
                                 <div class="form-group">
                                     <label><i class="fas fa-comment-dots"></i> Kesan & Pesan</label>
-                                    <textarea id="studentMessage" rows="6" placeholder="Tuliskan kesan dan pesan kamu untuk kelas RPL 2026..." required></textarea>
+                                    <textarea id="studentMessage" rows="6" placeholder="Minimal 5 Kata" required></textarea>
                                 </div>
 
                                 <!-- Social Media Links (all optional). Saved onto the
                                      student's profile and rendered as clickable SVG
                                      badges on the Beranda music player. -->
                                 <div class="form-group social-media-group">
-                                    <label><i class="fas fa-share-nodes"></i> Sosial Media <small style="color: var(--text-secondary); font-weight: 400;">(opsional, isi yang mau ditampilkan)</small></label>
+                                    <label><i class="fas fa-share-nodes"></i> Sosial Media <small style="color: var(--text-secondary); font-weight: 400;">(opsional aje kalo gamau isi gapapa)</small></label>
                                     <div class="social-media-inputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
                                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                                             <i class="fab fa-instagram" style="color: #E4405F; width: 18px;"></i>
@@ -1313,7 +1313,13 @@
                                                     <i class="fas fa-lightbulb"></i> Ingfoo ingfoooo!:
                                                 </p>
                                                 <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5;">
-                                                    Lagu yang di cut/trim bakalan punya proses pembuatan lirik lebih lama<br>
+                                                    ● Punya lagu sendiri? bisa pake fitur upload MP3<br>
+                                                </p>
+                                                <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5;">
+                                                    ● Mau pasang lagu? pake fitur Download dari Link<br>
+                                                </p>
+                                                <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5;">
+                                                    ● Lagu yang udah di download di server juga udah disimpen kok biar gak usah nyari lagu lagi<br>
                                                 </p>
                                             </div>
 
@@ -1330,7 +1336,7 @@
                                             <div class="audio-tab-content active">
                                                 <input type="file" id="studentAudioFile" accept=".mp3,audio/mpeg" style="display:none;">
                                                 <button type="button" class="btn-upload" onclick="document.getElementById('studentAudioFile').click()">
-                                                    <i class="fas fa-upload"></i> Choose MP3 File
+                                                    <i class="fas fa-upload"></i> Pilih MP3 File
                                                 </button>
                                                 <p class="help-text">Max file size: 50MB</p>
                                                 <div id="studentAudioFilePreview" style="display: none; margin-top: 0.8rem;">
@@ -1340,7 +1346,7 @@
 
                                             <!-- Download Tab -->
                                             <div class="audio-tab-content">
-                                                <input type="text" id="studentAudioUrl" placeholder="Taro sini URL Tiktok/Spotify song nya" class="form-input-url">
+                                                <input type="text" id="studentAudioUrl" placeholder="Taro sini URL Tiktok/Spotify/Youtube song nya" class="form-input-url">
                                                 
                                                 <!-- Artist Input Field (Hidden by default, shows only for Spotify) -->
                                                 <div id="studentArtistInputGroup" style="display: none; margin-top: 0.8rem;">
@@ -1349,7 +1355,7 @@
                                                     </label>
                                                     <input type="text" id="studentArtistInput" placeholder="Contoh: Joji, Billie Eilish, HYOHYO, dsb..." class="form-input-url">
                                                     <small style="color: var(--text-secondary); margin-top: 0.3rem; display: block;">
-                                                        💡 Spotify API tidak ada data artist, silakan masukkan manual untuk hasil pencarian lebih akurat
+                                                        💡 Lebih enak pake link dari youtube kalo spotify kadang ngeleg.
                                                     </small>
                                                 </div>
 
@@ -1378,7 +1384,7 @@
                                 </div>
 
                                 <button type="submit" class="btn-save">
-                                    <i class="fas fa-save"></i> Jangan lupa Klik Aku ya! (Save Changes)
+                                    <i class="fas fa-save"></i> Jangan lupa Klik (Tombol Simpen)
                                 </button>
                             </div>
                         </div>
@@ -1391,15 +1397,15 @@
                         <div class="form-grid" style="display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: start;">
                             <div class="photo-upload-section">
                                 <div class="photo-preview">
-                                    <img id="teacherPhotoPreview" src="https://via.placeholder.com/300x300?text=Upload+Photo" alt="Preview">
+                                    <img id="teacherPhotoPreview" src="" alt="Preview">
                                     <div class="upload-overlay">
                                         <i class="fas fa-camera"></i>
-                                        <span>Click to upload</span>
+                                        <span>Klik Tombol Buat Upload</span>
                                     </div>
                                 </div>
                                 <input type="file" id="teacherPhotoInput" accept="image/*" style="display:none;">
                                 <button type="button" class="btn-upload" onclick="document.getElementById('teacherPhotoInput').click()">
-                                    <i class="fas fa-upload"></i> Upload Photo
+                                    <i class="fas fa-upload"></i> Upload Poto
                                 </button>
                             </div>
 
@@ -1415,7 +1421,7 @@
                                 </div>
 
                                 <button type="submit" class="btn-save">
-                                    <i class="fas fa-save"></i> Save Changes
+                                    <i class="fas fa-save"></i> Simpen
                                 </button>
                             </div>
                         </div>

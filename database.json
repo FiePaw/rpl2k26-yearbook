@@ -1,0 +1,52 @@
+{
+  "galleries": [
+    {
+      "id": "1778457220494",
+      "title": "Untitled",
+      "date": "2026-05-10",
+      "description": "",
+      "photoType": "boy",
+      "videos": [],
+      "photos": [
+        {
+          "url": "/OurGallery/1778457220483_1763834222452_1000006714.webp",
+          "name": "1763834222452_1000006714.webp",
+          "photoType": "boy"
+        }
+      ],
+      "uploadedAt": "2026-05-10T23:53:40.494Z"
+    },
+    {
+      "id": "1778457252255",
+      "title": "Untitled",
+      "date": "2026-05-10",
+      "description": "",
+      "photoType": "boy",
+      "videos": [],
+      "photos": [
+        {
+          "url": "/OurGallery/1778457252252_1763834225464_1000004196.webp",
+          "name": "1763834225464_1000004196.webp",
+          "photoType": "boy"
+        }
+      ],
+      "uploadedAt": "2026-05-10T23:54:12.255Z"
+    },
+    {
+      "id": "1778457261943",
+      "title": "Untitled",
+      "date": "2026-05-10",
+      "description": "",
+      "photoType": "boy",
+      "videos": [],
+      "photos": [
+        {
+          "url": "/OurGallery/1778457261938_1763834224893_1000004525.webp",
+          "name": "1763834224893_1000004525.webp",
+          "photoType": "boy"
+        }
+      ],
+      "uploadedAt": "2026-05-10T23:54:21.943Z"
+    }
+  ]
+}

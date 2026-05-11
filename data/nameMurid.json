@@ -30,6 +30,11 @@
     "nickname": "AISYAH"
   },
   {
+    "id": "student_007",
+    "name": "BUNGA RAHMA NURSIFA",
+    "nickname": "BUNGA"
+  },
+  {
     "id": "student_008",
     "name": "CHALISTA NAVISHA HANUM",
     "nickname": "CHALISTA"
@@ -198,10 +203,5 @@
     "id": "student_042",
     "name": "ZAHRA ALTHAFUNISA",
     "nickname": "ZAHRA"
-  },
-  {
-    "id": "admin",
-    "name": "Admin",
-    "nickname": "Admin"
   }
 ]

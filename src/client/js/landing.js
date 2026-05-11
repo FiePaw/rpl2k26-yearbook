@@ -635,7 +635,7 @@ async function loadStudentNames() {
         const data = await response.json();
         const select = document.getElementById('studentName');
         
-        select.innerHTML = '<option value="">Select your name...</option>';
+        select.innerHTML = '<option value="">Cek nama disini...</option>';
         data.forEach(student => {
             const option = document.createElement('option');
             option.value = student.id;
@@ -655,7 +655,7 @@ async function loadTeacherNames() {
         const data = await response.json();
         const select = document.getElementById('teacherName');
         
-        select.innerHTML = '<option value="">Select your name...</option>';
+        select.innerHTML = '<option value="">Select your account...</option>';
         data.forEach(teacher => {
             const option = document.createElement('option');
             option.value = teacher.id;
