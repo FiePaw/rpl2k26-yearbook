@@ -5118,18 +5118,41 @@ select:focus {
     font-size: 0.95rem;
 }
 
+
 /* Mobile Responsive - Audio File List */
 @media (max-width: 768px) {
     .audio-file-item {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
         padding: 0.8rem;
         gap: 0.6rem;
+    }
+    
+    .audio-file-thumbnail {
+        width: 120px !important;
+        height: 120px !important;
+        border-radius: 10px !important;
+    }
+    
+    .audio-file-thumbnail-placeholder {
+        width: 120px !important;
+        height: 120px !important;
+        border-radius: 10px !important;
+        font-size: 2.5rem !important;
     }
     
     .audio-file-info {
         width: 100%;
         min-width: auto;
+        text-align: center;
+    }
+    
+    .audio-file-title {
+        justify-content: center;
+    }
+    
+    .audio-file-meta {
+        justify-content: center;
     }
     
     .audio-file-btn {
@@ -5148,6 +5171,17 @@ select:focus {
     .audio-file-item {
         padding: 0.6rem;
         margin-bottom: 0.5rem;
+    }
+    
+    .audio-file-thumbnail {
+        width: 100px !important;
+        height: 100px !important;
+    }
+    
+    .audio-file-thumbnail-placeholder {
+        width: 100px !important;
+        height: 100px !important;
+        font-size: 2rem !important;
     }
     
     .audio-file-title {

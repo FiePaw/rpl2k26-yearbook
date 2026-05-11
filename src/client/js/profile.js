@@ -1764,11 +1764,16 @@ async function loadAvailableAudioFiles() {
                 }
                 metaInfo += `<span>${formatFileSize(file.size)}</span><span>•</span><span>${uploadDate}</span>`;
                 
+                // Thumbnail: gunakan foto lagu jika ada, fallback ke ikon
+                const thumbnailHtml = file.thumbnailUrl
+                    ? `<img src="${file.thumbnailUrl}" alt="cover" class="audio-file-thumbnail" style="width:48px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;">`
+                    : `<div class="audio-file-thumbnail-placeholder" style="width:48px;height:48px;border-radius:6px;background:var(--border-color);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-music" style="color:var(--text-muted);font-size:1.2rem;"></i></div>`;
+
                 html += `
                     <div class="audio-file-item">
+                        ${thumbnailHtml}
                         <div class="audio-file-info">
                             <div class="audio-file-title">
-                                <i class="fas fa-file-audio"></i>
                                 <span>${escapedTitle}</span>
                             </div>
                             <div class="audio-file-meta">
@@ -1838,11 +1843,16 @@ async function refreshStudentAudioList() {
                 }
                 metaInfo += `<span>${formatFileSize(file.size)}</span><span>•</span><span>${uploadDate}</span>`;
                 
+                // Thumbnail: gunakan foto lagu jika ada, fallback ke ikon
+                const thumbnailHtml = file.thumbnailUrl
+                    ? `<img src="${file.thumbnailUrl}" alt="cover" class="audio-file-thumbnail" style="width:48px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;">`
+                    : `<div class="audio-file-thumbnail-placeholder" style="width:48px;height:48px;border-radius:6px;background:var(--border-color);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-music" style="color:var(--text-muted);font-size:1.2rem;"></i></div>`;
+                
                 html += `
                     <div class="audio-file-item" style="animation: slideInUp 0.3s ease;">
+                        ${thumbnailHtml}
                         <div class="audio-file-info">
                             <div class="audio-file-title">
-                                <i class="fas fa-file-audio"></i>
                                 <span>${escapedTitle}</span>
                             </div>
                             <div class="audio-file-meta">

@@ -993,6 +993,7 @@ app.get('/api/audio/list', async (req, res) => {
                 
                 // Try to get additional metadata dari .info.json jika ada
                 const infoJsonPath = filepath.replace('.mp3', '.info.json');
+                let thumbnailUrl = null;
                 
                 try {
                     // Check if .info.json file exists
@@ -1026,13 +1027,24 @@ app.get('/api/audio/list', async (req, res) => {
                     // If no .info.json found, the filename parsing above will be used as fallback
                 }
                 
+                // Check for thumbnail image (yt-dlp writes .jpg alongside the mp3)
+                const baseName = filename.replace(/\.mp3$/i, '');
+                const thumbnailPath = path.join(musicDir, `${baseName}.jpg`);
+                try {
+                    await fs.stat(thumbnailPath);
+                    thumbnailUrl = `/profile_music/${baseName}.jpg`;
+                } catch (e) {
+                    // No thumbnail file found
+                }
+                
                 const fileData = {
                     filename,
                     title,
                     artist,
                     size: stats.size,
                     uploadedAt: stats.mtime.toISOString(),
-                    path: `/profile_music/${filename}`
+                    path: `/profile_music/${filename}`,
+                    thumbnailUrl
                 };
                 
                 // Tambahkan contributing artist jika ada

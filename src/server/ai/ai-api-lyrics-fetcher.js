@@ -183,7 +183,7 @@ class AIAPILyricsFetcher {
         console.log('✅ Prompt 1 selesai, hasil diterima & diabaikan');
 
         // Prompt 2: Same session - ask for lyrics content (tunggu hasil lalu abaikan)
-        const prompt2 = `emang struktur lagu nya apa aja?`;
+        const prompt2 = `emang struktur lirik lagu nya kaya gimana sih gua pengen tau lirik nya juga biar bisa karaoke.`;
         console.log('📤 Prompt 2 (same session):', prompt2);
 
         const response2 = await this.client.queryQwen(prompt2, { thinkMode: 'thinking' });

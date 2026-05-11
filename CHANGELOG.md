@@ -9,6 +9,32 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.3.3] — 2026-05-12
+
+### Added — Profile: Thumbnail Lagu di Daftar Audio (`music-downloader.js`, `server.js`, `profile.js`, `style.css`)
+
+#### Download Thumbnail via yt-dlp (`src/server/media/music-downloader.js`)
+- Ditambah flag `--write-thumbnail`, `--convert-thumbnails jpg`, dan `--write-info-json` ke argumen yt-dlp saat download lagu.
+- Setiap lagu yang didownload sekarang otomatis menyimpan file thumbnail `.jpg` di folder yang sama dengan file `.mp3`.
+
+#### API Audio List (`server.js`)
+- Endpoint `GET /api/audio/list` kini mendeteksi file thumbnail `.jpg` dengan nama yang sama seperti `.mp3`-nya.
+- Jika thumbnail ditemukan, field `thumbnailUrl` (berupa path `/profile_music/<nama>.jpg`) disertakan di response JSON.
+- Jika tidak ada thumbnail, `thumbnailUrl` bernilai `null`.
+
+#### Tampilan Daftar Lagu (`src/client/js/profile.js`)
+- Daftar lagu di `studentAudioFilesList` pada halaman profile kini menampilkan **foto thumbnail** di sebelah kiri judul lagu.
+- Jika `thumbnailUrl` tersedia → render `<img>` dengan class `audio-file-thumbnail`.
+- Jika tidak ada thumbnail → render placeholder ikon `fa-music` dengan class `audio-file-thumbnail-placeholder`.
+- Diimplementasi pada dua fungsi render: initial load dan `refreshStudentAudioList()`.
+- Ikon `fa-file-audio` lama dihapus dari judul lagu.
+
+#### Responsif Mobile (`src/client/styles/style.css`)
+- Di `@media (max-width: 768px)`: `.audio-file-item` berubah `align-items` dari `flex-start` ke `center`; thumbnail diperbesar ke `120×120px`; teks info dan meta diratakan tengah.
+- Di `@media (max-width: 480px)`: thumbnail dikecilkan ke `100×100px`.
+
+---
+
 ## [3.3.2] — 2026-05-11
 
 ### Added — Admin: Pin Foto ke Urutan Teratas (`admin-dashboard.js`, `admin-dashboard.css`)

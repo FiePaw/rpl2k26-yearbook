@@ -462,6 +462,9 @@ class MusicDownloader {
                     '-x',
                     '--audio-format', 'mp3',
                     '--audio-quality', '0',
+                    '--write-thumbnail',
+                    '--convert-thumbnails', 'jpg',
+                    '--write-info-json',
                     '-o', path.join(outputPath, '%(title)s.%(ext)s'),
                     url
                 );
