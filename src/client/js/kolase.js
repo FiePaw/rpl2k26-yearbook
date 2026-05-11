@@ -91,10 +91,16 @@ async function initMemoriesGallery() {
             allGalleryImages = data.images.map((image, index) => ({
                 ...image,
                 index: index,
-                photoType: image.photoType || 'all' // Default to 'all' if not specified
+                photoType: image.photoType || null // null = tidak ada tipe, akan muncul di semua filter
             }));
             
-            console.log(`📊 Loaded ${allGalleryImages.length} images with types`);
+            // Debug: log distribusi photoType dari API
+            const typeDist = allGalleryImages.reduce((acc, img) => {
+                const t = img.photoType || '(none)';
+                acc[t] = (acc[t] || 0) + 1;
+                return acc;
+            }, {});
+            console.log(`📊 Loaded ${allGalleryImages.length} images — type distribution:`, typeDist);
             
             // Display all images initially
             displayGalleryImages(allGalleryImages);
@@ -398,9 +404,13 @@ function filterGalleryByType(photoType) {
     let filteredImages = allGalleryImages;
     
     if (photoType !== 'all') {
-        filteredImages = allGalleryImages.filter(image => 
-            (image.photoType || 'all') === photoType
-        );
+        filteredImages = allGalleryImages.filter(image => {
+            const imgType = image.photoType;
+            // Foto masuk ke filter jika:
+            // 1. photoType-nya cocok dengan filter yang dipilih
+            // 2. ATAU photoType-nya tidak ada / 'all' (tampil di semua filter)
+            return imgType === photoType || !imgType || imgType === 'all';
+        });
     }
     
     console.log(`✅ Filtered to ${filteredImages.length} images of type '${photoType}'`);
@@ -1536,5 +1546,3 @@ document.addEventListener('touchend', (e) => {
         }
     }
 }, false);
-
-

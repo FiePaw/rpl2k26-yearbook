@@ -373,13 +373,12 @@ function renderKolaseManagement() {
     const container = document.getElementById('kolaseMgmtContent');
     if (!container) return;
 
-    fetch(`${API_URL}/api/admin/kolase`).then(r => r.json()).then(data => {
-        if (!data.success) throw new Error(data.error);
-
-        let html = `
-        <div class="kolase-summary">
-            <span><i class="fas fa-image"></i> ${data.totalImages} Photos</span>
-            <span><i class="fas fa-video"></i> ${data.totalVideos} Videos</span>
+    // Pertama kali: render struktur statis (upload section) — TIDAK di-reset saat auto-refresh
+    if (!document.getElementById('kolasePhotoType')) {
+        container.innerHTML = `
+        <div class="kolase-summary" id="kolaseSummary">
+            <span><i class="fas fa-image"></i> <span id="kolaseTotalImages">...</span> Photos</span>
+            <span><i class="fas fa-video"></i> <span id="kolaseTotalVideos">...</span> Videos</span>
         </div>
 
         <!-- Upload Photo Section -->
@@ -398,7 +397,7 @@ function renderKolaseManagement() {
                 <div class="kolase-upload-inner" onclick="document.getElementById('kolasePhotoInput').click()">
                     <i class="fas fa-image"></i>
                     <p>Klik atau drag foto ke sini</p>
-                    <small>Support: JPG, PNG, WEBP, GIF (Max 500MB)</small>
+                    <small>Support: JPG, PNG, WEBP, GIF &bull; Maks <strong>10 foto</strong> per upload</small>
                 </div>
             </div>
             <div id="kolasePhotoProgress" style="display:none">
@@ -415,32 +414,58 @@ function renderKolaseManagement() {
                 <div class="kolase-upload-inner" onclick="document.getElementById('kolaseVideoInput').click()">
                     <i class="fas fa-film"></i>
                     <p>Klik atau drag video ke sini</p>
-                    <small>Support: MP4, WEBM, MOV (Max 500MB)</small>
+                    <small>Support: MP4, WEBM, MOV &bull; Maks <strong>5 video</strong> per upload</small>
                 </div>
             </div>
             <div id="kolaseVideoProgress" style="display:none">
                 <div class="upload-progress-bar"><div class="upload-progress-fill" id="kolaseVideoProgressFill"></div></div>
                 <small id="kolaseVideoStatus">Uploading...</small>
             </div>
-        </div>`;
+        </div>
 
-        html += '<h4><i class="fas fa-image"></i> Photos</h4><div class="kolase-grid">';
+        <!-- Grid area — hanya ini yang di-update saat refresh -->
+        <div id="kolaseGridArea"></div>`;
+
+        // Attach upload event listeners hanya sekali saat pertama render
+        setupKolaseUpload();
+    }
+
+    // Selalu update: summary counter + grid foto/video (tanpa menyentuh select)
+    fetch(`${API_URL}/api/admin/kolase`).then(r => r.json()).then(data => {
+        if (!data.success) throw new Error(data.error);
+
+        // Update summary counter
+        const totalImagesEl = document.getElementById('kolaseTotalImages');
+        const totalVideosEl = document.getElementById('kolaseTotalVideos');
+        if (totalImagesEl) totalImagesEl.textContent = data.totalImages;
+        if (totalVideosEl) totalVideosEl.textContent = data.totalVideos;
+
+        // Update hanya grid area — select TIDAK tersentuh
+        const gridArea = document.getElementById('kolaseGridArea');
+        if (!gridArea) return;
+
+        let gridHtml = '<h4><i class="fas fa-image"></i> Photos</h4><div class="kolase-grid">';
         data.images.slice(0, 20).forEach(img => {
-            html += `
+            const typeLabel = { boy: 'Boy', girl: 'Girl', walas: 'Walas', all: 'All' }[img.photoType] || img.photoType || '?';
+            const typeColor = { boy: '#00bcd4', girl: '#FF6B6B', walas: '#FFC107', all: '#aaa' }[img.photoType] || '#aaa';
+            gridHtml += `
                 <div class="kolase-item">
                     <img src="${img.url}" loading="lazy" alt="${img.filename}">
                     <div class="kolase-item-overlay">
                         <small>${img.filename.substring(0, 20)}...</small>
-                        <button class="btn-sm btn-danger" onclick="deleteKolaseFile('${img.filename}')"><i class="fas fa-trash"></i></button>
+                        <div style="display:flex;gap:4px;align-items:center;">
+                            <span style="font-size:0.6rem;padding:1px 5px;border-radius:3px;background:${typeColor}22;color:${typeColor};border:1px solid ${typeColor};font-weight:700;">${typeLabel}</span>
+                            <button class="btn-sm btn-danger" onclick="deleteKolaseFile('${img.filename}')"><i class="fas fa-trash"></i></button>
+                        </div>
                     </div>
                 </div>
             `;
         });
-        html += '</div>';
+        gridHtml += '</div>';
 
-        html += '<h4 style="margin-top:1.5rem"><i class="fas fa-video"></i> Videos</h4><div class="kolase-grid">';
+        gridHtml += '<h4 style="margin-top:1.5rem"><i class="fas fa-video"></i> Videos</h4><div class="kolase-grid">';
         data.videos.slice(0, 10).forEach(vid => {
-            html += `
+            gridHtml += `
                 <div class="kolase-item kolase-video">
                     <video src="${vid.url}" muted preload="metadata"></video>
                     <div class="kolase-item-overlay">
@@ -450,14 +475,12 @@ function renderKolaseManagement() {
                 </div>
             `;
         });
-        html += '</div>';
+        gridHtml += '</div>';
 
-        container.innerHTML = html;
-
-        // Attach upload event listeners after render
-        setupKolaseUpload();
+        gridArea.innerHTML = gridHtml;
     }).catch(() => {
-        container.innerHTML = '<p class="empty-msg">Failed to load kolase data</p>';
+        const gridArea = document.getElementById('kolaseGridArea');
+        if (gridArea) gridArea.innerHTML = '<p class="empty-msg">Failed to load kolase data</p>';
     });
 }
 
@@ -495,12 +518,22 @@ function setupKolaseUpload() {
 
 async function uploadKolaseFiles(files, type) {
     const isPhoto = type === 'photo';
+    const MAX_PHOTOS = 10;
+    const MAX_VIDEOS = 5;
+    const maxAllowed = isPhoto ? MAX_PHOTOS : MAX_VIDEOS;
+
+    // Validate file count limit
+    if (files.length > maxAllowed) {
+        showToast(`Maksimal ${maxAllowed} ${isPhoto ? 'foto' : 'video'} per upload! (Kamu memilih ${files.length})`, 'error');
+        return;
+    }
+
     const progressContainer = document.getElementById(isPhoto ? 'kolasePhotoProgress' : 'kolaseVideoProgress');
     const progressFill = document.getElementById(isPhoto ? 'kolasePhotoProgressFill' : 'kolaseVideoProgressFill');
     const statusEl = document.getElementById(isPhoto ? 'kolasePhotoStatus' : 'kolaseVideoStatus');
 
     if (progressContainer) progressContainer.style.display = 'block';
-    if (statusEl) statusEl.textContent = `Uploading ${files.length} ${type}(s)...`;
+    if (statusEl) statusEl.textContent = `Uploading ${files.length}/${maxAllowed} ${type}(s)...`;
     if (progressFill) progressFill.style.width = '10%';
 
     const formData = new FormData();
