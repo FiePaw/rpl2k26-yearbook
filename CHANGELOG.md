@@ -9,6 +9,40 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.2.4] — 2026-05-11
+
+### Changed — `reels-enter-hint` Posisi & Animasi Diubah ke Tengah Layar (`style.css`, `kolase.js`)
+
+#### Posisi (`style.css`)
+- **Sebelumnya**: `bottom: 1.8rem; left: 50%; transform: translateX(-50%)` — popup muncul di bagian bawah layar.
+- **Sekarang**: `top: 0; left: 0; right: 0; bottom: 0; margin: auto` — popup berada tepat di tengah layar secara vertikal maupun horizontal, tanpa bergantung pada `transform` untuk centering (agar tidak bentrok dengan anime.js).
+- Layout diubah dari **horizontal** (`flex-direction: row`) menjadi **vertikal** (`flex-direction: column; align-items: center`) — icon di atas, teks di tengah, tombol di bawah.
+- Icon diperbesar (`2.2rem`) dengan lingkaran background `rgba(255,255,255,0.1)` berukuran `60×60px`.
+- Tombol aksi sekarang `flex: 1` dan melebar penuh sejajar (`width: 100%`).
+- `white-space: nowrap` dihapus agar teks sub bisa wrap pada layar sempit.
+
+#### Backdrop (`kolase.html`, `style.css`, `kolase.js`)
+- Ditambah elemen baru `#reels-enter-backdrop` (tepat sebelum `#reels-enter-hint` di HTML) sebagai overlay gelap `rgba(0,0,0,0.5)` fullscreen `z-index: 8499`.
+- Toggle `.show` pada backdrop dilakukan bersamaan dengan popup di `showEnterHint()` dan `cancelEnterHint()`.
+- Menggantikan pendekatan `::before` pseudo-element yang tidak bisa `position: fixed` dengan benar.
+
+#### Animasi (`kolase.js`)
+- **Sebelumnya**: slide up `translateY 30px → 0` / slide down `translateY 0 → 20px`.
+- **Sekarang**: **scale popup** `0.7 → 1` + fade in (`easeOutBack`, 420ms) saat muncul; `1 → 0.8` + fade out (`easeInQuad`, 260ms) saat tutup.
+- Dihapus `translateX/Y` dari `anime.set()` karena centering tidak lagi pakai `transform`.
+
+---
+
+## [3.2.3] — 2026-05-11
+
+### Added — Label Hint Scroll Video Mobile (`kolase.html`)
+- Ditambah elemen `#scroll-video-hint` tepat di bawah `</main>` — hanya tampil di mobile (≤768px) via `@media`.
+- Teks: *"Paksa scroll ke bawah buat liat video!"* dengan ikon `fa-chevron-down` di kiri dan kanan.
+- Animasi **bounce** naik-turun (`hintBounce` keyframe, 1.6s infinite) agar menarik perhatian tanpa mengganggu.
+- Warna mengikuti `var(--text-secondary)` — otomatis menyesuaikan dark/light mode.
+
+---
+
 ## [3.2.2] — 2026-05-11
 
 ### Fixed — Auto-masuk Reels saat Halaman Load (`kolase.js`)

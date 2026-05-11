@@ -1480,6 +1480,7 @@ document.addEventListener('touchend', (e) => {
     const volumeBtnEl  = document.getElementById('reels-volume-btn');
     const exitHintEl   = document.getElementById('reels-exit-hint');
     const enterHintEl  = document.getElementById('reels-enter-hint');
+    const backdropEl   = document.getElementById('reels-enter-backdrop');
 
     if (!overlay || !scrollCont) {
         console.warn('⚠️ Reels: overlay elements not found');
@@ -1977,17 +1978,18 @@ document.addEventListener('touchend', (e) => {
         if (hintShowing || reelsActive) return;
         hintShowing = true;
 
-        // Set state awal (di bawah + transparan)
-        anime.set(enterHintEl, { translateY: '30px', opacity: 0 });
+        // Set state awal: kecil + transparan (popup dari tengah layar)
+        anime.set(enterHintEl, { scale: 0.7, opacity: 0 });
         enterHintEl.classList.add('show');
+        if (backdropEl) backdropEl.classList.add('show');
 
-        // Slide up + fade in
+        // Scale up + fade in — efek popup dari tengah
         anime({
-            targets:     enterHintEl,
-            duration:    380,
-            translateY:  ['30px', '0px'],
-            opacity:     [0, 1],
-            easing:      'easeOutBack'
+            targets:  enterHintEl,
+            duration: 420,
+            scale:    [0.7, 1],
+            opacity:  [0, 1],
+            easing:   'easeOutBack'
         });
     }
 
@@ -1995,16 +1997,17 @@ document.addEventListener('touchend', (e) => {
         if (!hintShowing) return;
         hintShowing = false;
 
-        // Slide down + fade out
+        // Scale down + fade out
         anime({
-            targets:    enterHintEl,
-            duration:   240,
-            translateY: ['0px', '20px'],
-            opacity:    [1, 0],
-            easing:     'easeInQuad',
+            targets:  enterHintEl,
+            duration: 260,
+            scale:    [1, 0.8],
+            opacity:  [1, 0],
+            easing:   'easeInQuad',
             complete() {
                 enterHintEl.classList.remove('show');
-                anime.set(enterHintEl, { translateY: '30px', opacity: 0 });
+                if (backdropEl) backdropEl.classList.remove('show');
+                anime.set(enterHintEl, { scale: 0.7, opacity: 0 });
             }
         });
     }
