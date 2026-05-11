@@ -836,101 +836,27 @@ async function initVideoCarousel() {
             //      decisions. A separate scroll listener with a
             //      timer-based "scroll ended" detection re-enables
             //      decisions afterwards.
+            // ========== AUTO-PLAY & AUTO-ROTATE: DISABLED ==========
+            // Video hanya diputar manual oleh user (klik play button).
+            // IntersectionObserver hanya PAUSE saat keluar viewport, tidak auto-play.
             if (videoSection && 'IntersectionObserver' in window) {
-                let lastDecisionTimer = null;
-                let pendingShouldPlay = null;
-                let isScrolling = false;
-                let scrollEndTimer = null;
-
-                // Mark scrolling state so IntersectionObserver doesn't
-                // fight the scroll itself.
-                const onScroll = () => {
-                    isScrolling = true;
-                    if (scrollEndTimer) clearTimeout(scrollEndTimer);
-                    scrollEndTimer = setTimeout(() => {
-                        isScrolling = false;
-                        // After scroll ends, apply the last pending decision.
-                        if (pendingShouldPlay !== null) {
-                            applyDecision(pendingShouldPlay);
-                            pendingShouldPlay = null;
-                        }
-                    }, 140);
-                };
-                window.addEventListener('scroll', onScroll, { passive: true });
-
-                const applyDecision = (shouldPlay) => {
-                    const currentVideo = document.getElementById(`video-${currentIndex}`);
-                    if (!currentVideo) return;
-                    if (shouldPlay) {
-                        // Don't auto-resume a video the user explicitly paused.
-                        if (window._videoUserPaused) return;
-                        if (currentVideo.paused) {
-                            console.log(`▶️ Section fully visible: Auto-playing video ${currentIndex}`);
-                            requestVideoPlay(currentVideo);
-                        }
-                    } else {
-                        if (!currentVideo.paused) {
-                            console.log(`⏸️ Section off-screen: Pausing video ${currentIndex}`);
-                            currentVideo.pause();
-                        }
-                    }
-                };
-
                 const videoObserver = new IntersectionObserver((entries) => {
                     entries.forEach((entry) => {
-                        const shouldPlay = entry.isIntersecting;
-
-                        // During active scroll, just queue the decision
-                        // and let the scroll-end handler apply it.
-                        if (isScrolling) {
-                            pendingShouldPlay = shouldPlay;
-                            return;
+                        if (!entry.isIntersecting) {
+                            const currentVideo = document.getElementById(`video-${currentIndex}`);
+                            if (currentVideo && !currentVideo.paused) {
+                                currentVideo.pause();
+                                console.log(`⏸️ Section off-screen: Pausing video ${currentIndex}`);
+                            }
                         }
-
-                        // Otherwise debounce by 120ms so we don't react
-                        // to quick in/out crossings.
-                        if (lastDecisionTimer) clearTimeout(lastDecisionTimer);
-                        lastDecisionTimer = setTimeout(() => {
-                            applyDecision(shouldPlay);
-                        }, 120);
+                        // Tidak auto-play saat masuk viewport
                     });
-                }, {
-                    // Only fire when section is meaningfully (not 30%) off-screen.
-                    // rootMargin shrinks viewport by 30% top/bottom so
-                    // a quick scroll past the 30% boundary doesn't toggle.
-                    threshold: 0,
-                    rootMargin: '-30% 0% -30% 0%'
-                });
-
+                }, { threshold: 0, rootMargin: '-30% 0% -30% 0%' });
                 videoObserver.observe(videoSection);
-                console.log('✅ Scroll-aware video observer initialized (debounced)');
+                console.log('✅ Video observer initialized (pause-only, no autoplay)');
             }
-            // Rotate to the next video every 40s **if still playing**.
-            // Fade-out starts at 38s (2s fade), then nextVideo().
-            // If the user manually navigates (prev/next/swipe), we restart
-            // this timer so the user doesn't lose their freshly-picked
-            // video half-way through.
-            const AUTO_ROTATE_MS = 38000;
-            const scheduleAutoRotate = () => {
-                if (window._videoAutoRotateTimer) {
-                    clearInterval(window._videoAutoRotateTimer);
-                }
-                window._videoAutoRotateTimer = setInterval(() => {
-                    const currentVideo = document.getElementById(`video-${currentIndex}`);
-                    if (currentVideo && !currentVideo.paused) {
-                        console.log(`⏱️ Auto-rotate: Fade-out animation starting...`);
-                        currentVideo.classList.remove('video-fade-out');
-                        currentVideo.classList.add('video-fade-out');
-                        setTimeout(() => {
-                            currentVideo.classList.remove('video-fade-out');
-                            nextVideo();
-                        }, 2000);
-                    }
-                }, AUTO_ROTATE_MS);
-            };
-            // Expose so showVideo() / manual nav can restart the countdown
-            window._resetVideoAutoRotate = scheduleAutoRotate;
-            scheduleAutoRotate();
+            // Auto-rotate: DISABLED
+            window._resetVideoAutoRotate = () => {};
         } else {
             console.error('❌ No videos found in API response');
         }
@@ -957,14 +883,8 @@ function showVideo(index) {
             // Remove fade-out class to show video with full opacity
             el.classList.remove('video-fade-out');
             el.classList.add('active');
-            
             el.style.opacity = '1';
-
-            // First-play priming + decoder-stuck recovery is centralized
-            // in requestVideoPlay() (defined below). Using it here keeps
-            // behavior identical across observer auto-play, manual nav,
-            // keyboard space, and button clicks.
-            requestVideoPlay(el);
+            // Tidak auto-play — user yang kontrol via tombol play
         } else if (idx === (index + 1) % videoEls.length) {
             // Next video: preload metadata only
             el.preload = 'metadata';
@@ -985,17 +905,6 @@ function showVideo(index) {
     currentIndex = index;
     updateVideoInfo();
     updatePlayerControls();
-
-    // Navigating to a different video is an explicit action — allow
-    // auto-play on the new one even if the user had paused the previous.
-    window._videoUserPaused = false;
-
-    // Restart the 40s auto-rotate countdown so that a video the user just
-    // picked (via next/prev/swipe/keyboard) plays for its full window
-    // instead of possibly getting cut off a few seconds in.
-    if (typeof window._resetVideoAutoRotate === 'function') {
-        window._resetVideoAutoRotate();
-    }
 }
 
 function nextVideo() {
@@ -1546,3 +1455,675 @@ document.addEventListener('touchend', (e) => {
         }
     }
 }, false);
+
+// ========================================================================
+// MOBILE REELS / TIKTOK MODE
+// Hanya aktif di mobile (window.innerWidth <= 768).
+// Desktop: semua listener ini tidak melakukan apa-apa karena guard awal.
+// ========================================================================
+(function initReelsMode() {
+    // Guard: hanya mobile
+    if (window.innerWidth > 768) return;
+
+    // ---- State ----
+    let reelsActive = false;
+    let reelsCurrentIndex = 0;
+    let reelsMuted = true;
+    let reelsExitScrollCount = 0;
+    let reelsItemsBuilt = false;
+
+    // ---- DOM refs ----
+    const overlay      = document.getElementById('reels-mode-overlay');
+    const scrollCont   = document.getElementById('reels-scroll-container');
+    const closeBtnEl   = document.getElementById('reels-close-btn');
+    const counterEl    = document.getElementById('reels-counter');
+    const volumeBtnEl  = document.getElementById('reels-volume-btn');
+    const exitHintEl   = document.getElementById('reels-exit-hint');
+    const enterHintEl  = document.getElementById('reels-enter-hint');
+
+    if (!overlay || !scrollCont) {
+        console.warn('⚠️ Reels: overlay elements not found');
+        return;
+    }
+
+    // ---- Bangun reels items dari array videos global ----
+    function buildReelsItems() {
+        if (reelsItemsBuilt) return;
+        if (!videos || videos.length === 0) {
+            console.warn('⚠️ Reels: no videos loaded yet');
+            return;
+        }
+
+        scrollCont.innerHTML = '';
+
+        videos.forEach((video, idx) => {
+            // ---- Item wrapper ----
+            const item = document.createElement('div');
+            item.className = 'reels-item';
+            item.dataset.index = idx;
+
+            // ---- Video element ----
+            const videoEl = document.createElement('video');
+            videoEl.id = `reels-video-${idx}`;
+            videoEl.muted = true;
+            videoEl.defaultMuted = true;
+            videoEl.setAttribute('muted', '');
+            videoEl.playsInline = true;
+            videoEl.setAttribute('playsinline', '');
+            videoEl.setAttribute('webkit-playsinline', '');
+            videoEl.controls = false;
+            videoEl.loop = true;
+            videoEl.preload = idx === 0 ? 'auto' : 'none';
+
+            // URL: gunakan streamUrl polos (tanpa ?quality=) → optimizedVersions → url
+            // Sama persis dengan logika carousel utama agar tidak 400
+            let srcUrl = '';
+            if (video.streamUrl) {
+                srcUrl = video.streamUrl; // tanpa query param
+            } else if (video.optimizedVersions) {
+                srcUrl = video.optimizedVersions['480p']
+                    || video.optimizedVersions['360p']
+                    || video.optimizedVersions['720p']
+                    || video.optimizedVersions.auto
+                    || '';
+            }
+            if (!srcUrl) srcUrl = video.url || '';
+            if (srcUrl) videoEl.src = srcUrl;
+
+            // ---- Gradients ----
+            const gradBottom = document.createElement('div');
+            gradBottom.className = 'reels-item-gradient';
+
+            const gradTop = document.createElement('div');
+            gradTop.className = 'reels-item-gradient-top';
+
+            // ---- Progress bar ----
+            const progressBar = document.createElement('div');
+            progressBar.className = 'reels-progress-bar';
+            const progressFill = document.createElement('div');
+            progressFill.className = 'reels-progress-fill';
+            progressFill.id = `reels-progress-${idx}`;
+            progressBar.appendChild(progressFill);
+
+            // ---- Info kiri bawah ----
+            const info = document.createElement('div');
+            info.className = 'reels-item-info';
+            const cleanName = (video.name || `Video ${idx + 1}`).replace(/\.[^/.]+$/, '');
+            info.innerHTML = `
+                <h3>${cleanName}</h3>
+                <p><i class="fas fa-compact-disc" style="margin-right:4px;opacity:0.7;"></i>RPL Yearbook 2026</p>
+            `;
+
+            // ---- Action buttons kanan (like, share, volume) ----
+            const actions = document.createElement('div');
+            actions.className = 'reels-item-actions';
+            actions.innerHTML = `
+                <button class="reels-action-btn reels-like-btn" title="Like">
+                    <span class="reels-action-icon"><i class="fas fa-heart"></i></span>
+                    <span class="reels-action-label">Suka</span>
+                </button>
+                <button class="reels-action-btn reels-share-btn" title="Share">
+                    <span class="reels-action-icon"><i class="fas fa-share"></i></span>
+                    <span class="reels-action-label">Bagikan</span>
+                </button>
+                <button class="reels-action-btn reels-mute-item-btn" title="Mute/Unmute">
+                    <span class="reels-action-icon"><i class="fas fa-volume-mute"></i></span>
+                    <span class="reels-action-label">Suara</span>
+                </button>
+            `;
+
+            // Like button toggle
+            const likeBtn = actions.querySelector('.reels-like-btn');
+            likeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                likeBtn.querySelector('.reels-action-icon').style.color = '#ff4757';
+                likeBtn.querySelector('i').style.color = '#ff4757';
+                likeBtn.querySelector('.reels-action-label').textContent = 'Disukai';
+            });
+
+            // Share button
+            const shareBtn = actions.querySelector('.reels-share-btn');
+            shareBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (navigator.share) {
+                    navigator.share({ title: cleanName, text: 'RPL Yearbook 2026' }).catch(() => {});
+                }
+            });
+
+            // Mute per-item button
+            const muteItemBtn = actions.querySelector('.reels-mute-item-btn');
+            muteItemBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                reelsMuted = !reelsMuted;
+                scrollCont.querySelectorAll('video').forEach(v => { v.muted = reelsMuted; });
+                const icon = muteItemBtn.querySelector('i');
+                icon.className = reelsMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+                // Sync global volume button
+                const globalVolBtn = document.getElementById('reels-volume-btn');
+                if (globalVolBtn) {
+                    globalVolBtn.querySelector('i').className = reelsMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+                }
+            });
+
+            // ---- Tap area (klik untuk play/pause) ----
+            const tapArea = document.createElement('div');
+            tapArea.className = 'reels-item-tap-area';
+
+            // ---- Pause icon tengah ----
+            const pauseIcon = document.createElement('div');
+            pauseIcon.className = 'reels-pause-icon';
+            pauseIcon.innerHTML = '<i class="fas fa-play"></i>';
+
+            // Tap untuk play/pause
+            tapArea.addEventListener('click', () => toggleReelsPlay(idx));
+
+            // Update state class & progress
+            videoEl.addEventListener('play', () => {
+                item.classList.add('reels-playing');
+                item.classList.remove('reels-paused');
+            });
+            videoEl.addEventListener('pause', () => {
+                item.classList.remove('reels-playing');
+                item.classList.add('reels-paused');
+            });
+            videoEl.addEventListener('timeupdate', () => {
+                if (!videoEl.duration) return;
+                const pct = (videoEl.currentTime / videoEl.duration) * 100;
+                progressFill.style.width = pct + '%';
+            });
+
+            // ---- Susun elemen ----
+            item.appendChild(videoEl);
+            item.appendChild(gradBottom);
+            item.appendChild(gradTop);
+            item.appendChild(tapArea);
+            item.appendChild(pauseIcon);
+            item.appendChild(progressBar);
+            item.appendChild(info);
+            item.appendChild(actions);
+            scrollCont.appendChild(item);
+        });
+
+        reelsItemsBuilt = true;
+        console.log(`✅ Reels: built ${videos.length} items (Instagram-style)`);
+    }
+
+    // ---- Toggle play/pause video dalam reels ----
+    function toggleReelsPlay(idx) {
+        const vid = document.getElementById(`reels-video-${idx}`);
+        if (!vid) return;
+        if (vid.paused) {
+            const p = vid.play();
+            if (p && p.catch) p.catch(() => {});
+        } else {
+            vid.pause();
+        }
+    }
+
+    // ---- Play video pada index tertentu, pause yang lain ----
+    function playReelsVideo(idx) {
+        if (!videos || videos.length === 0) return;
+        reelsCurrentIndex = idx;
+        // Update counter
+        if (counterEl) counterEl.textContent = `${idx + 1} / ${videos.length}`;
+
+        const items = scrollCont.querySelectorAll('.reels-item');
+        items.forEach((item, i) => {
+            const vid = item.querySelector('video');
+            if (!vid) return;
+
+            if (i === idx) {
+                vid.muted = reelsMuted;
+                // Lazy-load src jika belum ada
+                if (!vid.src && videos[i]) {
+                    let srcUrl = '';
+                    const v = videos[i];
+                    if (v.streamUrl) srcUrl = v.streamUrl;
+                    else if (v.optimizedVersions) srcUrl = v.optimizedVersions['480p'] || v.optimizedVersions['360p'] || v.url || '';
+                    else srcUrl = v.url || '';
+                    if (srcUrl) { vid.src = srcUrl; vid.load(); }
+                }
+                const p = vid.play();
+                if (p && p.catch) p.catch(() => {});
+            } else {
+                vid.pause();
+                // Preload berikutnya (metadata saja)
+                if (i === idx + 1 && !vid.src && videos[i]) {
+                    const v = videos[i];
+                    let srcUrl = v.streamUrl || v.optimizedVersions?.['360p'] || v.url || '';
+                    if (srcUrl) { vid.src = srcUrl; vid.preload = 'metadata'; vid.load(); }
+                }
+            }
+        });
+    }
+
+    // ---- Scroll snap observer: deteksi item aktif ----
+    function initReelsScrollObserver() {
+        if (!('IntersectionObserver' in window)) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const idx = parseInt(entry.target.dataset.index);
+                    if (!isNaN(idx)) playReelsVideo(idx);
+                }
+            });
+        }, {
+            root: scrollCont,
+            threshold: 0.6
+        });
+
+        scrollCont.querySelectorAll('.reels-item').forEach(item => observer.observe(item));
+    }
+
+    // ---- Deteksi scroll ke atas paksa untuk keluar ----
+    function initReelsExitOnScrollUp() {
+        let lastScrollTop = 0;
+        let fastScrollUpStart = null;
+
+        scrollCont.addEventListener('scroll', () => {
+            const st = scrollCont.scrollTop;
+            const isAtTop = st <= 10;
+
+            // Tampilkan hint keluar saat di video pertama
+            if (reelsCurrentIndex === 0 && exitHintEl) {
+                exitHintEl.classList.toggle('show', isAtTop);
+            } else if (exitHintEl) {
+                exitHintEl.classList.remove('show');
+            }
+
+            // Deteksi scroll naik cepat di video pertama → keluar
+            if (isAtTop && st < lastScrollTop) {
+                if (!fastScrollUpStart) fastScrollUpStart = Date.now();
+                reelsExitScrollCount++;
+
+                if (reelsExitScrollCount > 3 || Date.now() - fastScrollUpStart < 400) {
+                    exitReelsMode();
+                }
+            } else {
+                fastScrollUpStart = null;
+                reelsExitScrollCount = 0;
+            }
+
+            lastScrollTop = st;
+        }, { passive: true });
+
+        // Touch: swipe ke bawah di video pertama (overscroll) → keluar
+        let touchStartY = 0;
+        scrollCont.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        scrollCont.addEventListener('touchend', (e) => {
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            // Swipe ke bawah (dy > 0) saat sudah di paling atas
+            if (dy > 60 && scrollCont.scrollTop <= 10) {
+                exitReelsMode();
+            }
+        }, { passive: true });
+    }
+
+    // ---- Masuk Reels Mode — anime.js transition ----
+    function enterReelsMode() {
+        if (reelsActive) return;
+
+        buildReelsItems();
+        if (!reelsItemsBuilt) {
+            console.warn('⚠️ Reels: videos not ready yet, aborting enter');
+            return;
+        }
+
+        reelsActive = true;
+        reelsCurrentIndex = currentIndex;
+        reelsExitScrollCount = 0;
+        window._reelsModeActive = true;
+
+        // Pause video carousel utama
+        const mainVideo = document.getElementById(`video-${currentIndex}`);
+        if (mainVideo && !mainVideo.paused) mainVideo.pause();
+
+        // Scroll reels ke item yang sesuai sebelum animasi
+        const items = scrollCont.querySelectorAll('.reels-item');
+        if (items[reelsCurrentIndex]) {
+            scrollCont.scrollTop = items[reelsCurrentIndex].offsetTop;
+        }
+
+        // Tampilkan overlay (class agar display:block aktif)
+        overlay.classList.remove('reels-exiting');
+        overlay.classList.add('reels-entering');
+
+        // Set state awal overlay (di bawah layar)
+        anime.set(overlay, { translateY: '100%', opacity: 0 });
+
+        // Set state awal UI elements (tersembunyi)
+        const uiEls = [closeBtnEl, counterEl, volumeBtnEl].filter(Boolean);
+        anime.set(uiEls, { opacity: 0, translateY: '-12px' });
+        uiEls.forEach(el => {
+            if (el) el.classList.add('reels-active'); // display:flex/block aktif dulu
+        });
+
+        // Elemen halaman utama yang akan di-scale/fade keluar
+        const pageMain = document.querySelector('main') ||
+                         document.querySelector('.kolase-container') ||
+                         document.querySelector('.page-wrapper') ||
+                         document.body;
+
+        // ---- anime.js timeline: masuk ----
+        anime.timeline({ easing: 'easeInOutQuart' })
+            // 1. Halaman utama: scale sedikit ke dalam + fade out (kesan "masuk ke dalam")
+            .add({
+                targets: pageMain,
+                duration: 320,
+                scale:    [1, 0.94],
+                opacity:  [1, 0],
+                easing:   'easeInQuart'
+            })
+            // 2. Overlay reels slide dari bawah dengan spring-like easing
+            .add({
+                targets:     overlay,
+                duration:    520,
+                translateY:  ['100%', '0%'],
+                opacity:     [0, 1],
+                easing:      'easeOutQuart',
+                begin() {
+                    overlay.classList.remove('reels-entering');
+                    overlay.classList.add('reels-active');
+                    // Kunci scroll body saat animasi mulai
+                    document.body.style.overflow = 'hidden';
+                    document.documentElement.style.overflow = 'hidden';
+                }
+            }, '-=80') // sedikit overlap dengan step 1
+            // 3. UI elements muncul dengan stagger (close, counter, volume)
+            .add({
+                targets:  uiEls,
+                duration: 300,
+                opacity:  [0, 1],
+                translateY: ['-12px', '0px'],
+                delay:    anime.stagger(60),
+                easing:   'easeOutBack',
+                complete() {
+                    // Reset scale halaman (tersembunyi di belakang overlay)
+                    anime.set(pageMain, { scale: 1, opacity: 1 });
+                    // Putar video reels
+                    playReelsVideo(reelsCurrentIndex);
+                    // Init observer (sekali saja)
+                    if (!scrollCont._observerInit) {
+                        initReelsScrollObserver();
+                        initReelsExitOnScrollUp();
+                        scrollCont._observerInit = true;
+                    }
+                    console.log(`✅ Reels mode ENTERED (index ${reelsCurrentIndex})`);
+                }
+            });
+    }
+
+    // ---- Keluar Reels Mode — anime.js transition ----
+    function exitReelsMode() {
+        if (!reelsActive) return;
+        reelsActive = false;
+        window._reelsModeActive = false;
+
+        // Pause semua video reels
+        scrollCont.querySelectorAll('video').forEach(v => v.pause());
+
+        // Sembunyikan hint
+        exitHintEl  && exitHintEl.classList.remove('show');
+        enterHintEl && enterHintEl.classList.remove('show');
+
+        overlay.classList.add('reels-exiting');
+
+        // Elemen halaman utama
+        const pageMain = document.querySelector('main') ||
+                         document.querySelector('.kolase-container') ||
+                         document.querySelector('.page-wrapper') ||
+                         document.body;
+
+        // Pastikan halaman mulai dari state tersembunyi (scale kecil)
+        anime.set(pageMain, { scale: 0.94, opacity: 0 });
+
+        const uiEls = [closeBtnEl, counterEl, volumeBtnEl].filter(Boolean);
+
+        // ---- anime.js timeline: keluar ----
+        anime.timeline({ easing: 'easeInOutQuart' })
+            // 1. UI elements fade out cepat
+            .add({
+                targets:  uiEls,
+                duration: 180,
+                opacity:  [1, 0],
+                translateY: ['0px', '-8px'],
+                easing:   'easeInQuad'
+            })
+            // 2. Overlay slide keluar ke atas
+            .add({
+                targets:    overlay,
+                duration:   440,
+                translateY: ['0%', '100%'],
+                opacity:    [1, 0],
+                easing:     'easeInQuart',
+                complete() {
+                    overlay.classList.remove('reels-active', 'reels-exiting');
+                    overlay.style.display = 'none';
+                    // Sembunyikan class UI elements
+                    uiEls.forEach(el => el && el.classList.remove('reels-active'));
+                }
+            }, '-=60')
+            // 3. Halaman utama kembali muncul (scale normal + fade in)
+            .add({
+                targets:  pageMain,
+                duration: 360,
+                scale:    [0.94, 1],
+                opacity:  [0, 1],
+                easing:   'easeOutQuart',
+                begin() {
+                    // Unlock scroll
+                    document.body.style.overflow = '';
+                    document.documentElement.style.overflow = '';
+                },
+                complete() {
+                    // Sync index ke carousel utama
+                    if (reelsCurrentIndex !== currentIndex) {
+                        showVideo(reelsCurrentIndex);
+                    }
+                    // Scroll halaman ke video section
+                    const videoSection = document.querySelector('.video-gallery-section');
+                    if (videoSection) {
+                        videoSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    console.log(`✅ Reels mode EXITED`);
+                }
+            }, '-=200'); // overlap: halaman mulai muncul sementara overlay masih bergerak
+    }
+
+    // ---- Volume toggle dalam reels ----
+    if (volumeBtnEl) {
+        volumeBtnEl.addEventListener('click', () => {
+            reelsMuted = !reelsMuted;
+            scrollCont.querySelectorAll('video').forEach(v => { v.muted = reelsMuted; });
+            const icon = volumeBtnEl.querySelector('i');
+            if (icon) icon.className = reelsMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+        });
+    }
+
+    // ---- Tombol close ----
+    if (closeBtnEl) {
+        closeBtnEl.addEventListener('click', exitReelsMode);
+    }
+
+    // ---- Wire tombol konfirmasi ----
+    const confirmYes = document.getElementById('reels-confirm-yes');
+    const confirmNo  = document.getElementById('reels-confirm-no');
+
+    if (confirmYes) {
+        confirmYes.addEventListener('click', (e) => {
+            e.stopPropagation();
+            cancelEnterHint();
+            enterReelsMode();
+        });
+    }
+    if (confirmNo) {
+        confirmNo.addEventListener('click', (e) => {
+            e.stopPropagation();
+            cancelEnterHint();
+        });
+    }
+
+    // ---- Deteksi scroll mentok bawah di halaman utama ----
+    // Saat user scroll ke bawah dan video section sudah terlihat + mentok bawah
+    // → tunggu 2 detik → tampilkan konfirmasi masuk reels
+    let atBottomTimer = null; // unused, kept for safety
+    let hintShowing = false;
+
+    function showEnterHint() {
+        if (hintShowing || reelsActive) return;
+        hintShowing = true;
+
+        // Set state awal (di bawah + transparan)
+        anime.set(enterHintEl, { translateY: '30px', opacity: 0 });
+        enterHintEl.classList.add('show');
+
+        // Slide up + fade in
+        anime({
+            targets:     enterHintEl,
+            duration:    380,
+            translateY:  ['30px', '0px'],
+            opacity:     [0, 1],
+            easing:      'easeOutBack'
+        });
+    }
+
+    function cancelEnterHint() {
+        if (!hintShowing) return;
+        hintShowing = false;
+
+        // Slide down + fade out
+        anime({
+            targets:    enterHintEl,
+            duration:   240,
+            translateY: ['0px', '20px'],
+            opacity:    [1, 0],
+            easing:     'easeInQuad',
+            complete() {
+                enterHintEl.classList.remove('show');
+                anime.set(enterHintEl, { translateY: '30px', opacity: 0 });
+            }
+        });
+    }
+
+    // ================================================================
+    // MOBILE PAGE SCROLL SNAP + OVERSCROLL → REELS TRIGGER
+    //
+    // Skenario:
+    //   1. Halaman mobile snap berhenti di video-gallery-section.
+    //   2. Jika user paksa swipe ke bawah dari posisi itu
+    //      (overscroll), muncul konfirmasi masuk Reels.
+    //   3. Konfirmasi hilang otomatis jika user scroll kembali ke atas.
+    //
+    // Penting:
+    //   - Class kolase-page HANYA ditambah setelah halaman fully loaded
+    //     agar browser tidak auto-snap saat render awal.
+    //   - video-gallery-section disembunyikan di mobile — hanya
+    //     accessible via Reels mode fullscreen.
+    // ================================================================
+
+    const videoSection      = document.querySelector('.video-gallery-section');
+    const memoriesContainer = document.querySelector('#memoriesContainer') ||
+                              document.querySelector('.memories-container');
+    // (bukan langsung saat init) agar scroll-snap tidak trigger saat load
+    let snapEnabled = false;
+    function enableScrollSnap() {
+        if (snapEnabled || window.innerWidth > 768) return;
+        snapEnabled = true;
+        document.documentElement.classList.add('kolase-page');
+        document.body.classList.add('kolase-page');
+    }
+
+    // Aktifkan snap setelah window load + delay 800ms buffer
+    window.addEventListener('load', () => {
+        setTimeout(enableScrollSnap, 800);
+    });
+    // Fallback jika load sudah lewat
+    if (document.readyState === 'complete') {
+        setTimeout(enableScrollSnap, 800);
+    }
+
+    // ---- Cek apakah user sudah mentok di bawah halaman (after memories) ----
+    // video-gallery-section disembunyikan di mobile, jadi deteksi
+    // berdasarkan scroll mentok bawah halaman (memories container habis)
+    function isSnappedAtVideoSection() {
+        if (!snapEnabled) return false;
+        const scrollY   = window.scrollY || window.pageYOffset;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        // Dianggap di "snap point" jika dalam 60px dari bawah halaman
+        return maxScroll > 0 && (maxScroll - scrollY) <= 60;
+    }
+
+    // ---- Deteksi overscroll (paksa scroll ke bawah dari snap point) ----
+    let touchStartY    = 0;
+    let touchStartTime = 0;
+    let atSnapPoint    = false;
+    let overscrollTimer = null;
+
+    document.addEventListener('touchstart', (e) => {
+        if (reelsActive || window.innerWidth > 768) return;
+        touchStartY    = e.touches[0].clientY;
+        touchStartTime = Date.now();
+        // Cek SETELAH snap aktif saja
+        atSnapPoint = snapEnabled ? isSnappedAtVideoSection() : false;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (reelsActive || window.innerWidth > 768) return;
+        if (!atSnapPoint || hintShowing) return;
+
+        const dy      = touchStartY - e.touches[0].clientY; // positif = swipe ke atas (scroll bawah)
+        const elapsed = Date.now() - touchStartTime;
+
+        // Paksa scroll ke bawah: dy > 55px dalam waktu < 600ms
+        if (dy > 55 && elapsed < 600) {
+            if (!overscrollTimer) {
+                overscrollTimer = setTimeout(() => {
+                    overscrollTimer = null;
+                    if (!reelsActive && !hintShowing && isSnappedAtVideoSection()) {
+                        // Efek rubber-band pada memories container via anime.js
+                        const rubberTarget = memoriesContainer || document.querySelector('.main-content');
+                        if (rubberTarget) {
+                            anime({
+                                targets:  rubberTarget,
+                                duration: 180,
+                                translateY: [0, -14],
+                                easing:   'easeOutQuad',
+                                complete() {
+                                    anime({
+                                        targets:    rubberTarget,
+                                        duration:   260,
+                                        translateY: [-14, 0],
+                                        easing:     'easeOutBounce'
+                                    });
+                                }
+                            });
+                        }
+                        showEnterHint();
+                    }
+                }, 60);
+            }
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => {
+        if (overscrollTimer) {
+            clearTimeout(overscrollTimer);
+            overscrollTimer = null;
+        }
+    }, { passive: true });
+
+    // ---- Batalkan hint jika user scroll kembali ke atas ----
+    window.addEventListener('scroll', () => {
+        if (reelsActive || window.innerWidth > 768 || !hintShowing) return;
+        if (!isSnappedAtVideoSection()) {
+            cancelEnterHint();
+        }
+    }, { passive: true });
+
+    console.log('✅ Mobile Reels mode initialized (scroll-snap + overscroll trigger)');
+})();
+// ====== END MOBILE REELS MODE ======

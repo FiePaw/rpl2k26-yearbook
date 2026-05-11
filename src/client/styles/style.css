@@ -6842,3 +6842,471 @@ select:focus {
         width: 115px;
     }
 }
+
+/* ========== MOBILE PAGE SCROLL SNAP ==========
+   Scroll halaman berhenti di video-gallery-section.
+   Section tersebut DISEMBUNYIKAN di mobile — hanya bisa
+   diakses via Reels mode fullscreen.
+   Hanya mobile (≤768px). Desktop tidak terpengaruh.
+   ============================================== */
+
+@media (max-width: 768px) {
+
+    /* video-gallery-section DISEMBUNYIKAN di mobile.
+       User tidak bisa scroll ke section ini secara normal.
+       Hanya bisa lewat Reels mode (fullscreen overlay). */
+    .video-gallery-section {
+        display: none !important;
+    }
+
+    /* Snap hanya aktif setelah class kolase-page ditambah via JS
+       (setelah halaman fully loaded, bukan saat render awal) */
+    html.kolase-page {
+        scroll-snap-type: y proximity;
+    }
+
+    /* Snap point: memories container — scroll berhenti di sini,
+       dari sini user bisa paksa scroll untuk trigger reels */
+    html.kolase-page .memories-container {
+        scroll-snap-align: end;
+    }
+}
+
+/* ====== END MOBILE PAGE SCROLL SNAP ====== */
+
+
+/* Hanya berlaku di mobile (max-width: 768px)        */
+/* Desktop TIDAK terpengaruh sama sekali             */
+
+/* Default hidden untuk semua elemen reels — berlaku di semua viewport termasuk desktop */
+#reels-mode-overlay,
+#reels-close-btn,
+#reels-counter,
+#reels-dots,
+#reels-volume-btn,
+#reels-exit-hint,
+#reels-enter-hint {
+    display: none;
+}
+
+@media (min-width: 769px) {
+    /* Desktop: paksa hidden, tidak bisa di-override JS */
+    #reels-mode-overlay,
+    #reels-close-btn,
+    #reels-counter,
+    #reels-dots,
+    #reels-volume-btn,
+    #reels-exit-hint,
+    #reels-enter-hint {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Mobile: elemen ini bisa muncul via JS class */
+    /* Transisi overlay dikontrol penuh oleh anime.js — tidak ada CSS transition */
+    #reels-mode-overlay {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        height: 100dvh;
+        background: #000;
+        z-index: 9000;
+        overflow: hidden;
+        /* State awal diset oleh anime.set() di JS */
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    #reels-mode-overlay.reels-entering,
+    #reels-mode-overlay.reels-active,
+    #reels-mode-overlay.reels-exiting {
+        display: block !important;
+    }
+
+    /* Scroll container vertical snap */
+    #reels-scroll-container {
+        width: 100%;
+        height: 100%;
+        overflow-y: scroll;
+        scroll-snap-type: y mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    #reels-scroll-container::-webkit-scrollbar { display: none; }
+
+    /* Setiap item = 1 layar penuh */
+    .reels-item {
+        width: 100%;
+        height: 100dvh;
+        height: 100vh;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        position: relative;
+        background: #000;
+        overflow: hidden;
+        display: block;
+    }
+
+    /* VIDEO: cover penuh layar, portrait style */
+    .reels-item video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;   /* ← cover, bukan contain */
+        background: #000;
+        z-index: 1;
+    }
+
+    /* Gradient gelap di bawah untuk overlay info */
+    .reels-item-gradient {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 55%;
+        background: linear-gradient(
+            to top,
+            rgba(0,0,0,0.82) 0%,
+            rgba(0,0,0,0.4) 50%,
+            transparent 100%
+        );
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    /* Gradient tipis di atas untuk status bar readability */
+    .reels-item-gradient-top {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 120px;
+        background: linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.45) 0%,
+            transparent 100%
+        );
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    /* ---- Area kiri bawah: judul + deskripsi (seperti Instagram) ---- */
+    .reels-item-info {
+        position: absolute;
+        bottom: 80px;
+        left: 1rem;
+        right: 80px;   /* beri ruang untuk action buttons di kanan */
+        z-index: 10;
+        color: white;
+    }
+
+    .reels-item-info h3 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin: 0 0 6px;
+        text-shadow: 0 1px 6px rgba(0,0,0,0.7);
+        line-height: 1.3;
+    }
+
+    .reels-item-info p {
+        font-size: 0.78rem;
+        color: rgba(255,255,255,0.8);
+        margin: 0;
+    }
+
+    /* ---- Progress bar di bawah ---- */
+    .reels-progress-bar {
+        position: absolute;
+        bottom: 65px;
+        left: 1rem;
+        right: 80px;
+        height: 2px;
+        background: rgba(255,255,255,0.3);
+        border-radius: 2px;
+        z-index: 10;
+        overflow: hidden;
+    }
+
+    .reels-progress-fill {
+        height: 100%;
+        background: #fff;
+        border-radius: 2px;
+        width: 0%;
+        transition: width 0.1s linear;
+    }
+
+    /* ---- Action buttons kanan (seperti Instagram Reels) ---- */
+    .reels-item-actions {
+        position: absolute;
+        right: 0.9rem;
+        bottom: 80px;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.4rem;
+    }
+
+    .reels-action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .reels-action-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        transition: background 0.2s, transform 0.15s;
+    }
+
+    .reels-action-btn:active .reels-action-icon {
+        transform: scale(0.88);
+        background: rgba(255,255,255,0.28);
+    }
+
+    .reels-action-label {
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.85);
+        font-weight: 500;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+
+    /* ---- Tombol play/pause tengah (tap area) ---- */
+    .reels-item-tap-area {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 80px;  /* tidak overlap action buttons */
+        bottom: 0;
+        z-index: 5;
+        cursor: pointer;
+    }
+
+    /* Icon play besar muncul saat pause */
+    .reels-pause-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.5);
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: white;
+        opacity: 0;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        pointer-events: none;
+        z-index: 6;
+    }
+
+    .reels-item.reels-paused .reels-pause-icon {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* ---- Tombol close (X) pojok kanan atas ---- */
+    #reels-close-btn {
+        position: fixed !important;
+        top: 0.9rem;
+        right: 0.9rem;
+        z-index: 9100;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.5);
+        border: 1.5px solid rgba(255,255,255,0.4);
+        color: white;
+        font-size: 0.9rem;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+
+    #reels-close-btn.reels-active {
+        display: flex !important;
+    }
+
+    /* ---- Counter pojok kiri atas ---- */
+    #reels-counter {
+        position: fixed !important;
+        top: 0.9rem;
+        left: 0.9rem;
+        z-index: 9100;
+        color: rgba(255,255,255,0.9);
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: none;
+        background: rgba(0,0,0,0.4);
+        padding: 3px 10px;
+        border-radius: 20px;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        letter-spacing: 0.5px;
+    }
+
+    #reels-counter.reels-active {
+        display: block !important;
+    }
+
+    /* ---- Volume toggle kanan bawah ---- */
+    #reels-volume-btn {
+        position: fixed !important;
+        bottom: 1.1rem;
+        right: 0.9rem;
+        z-index: 9100;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.5);
+        border: 1.5px solid rgba(255,255,255,0.35);
+        color: white;
+        font-size: 0.85rem;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+
+    #reels-volume-btn.reels-active {
+        display: flex !important;
+    }
+
+    /* ---- Hint exit (swipe ke bawah untuk keluar) ---- */
+    #reels-exit-hint {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 9100;
+        text-align: center;
+        padding: 0.4rem;
+        color: rgba(255,255,255,0.75);
+        font-size: 0.7rem;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%);
+    }
+
+    #reels-exit-hint.show {
+        display: block !important;
+        opacity: 1;
+    }
+
+    /* ---- Hint masuk reels (konfirmasi) — animasi dikontrol anime.js ---- */
+    #reels-enter-hint {
+        position: fixed !important;
+        bottom: 1.8rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 8500;
+        background: rgba(15, 15, 15, 0.92);
+        color: white;
+        padding: 0.9rem 1.1rem;
+        border-radius: 18px;
+        font-size: 0.8rem;
+        align-items: center;
+        gap: 0.8rem;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
+        white-space: nowrap;
+        min-width: 280px;
+        /* Tidak ada CSS animation — anime.js yang kontrol */
+    }
+
+    #reels-enter-hint.show {
+        display: flex !important;
+    }
+
+    .reels-hint-icon {
+        font-size: 1.3rem;
+        opacity: 0.9;
+        flex-shrink: 0;
+    }
+
+    .reels-hint-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1;
+    }
+
+    .reels-hint-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .reels-hint-sub {
+        font-size: 0.72rem;
+        color: rgba(255,255,255,0.6);
+    }
+
+    .reels-hint-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .reels-hint-actions button {
+        padding: 0.4rem 0.85rem;
+        border-radius: 20px;
+        border: none;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.1s, opacity 0.1s;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .reels-hint-actions button:active {
+        transform: scale(0.94);
+        opacity: 0.8;
+    }
+
+    #reels-confirm-yes {
+        background: #fff;
+        color: #000;
+    }
+
+    #reels-confirm-no {
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+    }
+
+    /* Dots: disembunyikan di desain baru (terlalu ramai) */
+    #reels-dots { display: none !important; }
+}
+/* ====== END MOBILE REELS MODE ====== */

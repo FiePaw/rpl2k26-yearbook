@@ -1659,7 +1659,8 @@ app.get('/api/video/stream/:filename', async (req, res) => {
         const requestedQuality = (req.query.quality || 'auto').toString();
 
         // Security: reject any path-traversal attempt.
-        if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+        // Hanya tolak jika ada ../ atau ..\ (traversal asli), bukan .. di tengah nama file.
+        if (!filename || /(\.\.[/\\])|(^\.\.)|([/\\]\.\.)/.test(filename) || filename.includes('/') || filename.includes('\\')) {
             return res.status(400).json({ success: false, error: 'Invalid filename' });
         }
 

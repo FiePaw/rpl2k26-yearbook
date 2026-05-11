@@ -244,6 +244,41 @@
         </div>
     </footer>
 
+    <!-- ===== MOBILE REELS MODE OVERLAY ===== -->
+    <!-- Hanya digunakan di mobile, desktop diabaikan via CSS/JS -->
+    <div id="reels-mode-overlay" aria-hidden="true">
+        <div id="reels-scroll-container"></div>
+    </div>
+    <!-- Tombol close reels -->
+    <button id="reels-close-btn" aria-label="Keluar dari mode Reels" title="Keluar">
+        <i class="fas fa-times"></i>
+    </button>
+    <!-- Counter video -->
+    <div id="reels-counter">1 / 1</div>
+    <!-- Dots navigasi -->
+    <div id="reels-dots"></div>
+    <!-- Volume toggle -->
+    <button id="reels-volume-btn" aria-label="Toggle mute">
+        <i class="fas fa-volume-mute"></i>
+    </button>
+    <!-- Hint keluar (scroll ke atas) -->
+    <div id="reels-exit-hint">
+        <i class="fas fa-chevron-up"></i> Scroll ke atas untuk keluar
+    </div>
+    <!-- Hint masuk reels dengan konfirmasi -->
+    <div id="reels-enter-hint">
+        <div class="reels-hint-icon"><i class="fas fa-film"></i></div>
+        <div class="reels-hint-text">
+            <span class="reels-hint-title">Mode Reels</span>
+            <span class="reels-hint-sub">Masuk tampilan video fullscreen?</span>
+        </div>
+        <div class="reels-hint-actions">
+            <button id="reels-confirm-yes">Masuk</button>
+            <button id="reels-confirm-no">Batal</button>
+        </div>
+    </div>
+    <!-- ===== END MOBILE REELS MODE ===== -->
+
     <script src="/src/client/js/loading.js"></script>
     <script src="/src/client/js/image-optimizer.js"></script>
     <script src="/src/client/js/popup.js"></script>

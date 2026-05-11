@@ -9,6 +9,109 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.2.2] — 2026-05-11
+
+### Fixed — Auto-masuk Reels saat Halaman Load (`kolase.js`)
+- **Penyebab**: Class `kolase-page` langsung ditambah ke `html/body` saat JS init → `scroll-snap-type: y proximity` aktif sebelum konten galeri foto selesai di-render secara dinamis → browser bisa auto-snap ke posisi yang kebetulan memenuhi threshold `isSnappedAtVideoSection()` → swipe sekecil apapun (bahkan saat loading) bisa trigger dialog konfirmasi Reels.
+- **Fix**: Class `kolase-page` sekarang hanya ditambah via `enableScrollSnap()` yang dipanggil dari event `window.load` + delay **800ms** sebagai buffer. Memastikan semua konten dinamis (galeri foto dari API) sudah ter-render sebelum snap aktif. Guard tambahan `if (!snapEnabled) return false` di `isSnappedAtVideoSection()` mencegah trigger apapun sebelum snap benar-benar diaktifkan.
+
+### Fixed — Video-gallery-section Terlihat di Mobile (`style.css`)
+- **Penyebab**: Tidak ada CSS yang menyembunyikan `.video-gallery-section` di mobile. User bisa scroll ke section tersebut dan melihat layout player desktop yang tidak dioptimasi untuk layar kecil.
+- **Fix**: Ditambahkan `display: none !important` pada `.video-gallery-section` di dalam `@media (max-width: 768px)`. Section ini sepenuhnya tidak terlihat di mobile — satu-satunya cara melihat video adalah lewat **Reels mode fullscreen**. Desktop tidak terpengaruh.
+- Efek rubber-band saat overscroll diupdate target dari `videoSection` (hidden) ke `#memoriesContainer` agar animasi tetap bisa terlihat user.
+
+---
+
+## [3.2.1] — 2026-05-11
+
+### Added — Anime.js Transitions untuk Reels Mode (`kolase.js`, `style.css`)
+Semua transisi masuk/keluar Reels mode sekarang dikontrol penuh oleh **anime.js** — CSS `transition` dan `@keyframes` pada overlay dihapus.
+
+#### Transisi Masuk (`enterReelsMode`)
+Timeline 3 tahap berurutan via `anime.timeline()`:
+1. **Halaman utama** — `scale 1 → 0.94` + opacity fade out (`easeInQuart`, 320ms) — kesan "masuk ke dalam layar".
+2. **Overlay reels** — slide dari bawah `translateY 100% → 0%` + fade in (`easeOutQuart`, 520ms), overlap 80ms dengan step 1.
+3. **UI elements** (✕, counter, volume) — muncul dengan `anime.stagger(60ms)` per elemen, `easeOutBack` untuk efek bounce kecil (300ms).
+
+#### Transisi Keluar (`exitReelsMode`)
+Timeline 3 tahap berurutan:
+1. **UI elements** — fade out + slide ke atas sedikit (`easeInQuad`, 180ms).
+2. **Overlay reels** — slide keluar ke bawah `translateY 0% → 100%` + fade out (`easeInQuart`, 440ms), overlap 60ms.
+3. **Halaman utama** — `scale 0.94 → 1` + fade in (`easeOutQuart`, 360ms), overlap 200ms — muncul saat overlay masih bergerak untuk transisi seamless.
+
+#### Dialog Konfirmasi (`showEnterHint` / `cancelEnterHint`)
+- **Muncul**: `anime()` slide up `translateY 30px → 0` + fade in (`easeOutBack`, 380ms) — efek spring ringan.
+- **Tutup**: `anime()` slide down + fade out (`easeInQuad`, 240ms).
+- CSS `@keyframes reels-hint-slide-up` dihapus — anime.js yang mengontrol sepenuhnya.
+
+### Added — Mobile Page Scroll Snap + Overscroll Trigger (`kolase.js`, `style.css`)
+Perilaku scroll halaman Kolase di mobile diubah total:
+
+- **Scroll snap** aktif di `html.kolase-page` (`scroll-snap-type: y proximity`) — halaman berhenti natural setelah galeri foto habis.
+- **Overscroll trigger**: jika user paksa swipe ke bawah `>55px` dalam `<600ms` saat sudah di posisi bawah halaman, muncul dialog konfirmasi Reels + efek **rubber-band** anime.js pada `#memoriesContainer` (naik 14px lalu bounce balik).
+- Scroll kembali ke atas → dialog konfirmasi otomatis hilang dengan animasi.
+- Class `kolase-page` ditambah ke `html`/`body` via JS (bukan langsung di HTML) agar snap hanya aktif setelah halaman fully loaded.
+
+---
+
+## [3.2.0] — 2026-05-11
+
+### Added — Mobile Reels Mode (Kolase)
+Fitur baru di halaman Kolase: mode tampilan video fullscreen bergaya Instagram Reels / TikTok, **khusus mobile** (≤768px). Desktop tidak terpengaruh sama sekali.
+
+#### Trigger & Konfirmasi
+- Saat user scroll mentok ke bawah dan section **Our Video** terlihat di viewport, sistem menunggu **2 detik** lalu menampilkan **dialog konfirmasi** dari bawah layar (slide-up animation).
+- Dialog berisi: ikon 🎬, teks "Mode Reels" + subjudul "Masuk tampilan video fullscreen?", tombol **"Masuk"** (putih) dan **"Batal"** (transparan).
+- Jika user scroll kembali sebelum menekan tombol, dialog otomatis hilang.
+- User yang memilih "Batal" tidak masuk mode reels — tidak ada auto-enter paksa.
+
+#### Tampilan Reels (Instagram-style)
+- **Video `object-fit: cover`** — mengisi penuh layar portrait, tidak ada sisi kosong hitam.
+- **Gradient atas & bawah** untuk readability UI seperti Instagram Reels asli.
+- **Scroll snap vertikal** — geser ke atas/bawah antar video dengan snapping mulus.
+- **Tap area tengah** untuk play/pause; ikon play besar muncul animasi saat video pause.
+- **Action buttons di kanan** (❤️ Suka, ↗ Bagikan, 🔇 Suara) — persis layout Instagram Reels.
+- **Info judul + nama channel** di kiri bawah dengan ikon vinyl.
+- **Progress bar tipis** di atas area info.
+- **Counter video** (misal `2 / 5`) di pojok kiri atas.
+- **Tombol ✕** di pojok kanan atas untuk keluar.
+
+#### Transisi (awal — sebelum upgrade ke anime.js di v3.2.1)
+- **Masuk**: slide dari bawah layar + fade-in via CSS transition.
+- **Keluar**: slide ke atas + fade-out via CSS transition.
+
+#### Cara Keluar
+- Tombol ✕ di pojok kanan atas.
+- Swipe ke bawah saat berada di video pertama.
+- Scroll paksa ke atas di video pertama (overscroll gesture).
+
+#### Isolasi Desktop
+- Semua elemen HTML reels mendapat `display: none` secara global.
+- Di viewport `min-width: 769px` dipaksa `display: none !important; visibility: hidden !important` — layout desktop tidak bisa terpengaruh sama sekali meski ada JS yang berjalan.
+
+#### File yang Diubah
+- **`public/kolase.html`** — tambah HTML overlay reels (overlay, scroll container, close button, counter, volume toggle, exit hint, enter hint dengan tombol konfirmasi).
+- **`src/client/styles/style.css`** — tambah blok CSS reels seluruhnya dalam `@media (max-width: 768px)` + default hidden di luar media query.
+- **`src/client/js/kolase.js`** — tambah IIFE `initReelsMode()` di akhir file dengan guard `if (window.innerWidth > 768) return`.
+
+---
+
+### Changed — Autoplay Video Dihapus (Kolase)
+Video di halaman Kolase sekarang **hanya diputar manual** oleh user — tidak ada autoplay sama sekali.
+
+- **`IntersectionObserver`** sekarang hanya melakukan **pause** saat section keluar viewport. Tidak lagi auto-play saat section masuk viewport.
+- **Auto-rotate timer 38 detik** dihapus sepenuhnya (`scheduleAutoRotate` → no-op).
+- **`showVideo()`** tidak lagi memanggil `requestVideoPlay()` saat ganti video — video hanya berganti tampilan, user yang memulai play via tombol.
+- Flag `window._videoUserPaused` dan `window._resetVideoAutoRotate` dibersihkan karena tidak relevan lagi.
+
+---
+
+### Fixed — Video Stream 400 Bad Request untuk Nama File dengan `..` (`server.js`)
+- **Penyebab**: Validasi keamanan di endpoint `GET /api/video/stream/:filename` menolak semua filename yang mengandung `..` (double dot). Nama file video dari TikTok/Instagram sering mengandung `..` di tengah sebagai bagian dari nama aslinya (contoh: `1778462258904_AQOLjv…NFnDAwPHo3..mp4`), sehingga selalu di-reject dengan `400 Bad Request` → error `MEDIA_ELEMENT_ERROR: Format error` di browser.
+- **Fix**: Regex validasi diperketat — hanya menolak pola *path traversal* asli (`../`, `..\`, `^..`) bukan sekadar kehadiran `..` di mana saja dalam nama file. Keamanan tetap terjaga, video dengan `..` di nama file bisa distream normal.
+
+---
+
 ## [3.1.0] — 2026-05-10
 
 ### Changed — Video Streaming Refactor (TikTok-style delivery)
