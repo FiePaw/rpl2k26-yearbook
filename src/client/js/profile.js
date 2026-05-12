@@ -841,6 +841,10 @@ function setupStudentForm(studentId) {
             popup.error('Yahh Error Nih: ' + error.message);
         }
     });
+
+    // Setup artist input monitoring langsung saat form di-init,
+    // tidak perlu tunggu user klik tab "Download MP3"
+    setupArtistInputMonitoring();
 }
 
 // Setup teacher form
@@ -1522,7 +1526,7 @@ async function loadAvailableAudioFiles() {
                         ${thumbnailHtml}
                         <div class="audio-file-info">
                             <div class="audio-file-title">
-                                <span>${escapedTitle}</span>
+                                <span class="audio-file-title-text">${escapedTitle}</span>
                             </div>
                             <div class="audio-file-meta">
                                 ${metaInfo}
@@ -1601,7 +1605,7 @@ async function refreshStudentAudioList() {
                         ${thumbnailHtml}
                         <div class="audio-file-info">
                             <div class="audio-file-title">
-                                <span>${escapedTitle}</span>
+                                <span class="audio-file-title-text">${escapedTitle}</span>
                             </div>
                             <div class="audio-file-meta">
                                 ${metaInfo}

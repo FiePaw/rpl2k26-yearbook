@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/src/client/styles/loading.css">
     <link rel="stylesheet" href="/src/client/styles/style.css">
     <link rel="stylesheet" href="/src/client/styles/popup.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <!-- Cropper.js for image cropping -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
@@ -1237,7 +1237,7 @@
                                                         <i id="songPlayIcon" class="fas fa-play" style="font-size:1.6rem;color:#fff;"></i>
                                                     </div>
                                                 </div>
-                                                <div style="flex:1;min-width:0;">
+                                                <div style="flex:1;min-width:0;overflow:hidden;">
                                                     <p style="margin:0 0 0.2rem 0;font-size:0.75rem;color:var(--primary-color);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Lagu yang dipilih</p>
                                                     <p id="selectedSongTitle" style="margin:0 0 0.25rem 0;font-size:1rem;font-weight:700;color:var(--text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</p>
                                                     <p id="selectedSongArtist" style="margin:0 0 0.5rem 0;font-size:0.85rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</p>
@@ -1357,7 +1357,7 @@
                                                             <i class="fas fa-sync-alt"></i> Refresh
                                                         </button>
                                                     </div>
-                                                    <div id="studentAudioFilesContainer" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.8rem;">
+                                                    <div id="studentAudioFilesContainer" style="max-height: 300px; overflow-y: auto; overflow-x: hidden; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.8rem; box-sizing: border-box;">
                                                         <p style="color: var(--text-muted); font-size: 0.9rem;"><i class="fas fa-spinner fa-spin"></i> Loading audio files...</p>
                                                     </div>
                                                 </div>

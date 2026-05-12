@@ -26,6 +26,7 @@ const { spawn } = require('child_process');
 const MetadataCache = require('../utils/metadata-cache');
 const RateLimitHandler = require('../utils/rate-limit-handler');
 const CookieRotator = require('../utils/cookie-rotator');
+const PoTokenGenerator = require('../utils/po-token-generator');
 
 // Optional dependencies - loaded with try/catch
 let playDl = null;
@@ -47,6 +48,9 @@ class MusicDownloader {
         // Initialize cookie rotator - uses cookies/ directory at project root
         const projectRoot = path.join(__dirname, '..', '..', '..');
         this.cookieRotator = new CookieRotator(path.join(projectRoot, 'cookies'));
+
+        // Initialize po_token generator - dipakai sebagai fallback jika semua cookies expired
+        this.poTokenGenerator = new PoTokenGenerator();
 
         // Ensure output directory exists
         if (!fsSync.existsSync(outputDir)) {
@@ -415,43 +419,57 @@ class MusicDownloader {
 
 
     /**
-     * Download menggunakan yt-dlp CLI dengan cookie rotation.
-     * Jika cookie invalid/expired, otomatis rotate ke cookie berikutnya dan retry.
-     * 
+     * Download menggunakan yt-dlp CLI.
+     *
+     * Flow:
+     *   1. Coba dengan cookie rotation (existing behavior)
+     *   2. Jika semua cookies expired/invalid → fallback ke po_token + visitor_data
+     *   3. Jika fallback juga gagal → throw error
+     *
      * @param {string} url - URL untuk download
      * @param {string} outputPath - Output directory
-     * @param {number} retryCount - Internal retry counter
+     * @param {number} retryCount - Internal cookie retry counter
      * @returns {Promise<void>}
      */
     async downloadWithYtdlp(url, outputPath, retryCount = 0) {
-        const MAX_COOKIE_RETRIES = 3;
+        const MAX_COOKIE_RETRIES = this.cookieRotator.cookieFiles.length || 3;
 
         return new Promise(async (resolve, reject) => {
             try {
-                // Get current cookie from rotator
                 const cookiePath = this.cookieRotator.getCurrentCookie();
-                
+                const allCookiesExhausted = !cookiePath ||
+                    this.cookieRotator.invalidCookies.size >= this.cookieRotator.cookieFiles.length;
+
+                // ── FALLBACK: semua cookies expired, coba po_token ──────────────
+                if (allCookiesExhausted && retryCount >= MAX_COOKIE_RETRIES) {
+                    console.log('\n🔑 All cookies exhausted — attempting po_token fallback...');
+                    try {
+                        const result = await this._downloadWithPoToken(url, outputPath);
+                        return resolve(result);
+                    } catch (poErr) {
+                        return reject(new Error(
+                            `Semua cookies expired DAN po_token fallback gagal: ${poErr.message}`
+                        ));
+                    }
+                }
+
+                // ── NORMAL: download dengan cookie ───────────────────────────────
                 if (cookiePath) {
                     console.log(`🍪 Using cookie: ${path.basename(cookiePath)}`);
                 } else {
                     console.log('⚠️ No cookies available - downloads may fail');
                 }
-                
-                // Check for JavaScript runtime
+
                 const jsRuntime = await this.getJavaScriptRuntime();
-                
                 if (!jsRuntime) {
-                    console.error('❌ No JavaScript runtime found for YouTube signatures');
                     throw new Error('JavaScript runtime not found - cannot solve YouTube signatures');
                 }
-                
-                // Build yt-dlp arguments
+
                 const ytdlpArgs = [
                     '--remote-components', 'ejs:github',
                     '--js-runtimes', 'node',
                 ];
 
-                // Add cookies if available
                 if (cookiePath) {
                     ytdlpArgs.push('--cookies', cookiePath);
                 }
@@ -468,14 +486,13 @@ class MusicDownloader {
                     '-o', path.join(outputPath, '%(title)s.%(ext)s'),
                     url
                 );
-                
+
                 console.log(`\n📥 Starting yt-dlp...`);
                 console.log(`🔧 JS Runtime: ${jsRuntime}`);
                 console.log(`📍 URL: ${url}`);
                 console.log(`💾 Output: ${path.join(outputPath, '%(title)s.%(ext)s')}\n`);
-                
-                const ytdlp = spawn('yt-dlp', ytdlpArgs);
 
+                const ytdlp = spawn('yt-dlp', ytdlpArgs);
                 let stdout = '';
                 let stderr = '';
 
@@ -494,43 +511,131 @@ class MusicDownloader {
                 ytdlp.on('close', async (code) => {
                     if (code === 0) {
                         console.log('\n✅ yt-dlp download completed successfully');
-                        resolve(stdout);
-                    } else {
-                        const fullError = stderr || stdout || 'yt-dlp download failed';
-                        console.log(`\n❌ yt-dlp exit code: ${code}`);
-                        
-                        // Check if error is cookie-related (invalid/expired)
-                        const isCookieError = this._isCookieError(fullError);
-                        
-                        if (isCookieError && cookiePath && retryCount < MAX_COOKIE_RETRIES) {
-                            console.log(`\n🔄 Cookie appears invalid/expired, rotating...`);
-                            this.cookieRotator.markInvalid(cookiePath);
-                            
-                            const nextCookie = this.cookieRotator.getCurrentCookie();
-                            if (nextCookie) {
-                                console.log(`🍪 Retrying with: ${path.basename(nextCookie)} (attempt ${retryCount + 1}/${MAX_COOKIE_RETRIES})`);
-                                try {
-                                    const result = await this.downloadWithYtdlp(url, outputPath, retryCount + 1);
-                                    resolve(result);
-                                } catch (retryErr) {
-                                    reject(retryErr);
-                                }
-                                return;
+                        return resolve(stdout);
+                    }
+
+                    const fullError = stderr || stdout || 'yt-dlp download failed';
+                    console.log(`\n❌ yt-dlp exit code: ${code}`);
+
+                    const isCookieError = this._isCookieError(fullError);
+
+                    if (isCookieError && cookiePath) {
+                        console.log(`\n🔄 Cookie invalid/expired: ${path.basename(cookiePath)}`);
+                        this.cookieRotator.markInvalid(cookiePath);
+
+                        const nextCookie = this.cookieRotator.getCurrentCookie();
+                        const newRetryCount = retryCount + 1;
+
+                        if (nextCookie && newRetryCount < MAX_COOKIE_RETRIES) {
+                            // Masih ada cookie lain, coba lagi
+                            console.log(`🍪 Rotating to: ${path.basename(nextCookie)} (attempt ${newRetryCount}/${MAX_COOKIE_RETRIES})`);
+                            try {
+                                const result = await this.downloadWithYtdlp(url, outputPath, newRetryCount);
+                                return resolve(result);
+                            } catch (retryErr) {
+                                return reject(retryErr);
+                            }
+                        } else {
+                            // Semua cookies sudah dicoba → fallback ke po_token
+                            console.log('\n🔑 All cookies exhausted — switching to po_token fallback...');
+                            try {
+                                const result = await this._downloadWithPoToken(url, outputPath);
+                                return resolve(result);
+                            } catch (poErr) {
+                                return reject(new Error(
+                                    `Semua cookies expired DAN po_token fallback gagal: ${poErr.message}`
+                                ));
                             }
                         }
-                        
-                        reject(new Error(fullError));
                     }
+
+                    reject(new Error(fullError));
                 });
 
                 ytdlp.on('error', (err) => {
                     console.error('\n❌ Failed to execute yt-dlp:', err.message);
                     reject(err);
                 });
+
             } catch (error) {
                 console.error('❌ downloadWithYtdlp error:', error.message);
                 reject(error);
             }
+        });
+    }
+
+    /**
+     * Fallback download menggunakan po_token + visitor_data tanpa cookie.
+     * Dipanggil otomatis ketika semua cookies sudah expired/invalid.
+     *
+     * @param {string} url - URL untuk download
+     * @param {string} outputPath - Output directory
+     * @returns {Promise<string>} stdout dari yt-dlp
+     */
+    async _downloadWithPoToken(url, outputPath) {
+        console.log('🎟️  [PoToken Fallback] Generating po_token + visitor_data...');
+
+        const tokens = await this.poTokenGenerator.get();
+        if (!tokens) {
+            throw new Error('Gagal generate po_token — YouTube mungkin memblokir IP ini');
+        }
+
+        const { poToken, visitorData } = tokens;
+        console.log('✅ [PoToken Fallback] Tokens ready, starting download...');
+
+        return new Promise((resolve, reject) => {
+            const ytdlpArgs = [
+                '--extractor-args', `youtube:po_token=web+${poToken};visitor_data=${visitorData}`,
+                '--impersonate', 'Chrome-136',
+                '-f', 'ba',
+                '-x',
+                '--audio-format', 'mp3',
+                '--audio-quality', '0',
+                '--write-thumbnail',
+                '--convert-thumbnails', 'jpg',
+                '--write-info-json',
+                '-o', path.join(outputPath, '%(title)s.%(ext)s'),
+                url
+            ];
+
+            console.log(`\n📥 [PoToken Fallback] Starting yt-dlp...`);
+            console.log(`📍 URL: ${url}`);
+
+            const ytdlp = spawn('yt-dlp', ytdlpArgs);
+            let stdout = '';
+            let stderr = '';
+
+            ytdlp.stdout.on('data', (data) => {
+                const output = data.toString();
+                stdout += output;
+                console.log(`[yt-dlp/potoken] ${output.trim()}`);
+            });
+
+            ytdlp.stderr.on('data', (data) => {
+                const output = data.toString();
+                stderr += output;
+                console.log(`[yt-dlp/potoken] ${output.trim()}`);
+            });
+
+            ytdlp.on('close', (code) => {
+                if (code === 0) {
+                    console.log('\n✅ [PoToken Fallback] Download completed successfully');
+                    return resolve(stdout);
+                }
+
+                const fullError = stderr || stdout || 'yt-dlp po_token download failed';
+                console.log(`\n❌ [PoToken Fallback] Exit code: ${code}`);
+
+                // Kalau po_token juga gagal, invalidate cache agar di-regenerate next time
+                if (this._isCookieError(fullError)) {
+                    console.log('🗑️  [PoToken Fallback] Token appears invalid, clearing cache...');
+                    this.poTokenGenerator.invalidate();
+                }
+
+                reject(new Error(fullError));
+            });
+
+            ytdlp.on('error', (err) => reject(err));
         });
     }
 
@@ -646,10 +751,13 @@ class MusicDownloader {
     }
 
     /**
-     * Get cookie rotator status
+     * Get cookie rotator + po_token status
      */
     getCookieStatus() {
-        return this.cookieRotator.getStatus();
+        return {
+            ...this.cookieRotator.getStatus(),
+            poTokenFallback: this.poTokenGenerator.getStatus(),
+        };
     }
 
     /**

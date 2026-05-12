@@ -530,14 +530,14 @@
       "birthday": "2026-05-12",
       "message": "RYR",
       "photo": null,
-      "audioFile": "/profile_music/LANY - 13 (Official Audio).mp3",
-      "audioTrimStart": 0,
+      "audioFile": "/profile_music/The Weeknd - After Hours (Audio).mp3",
+      "audioTrimStart": null,
       "audioTrimEnd": null,
-      "studentLyrics": null,
-      "lyricsGeneratedFrom": null,
-      "lyricsUpdatedAt": null,
-      "lyricsArtistName": "LANY",
-      "lyricsSongTitle": "13",
+      "studentLyrics": "[00:00] Instrumental Intro\n[00:18] Thought I almost died in my dream again\n[00:23] Fightin' for my life, I couldn't breathe again\n[00:27] I'm fallin' in too deep\n[00:30] Without you, I can't sleep\n[00:33] 'Cause my heart belongs to you\n[00:36] I'll risk it all for you\n[00:40] I want you next to me\n[00:43] This time, I'll never leave\n[00:46] I wanna share babies\n[00:48] Protection, we won't need\n[00:51] Your body next to me\n[00:53] Is just a memory\n[00:56] I'm fallin' in too deep, oh\n[01:01] Without you, I can't sleep\n[01:04] Insomnia relieve, oh\n[01:08] Talk to me, without you, I can't breathe\n[01:13] My darkest hours\n[01:16] Girl, I felt so alone inside of this crowded room\n[01:21] Different girls on the floor, distractin' my thoughts of you\n[01:26] I turned into the man I used to be, to be\n[01:30] Put myself to sleep\n[01:32] Just so I can get closer to you inside my dreams\n[01:37] Didn't wanna wake up 'less you were beside me\n[01:41] I just wanted to call you and say, and say\n[01:45] Oh, baby\n[01:47] Where are you now when I need you most?\n[01:52] I'd give it all just to hold you close\n[01:57] Sorry that I broke your heart, your heart\n[02:02] Oh, baby\n[02:04] Where are you now when I need you most?\n[02:09] I'd give it all just to hold you close\n[02:14] Sorry that I broke your heart, your heart\n[02:19] Never comin' down, uh\n[02:23] I was running away from facin' reality, uh\n[02:28] Wastin' all of my time out living my fantasies\n[02:33] Spendin' money to compensate, compensate\n[02:36] 'Cause I want you, baby, uh\n[02:39] I be livin' in heaven when I'm inside of you\n[02:43] It was simply a blessing wakin' beside you\n[02:47] I'll never let you down again, again\n[02:52] Oh, baby\n[02:54] Where are you now when I need you most?\n[02:59] I'd give it all just to hold you close\n[03:04] Sorry that I broke your heart, your heart\n[03:09] I said, baby\n[03:11] I'll treat you better than I did before\n[03:16] I'll hold you down and not let you go\n[03:21] This time, I won't break your heart, your heart, yeah\n[03:26] I know it's all my fault\n[03:29] Made you put down your guard\n[03:32] I know I made you fall\n[03:34] Then said you were wrong for me\n[03:37] I lied to you, I lied to you, I lied to you\n[03:42] Can't hide the truth, I'd stay with her in spite of you\n[03:47] You did some things that you regret, still ride for you\n[03:52] 'Cause this house is not a home\n[03:57] Without my baby\n[03:59] Where are you now when I need you most?\n[04:04] I gave it all just to hold you close\n[04:09] Sorry that I broke your heart, your heart\n[04:14] And I said, baby\n[04:16] I'll treat you better than I did before\n[04:21] I'll hold you down and not let you go\n[04:26] This time, I won't break your heart, your heart, no\n[04:32] Instrumental Outro\n[06:01] End",
+      "lyricsGeneratedFrom": "auto-qwen-3prompt",
+      "lyricsUpdatedAt": "2026-05-12T09:11:45.242Z",
+      "lyricsArtistName": "The Weeknd",
+      "lyricsSongTitle": "After Hours",
       "socialMedia": {
         "instagram": "",
         "tiktok": "",
@@ -546,7 +546,7 @@
         "twitter": "",
         "threads": ""
       },
-      "updatedAt": "2026-05-12T08:21:47.396Z"
+      "updatedAt": "2026-05-12T09:05:43.633Z"
     }
   ],
   "teachers": [

@@ -9,6 +9,121 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.3.8] — 2026-05-12
+
+### Fixed — Kolase: Space Kosong pada `memory-frame` (`src/client/styles/style.css`)
+
+#### Root Cause
+Layout galeri kolase sebelumnya menggunakan **CSS Grid** dengan `grid-row: span 2` untuk kartu portrait. Masalahnya:
+- Kartu portrait "mereservasi" 2 baris di grid, namun karena tinggi gambar mengikuti konten (`height: auto`), baris ke-2 tidak selalu terisi penuh → timbul **ruang kosong (gap)** di bawah kartu.
+- `object-fit: contain` membuat gambar tidak memenuhi frame, menyisakan ruang kosong di atas/bawah gambar.
+- Walaupun sudah ada `grid-auto-flow: dense`, tetap tidak bisa mengisi gap karena row height yang tidak konsisten antar foto.
+
+#### Solusi: Ganti ke CSS Multi-Column Masonry
+- `.memories-container` diubah dari `display: grid` ke **`columns: N`** (CSS multi-column layout) — ini cara paling native dan stabil untuk layout foto berbeda ukuran tanpa space kosong.
+- `.memory-card` ditambah `break-inside: avoid` + `display: inline-block` agar kartu tidak terpotong di tengah antar kolom.
+- `.memory-card` ditambah `margin-bottom` sebagai pengganti `gap` (multi-column pakai margin, bukan gap).
+- `object-fit` diubah dari `contain` ke `cover` agar gambar selalu memenuhi frame.
+- Semua `grid-column: span` dan `grid-row: span` pada `.memory-card.landscape`, `.memory-card.portrait`, dan `.memory-large` dihapus — tidak relevan lagi dengan multi-column.
+
+#### Breakpoints yang diupdate
+- **Mobile** (`≤768px`): `columns: 2`, `column-gap: 0.7rem`
+- **Tablet** (`≤1024px`): `columns: 3`, `column-gap: 1rem`
+- **Desktop** (`≥1200px`): `columns: 4`, `column-gap: 1.4rem`
+- **Default**: `columns: 4`, `column-gap: 1.2rem`
+
+---
+
+## [3.3.7] — 2026-05-12
+
+### Fixed — Hotfix: Seluruh isi `studentProfile` keluar batas (`src/client/styles/style.css`, `public/profile.html`)
+
+Fix lanjutan dari [3.3.6] — perbaikan sebelumnya pada `.audio-file-info` belum cukup menahan overflow di level grid dan flex parent.
+
+#### Root cause
+Grid child (`.form-fields`) tidak memiliki `min-width: 0`, sehingga di dalam CSS Grid `grid-template-columns: auto 1fr`, kolom `1fr` bisa melampaui batas container. Ini ditambah `.audio-file-item` yang pakai `flex-wrap: wrap` tanpa `max-width: 100%` menyebabkan seluruh konten daftar lagu melebar keluar kartu profil.
+
+#### Perubahan `style.css`
+- Tambah rule dasar `.form-grid` dan `.form-fields` dengan `min-width: 0` dan `overflow: hidden` agar grid child tidak bisa overflow melampaui kolom.
+- `.audio-file-item` ditambah `max-width: 100%`, `overflow: hidden`, dan `box-sizing: border-box`.
+- `.profile-form` ditambah `overflow: hidden` sebagai jaring pengaman terakhir agar konten apapun di dalamnya tidak bisa keluar batas kartu.
+
+#### Perubahan `profile.html`
+- `#studentAudioFilesContainer` ditambah `overflow-x: hidden` dan `box-sizing: border-box` agar scroll container tidak melampaui lebar parent meski konten di dalamnya lebar.
+
+---
+
+## [3.3.6] — 2026-05-12
+
+### Fixed — Bug Profile: Overflow Nama Lagu, Ikon Sosmed, Artist Input (`public/profile.html`, `src/client/styles/style.css`, `src/client/js/profile.js`)
+
+#### Bug 1 — Nama lagu panjang keluar batas `studentProfile` (`style.css`, `profile.js`)
+- `.audio-file-info` diubah dari `min-width: 150px` ke `min-width: 0` + `overflow: hidden` agar flex child bisa di-constrain dengan benar.
+- `.audio-file-title` ditambah `overflow: hidden`, `white-space: nowrap`, `text-overflow: ellipsis`, dan `max-width: 100%` — nama lagu kini terpotong dengan ellipsis jika terlalu panjang.
+- Tambah class CSS baru `.audio-file-title-text` untuk wrapping teks judul secara spesifik di dalam flex container.
+- Di `profile.js`, kedua fungsi render daftar lagu (`loadAvailableAudioFiles` dan `refreshStudentAudioList`) diupdate: `<span>` yang membungkus judul lagu kini menggunakan class `audio-file-title-text`.
+- Di `profile.html`, container info di `selectedSongCard` ditambah `overflow: hidden` agar `text-overflow: ellipsis` pada `selectedSongTitle` dan `selectedSongArtist` bekerja dengan benar.
+
+#### Bug 2 — Ikon `fab fa-x-twitter` dan `fab fa-threads` tidak tampil (`profile.html`)
+- FontAwesome diupgrade dari versi `6.4.0` ke `6.7.2`.
+- `fa-threads` baru tersedia mulai FA `6.5.0`, sehingga versi `6.4.0` yang sebelumnya digunakan tidak menampilkan ikon tersebut.
+- `fa-x-twitter` juga lebih stabil di versi `6.7.2`.
+
+#### Bug 3 — `studentArtistInput` tidak tampil saat pertama load (`profile.js`)
+- `setupArtistInputMonitoring()` sebelumnya hanya dipanggil ketika user **mengklik tab "Download MP3"** (`switchStudentAudioTab`, index 1).
+- Akibatnya, jika user langsung mengetik Spotify URL di tab Download tanpa berpindah tab terlebih dahulu, event listener untuk menampilkan field artist belum terpasang.
+- Fix: `setupArtistInputMonitoring()` kini dipanggil langsung di akhir `setupStudentForm()` saat halaman pertama kali diinisialisasi, sehingga field artist sudah siap muncul tanpa perlu berpindah tab.
+
+---
+
+## [3.3.5] — 2026-05-12
+
+### Added — Download Fallback: po_token + visitor_data jika semua cookies expired (`src/server/utils/po-token-generator.js`, `src/server/media/music-downloader.js`)
+
+#### File Baru: `src/server/utils/po-token-generator.js`
+- Kelas `PoTokenGenerator` yang bertanggung jawab generate dan cache `po_token` + `visitor_data` dari YouTube tanpa memerlukan login atau cookie.
+- `visitor_data` di-fetch dari YouTube InnerTube API endpoint (`/youtubei/v1/visitor_id`) secara otomatis — tidak butuh autentikasi.
+- `po_token` di-generate via yt-dlp menggunakan flag `--print po_token` + `--extractor-args` dengan `visitor_data` yang sudah didapat.
+- Hasil token di-cache selama **6 jam** — tidak generate ulang setiap kali download.
+- Cache auto-invalidate jika token terdeteksi expired (ditandai oleh error cookie-related dari yt-dlp).
+- Method `invalidate()` untuk invalidate cache paksa jika diperlukan.
+- Method `getStatus()` untuk monitoring status cache dari admin dashboard.
+
+#### Update: `src/server/media/music-downloader.js`
+- Import `PoTokenGenerator` dan inisialisasi `this.poTokenGenerator` di constructor.
+- `downloadWithYtdlp()` kini memiliki **dua tahap fallback**:
+  1. **Tahap 1 (existing):** Download dengan cookie rotation — jika satu cookie expired, otomatis rotate ke cookie berikutnya.
+  2. **Tahap 2 (baru):** Jika **semua cookies sudah habis/invalid**, otomatis switch ke download menggunakan `po_token` + `visitor_data` tanpa cookie sama sekali via method `_downloadWithPoToken()`.
+- Method baru `_downloadWithPoToken(url, outputPath)`: menjalankan yt-dlp dengan flag `--extractor-args youtube:po_token=web+<token>;visitor_data=<data>` tanpa `--cookies`.
+- Jika po_token fallback juga gagal dengan cookie-related error, cache po_token di-invalidate otomatis agar di-regenerate pada request berikutnya.
+- `getCookieStatus()` kini menyertakan field `poTokenFallback` berisi status cache po_token (cached, ageMinutes, expiresInMinutes).
+
+#### Flow Download Baru
+```
+Request download
+    │
+    ▼
+Cookie tersedia? ──Ya──▶ Download dengan cookie
+                              │
+                         Berhasil? ──Ya──▶ ✅ Selesai
+                              │
+                         Cookie error → mark invalid, rotate
+                              │
+                         Masih ada cookie lain? ──Ya──▶ (ulangi)
+                              │
+                         Tidak — semua habis
+                              ▼
+                    🔑 Fallback: generate po_token + visitor_data
+                              │
+                         Download tanpa cookie
+                              │
+                         Berhasil? ──Ya──▶ ✅ Selesai
+                              │
+                         Tidak ──▶ ❌ Error
+```
+
+---
+
 ## [3.3.4] — 2026-05-12
 
 ### Hapus semua fungsi trim
