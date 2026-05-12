@@ -9,6 +9,17 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.3.4] — 2026-05-12
+
+### Hapus semua fungsi trim
+
+#### Adain preview lagu pas di profile
+
+#### ngutamain Daftar lagu dengan cara tuker posisi "Upload MP3" di profile
+
+
+---
+
 ## [3.3.3] — 2026-05-12
 
 ### Added — Profile: Thumbnail Lagu di Daftar Audio (`music-downloader.js`, `server.js`, `profile.js`, `style.css`)

@@ -176,18 +176,7 @@ async function loadStudentForEdit(studentId) {
             if (fileExists) {
                 studentAudioPath = student.audioFile;
                 studentAudioMetadata = null;  // Clear metadata, will be loaded when needed
-                // Also load trim settings
-                const trimStart = student.audioTrimStart || 0;
-                const trimEnd = student.audioTrimEnd || null;
-                
-                document.getElementById('studentAudioTrimStart').value = trimStart;
-                document.getElementById('studentAudioTrimStartInput').value = trimStart;
-                
-                if (trimEnd) {
-                    document.getElementById('studentAudioTrimEnd').value = trimEnd;
-                    document.getElementById('studentAudioTrimEndInput').value = trimEnd;
-                }
-                
+
                 displayStudentAudio();
                 displayStudentLyricsSection();  // Update form inputs with extracted artist/title
                 console.log('✅ Student audio loaded for editing:', student.audioFile);
@@ -260,8 +249,8 @@ function setupStudentFormForEdit(studentId) {
         }
         
         // Get trim settings
-        const trimStart = parseFloat(document.getElementById('studentAudioTrimStart').value) || 0;
-        const trimEnd = parseFloat(document.getElementById('studentAudioTrimEnd').value) || null;
+        const trimStart = parseFloat(document.getElementById('studentAudioTrimStart')?.value) || 0;
+        const trimEnd = parseFloat(document.getElementById('studentAudioTrimEnd')?.value) || null;
         
         const updateData = {
             name: fullName,
@@ -269,8 +258,6 @@ function setupStudentFormForEdit(studentId) {
             message: message,
             photo: document.querySelector('#studentProfile .photo-preview img')?.src || null,
             audioFile: studentAudioPath || null,
-            audioTrimStart: studentAudioPath ? trimStart : null,
-            audioTrimEnd: studentAudioPath ? trimEnd : null
         };
         
         let loadingDialog = null;
@@ -714,18 +701,7 @@ async function loadStudentProfile(studentId) {
             if (fileExists) {
                 studentAudioPath = student.audioFile;
                 studentAudioMetadata = null;  // Clear metadata, will be loaded when needed
-                // Also load trim settings
-                const trimStart = student.audioTrimStart || 0;
-                const trimEnd = student.audioTrimEnd || null;
-                
-                document.getElementById('studentAudioTrimStart').value = trimStart;
-                document.getElementById('studentAudioTrimStartInput').value = trimStart;
-                
-                if (trimEnd) {
-                    document.getElementById('studentAudioTrimEnd').value = trimEnd;
-                    document.getElementById('studentAudioTrimEndInput').value = trimEnd;
-                }
-                
+
                 displayStudentAudio();
                 displayStudentLyricsSection();  // Update form inputs with extracted artist/title
             } else {
@@ -804,8 +780,6 @@ function setupStudentForm(studentId) {
             message: document.getElementById('message')?.value || document.getElementById('studentMessage').value,
             photo: photoPreview.src.startsWith('data:') ? photoPreview.src : null,
             audioFile: studentAudioPath,
-            audioTrimStart: studentAudioPath ? trimStart : null,
-            audioTrimEnd: studentAudioPath ? trimEnd : null,
             studentLyrics: document.getElementById('studentLyricsTextarea')?.value || null,
             lyricsArtistName: document.getElementById('lyricsArtistInput')?.value || null,
             lyricsSongTitle: document.getElementById('lyricsSongTitleInput')?.value || null,
@@ -961,215 +935,8 @@ function setupLogout() {
 }
 
 // ========== AUDIO HANDLING ==========
+// ========== AUDIO HANDLING ==========
 
-// Show auto-trim dialog after Spotify download
-function showAutoTrimDialog(audioPlayer, audioPath) {
-    return new Promise((resolve) => {
-        // Detect if mobile device
-        const isMobile = window.innerWidth <= 768;
-        
-        // Create modal
-        const modal = document.createElement('div');
-        modal.id = 'autoTrimModal';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: ${isMobile ? 'flex-end' : 'center'};
-            justify-content: center;
-            z-index: 10000;
-            overflow-y: auto;
-            padding: ${isMobile ? '0' : '1rem'};
-        `;
-        
-        const modalContent = document.createElement('div');
-        const maxWidth = isMobile ? 'calc(100vw - 0px)' : '500px';
-        const borderRadius = isMobile ? '1.5rem 1.5rem 0 0' : '0.8rem';
-        const maxHeight = isMobile ? '90vh' : '80vh';
-        const padding = isMobile ? '1.5rem 1rem' : '2rem';
-        
-        modalContent.style.cssText = `
-            background: var(--bg-color);
-            border-radius: ${borderRadius};
-            padding: ${padding};
-            max-width: ${maxWidth};
-            width: 100%;
-            max-height: ${maxHeight};
-            overflow-y: auto;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            color: var(--text-color);
-            animation: ${isMobile ? 'slideUp' : 'slideInUp'} 0.3s ease;
-        `;
-        
-        const duration = audioPlayer.duration || 0;
-        const defaultTrimStart = 10; // 10 seconds
-        const defaultTrimEnd = Math.max(30, Math.floor(duration - 5)); // Keep last 5 seconds
-        
-        modalContent.innerHTML = `
-            <div style="margin-bottom: 1rem;">
-                <h2 style="margin: 0 0 0.3rem 0; color: var(--primary-color); font-size: ${isMobile ? '1.1rem' : '1.3rem'};">
-                    <i class="fas fa-scissors"></i> Trim Audio (Optional)
-                </h2>
-                <p style="margin: 0; color: var(--text-muted); font-size: ${isMobile ? '0.8rem' : '0.9rem'};">
-                    Remove silence or unwanted parts from the beginning and end
-                </p>
-            </div>
-            
-            <div style="background: var(--light-bg); padding: ${isMobile ? '0.8rem' : '1rem'}; border-radius: 0.5rem; margin-bottom: 1rem;">
-                <p style="margin: 0 0 0.3rem 0; font-size: ${isMobile ? '0.8rem' : '0.9rem'}; color: var(--text-muted);">
-                    <strong>Total Duration:</strong> ${formatTime(duration)}
-                </p>
-            </div>
-            
-            <!-- Start Time -->
-            <div style="margin-bottom: 1rem;">
-                <label style="display: block; margin-bottom: 0.4rem; font-weight: 500; font-size: ${isMobile ? '0.85rem' : '0.95rem'};">
-                    <i class="fas fa-play"></i> Start Time: <span class="trim-start-display" style="color: var(--primary-color);">${formatTime(defaultTrimStart)}</span>
-                </label>
-                <input type="range" class="trim-start-slider" min="0" max="${Math.floor(duration)}" value="${defaultTrimStart}" style="width: 100%; cursor: pointer;">
-                <input type="number" class="trim-start-input" min="0" max="${Math.floor(duration)}" value="${defaultTrimStart}" style="width: 100%; margin-top: 0.4rem; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 0.3rem; font-size: 0.9rem;">
-            </div>
-            
-            <!-- End Time -->
-            <div style="margin-bottom: 1rem;">
-                <label style="display: block; margin-bottom: 0.4rem; font-weight: 500; font-size: ${isMobile ? '0.85rem' : '0.95rem'};">
-                    <i class="fas fa-stop"></i> End Time: <span class="trim-end-display" style="color: var(--primary-color);">${formatTime(defaultTrimEnd)}</span>
-                </label>
-                <input type="range" class="trim-end-slider" min="0" max="${Math.floor(duration)}" value="${defaultTrimEnd}" style="width: 100%; cursor: pointer;">
-                <input type="number" class="trim-end-input" min="0" max="${Math.floor(duration)}" value="${defaultTrimEnd}" style="width: 100%; margin-top: 0.4rem; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 0.3rem; font-size: 0.9rem;">
-            </div>
-            
-            <!-- Preview -->
-            <div style="margin-bottom: 1rem;">
-                <button type="button" class="trim-preview-btn" style="width: 100%; padding: 0.8rem; background: var(--primary-color); color: white; border: none; border-radius: 0.3rem; cursor: pointer; font-weight: 500; margin-bottom: 0.4rem; font-size: 0.9rem;">
-                    <i class="fas fa-play-circle"></i> Preview Trim
-                </button>
-                <div class="trim-info" style="background: rgba(255, 152, 0, 0.1); padding: 0.6rem; border-radius: 0.3rem; border-left: 3px solid #FF9800;">
-                    <p style="margin: 0; font-size: ${isMobile ? '0.75rem' : '0.85rem'}; color: var(--text-color);">
-                        <strong>Trimmed Duration:</strong> <span class="trim-duration-info">-</span>
-                    </p>
-                </div>
-            </div>
-            
-            <!-- Buttons -->
-            <div style="display: flex; gap: 0.6rem; flex-direction: ${isMobile ? 'column' : 'row'};">
-                <button type="button" class="trim-cancel-btn" style="flex: 1; padding: 0.8rem; background: var(--border-color); color: var(--text-color); border: none; border-radius: 0.3rem; cursor: pointer; font-weight: 500; font-size: 0.9rem;">
-                    Skip Trim
-                </button>
-                <button type="button" class="trim-apply-btn" style="flex: 1; padding: 0.8rem; background: var(--primary-color); color: white; border: none; border-radius: 0.3rem; cursor: pointer; font-weight: 500; font-size: 0.9rem;">
-                    <i class="fas fa-check"></i> Apply Trim
-                </button>
-            </div>
-        `;
-        
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
-        
-        // Get references
-        const startSlider = modalContent.querySelector('.trim-start-slider');
-        const endSlider = modalContent.querySelector('.trim-end-slider');
-        const startInput = modalContent.querySelector('.trim-start-input');
-        const endInput = modalContent.querySelector('.trim-end-input');
-        const startDisplay = modalContent.querySelector('.trim-start-display');
-        const endDisplay = modalContent.querySelector('.trim-end-display');
-        const durationInfo = modalContent.querySelector('.trim-duration-info');
-        const previewBtn = modalContent.querySelector('.trim-preview-btn');
-        const cancelBtn = modalContent.querySelector('.trim-cancel-btn');
-        const applyBtn = modalContent.querySelector('.trim-apply-btn');
-        
-        // Update display
-        function updateDisplay() {
-            const startTime = parseFloat(startSlider.value);
-            const endTime = parseFloat(endSlider.value);
-            
-            startDisplay.textContent = formatTime(startTime);
-            endDisplay.textContent = formatTime(endTime);
-            
-            const trimDuration = Math.max(0, endTime - startTime);
-            durationInfo.textContent = `${formatTime(startTime)} → ${formatTime(endTime)} (${formatTime(trimDuration)})`;
-        }
-        
-        // Sync inputs and sliders
-        startSlider.addEventListener('input', () => {
-            startInput.value = startSlider.value;
-            updateDisplay();
-        });
-        
-        endSlider.addEventListener('input', () => {
-            endInput.value = endSlider.value;
-            updateDisplay();
-        });
-        
-        startInput.addEventListener('change', () => {
-            startSlider.value = startInput.value;
-            updateDisplay();
-        });
-        
-        endInput.addEventListener('change', () => {
-            endSlider.value = endInput.value;
-            updateDisplay();
-        });
-        
-        // Preview
-        previewBtn.addEventListener('click', () => {
-            const startTime = parseFloat(startSlider.value);
-            const endTime = parseFloat(endSlider.value);
-            
-            if (startTime >= endTime) {
-                popup.error('Trim nya salah, coba reset dulu deh');
-                return;
-            }
-            
-            audioPlayer.currentTime = startTime;
-            audioPlayer.play();
-            
-            const checkInterval = setInterval(() => {
-                if (audioPlayer.currentTime >= endTime) {
-                    audioPlayer.pause();
-                    clearInterval(checkInterval);
-                }
-            }, 100);
-        });
-        
-        // Cancel
-        cancelBtn.addEventListener('click', () => {
-            modal.remove();
-            resolve({ applied: false });
-        });
-        
-        // Apply
-        applyBtn.addEventListener('click', () => {
-            const startTime = parseFloat(startSlider.value);
-            const endTime = parseFloat(endSlider.value);
-            
-            if (startTime >= endTime) {
-                popup.error('Trim nya salah, coba reset dulu deh');
-                return;
-            }
-            
-            modal.remove();
-            resolve({
-                applied: true,
-                trimStart: startTime,
-                trimEnd: endTime
-            });
-        });
-        
-        // Close on outside click (desktop only)
-        modal.addEventListener('click', (e) => {
-            if (!isMobile && e.target === modal) {
-                modal.remove();
-                resolve({ applied: false });
-            }
-        });
-        
-        updateDisplay();
-    });
-}
 
 
 
@@ -1545,15 +1312,23 @@ function displayStudentAudio() {
         preview.style.display = 'block';
         input.style.display = 'none';
         
-        // Remove old event listeners to prevent duplicates
-        const startSlider = document.getElementById('studentAudioTrimStart');
-        const endSlider = document.getElementById('studentAudioTrimEnd');
-        const startInput = document.getElementById('studentAudioTrimStartInput');
-        const endInput = document.getElementById('studentAudioTrimEndInput');
-        
-        if (startSlider && endSlider && startInput && endInput) {
-            // Trim elements exist but no longer need event listeners (trim removed)
+        // Populate selected song preview card pakai metadata yg sudah ada
+        const titleEl = document.getElementById('selectedSongTitle');
+        const artistEl = document.getElementById('selectedSongArtist');
+        const thumbImg = document.getElementById('selectedSongThumbnail');
+        const thumbFallback = document.getElementById('selectedSongThumbnailFallback');
+        if (studentAudioMetadata) {
+            if (titleEl) titleEl.textContent = studentAudioMetadata.title || '—';
+            if (artistEl) artistEl.textContent = studentAudioMetadata.artist || '—';
+        } else {
+            // Fallback: pakai nama file
+            const fallbackTitle = studentAudioPath.split('/').pop().replace('.mp3', '') || '—';
+            if (titleEl) titleEl.textContent = fallbackTitle;
+            if (artistEl) artistEl.textContent = '—';
         }
+        // Thumbnail belum ada saat load profile (belum ada selectAudioFile), tampilkan fallback
+        if (thumbImg) thumbImg.style.display = 'none';
+        if (thumbFallback) thumbFallback.style.display = 'flex';
         
         // Handle loadedmetadata with proper timing
         function onLoadedMetadata() {
@@ -1601,10 +1376,6 @@ function displayStudentAudio() {
 function updateAudioDurationDisplay() {
     const player = document.getElementById('studentAudioPlayer');
     const durationSpan = document.getElementById('studentAudioDuration');
-    const startSlider = document.getElementById('studentAudioTrimStart');
-    const endSlider = document.getElementById('studentAudioTrimEnd');
-    const endInput = document.getElementById('studentAudioTrimEnd');
-    const endInputNum = document.getElementById('studentAudioTrimEndInput');
     
     if (!player || (!player.duration) || isNaN(player.duration) || player.duration === Infinity) {
         console.warn('⚠️ Invalid player or duration:', player?.duration);
@@ -1620,29 +1391,6 @@ function updateAudioDurationDisplay() {
     
     const maxDuration = Math.floor(player.duration);
     
-    // Update trim sliders if they exist (may not exist if Lyrics Section replaced Audio Trim)
-    if (startSlider && endSlider) {
-        startSlider.max = maxDuration;
-        endSlider.max = maxDuration;
-        
-        // Set end time default to full duration if not set or invalid
-        const currentEndVal = parseFloat(endSlider.value);
-        if (!currentEndVal || currentEndVal === 0 || currentEndVal > maxDuration) {
-            endSlider.value = maxDuration;
-            if (endInputNum) endInputNum.value = maxDuration;
-            console.log('✅ End time set to:', maxDuration);
-        }
-        
-        // Ensure start time doesn't exceed end time
-        const currentStartVal = parseFloat(startSlider.value);
-        if (currentStartVal >= parseFloat(endSlider.value)) {
-            startSlider.value = 0;
-            const startInputNum = document.getElementById('studentAudioTrimStartInput');
-            if (startInputNum) startInputNum.value = 0;
-            console.log('✅ Start time reset to 0');
-        }
-    }
-    
     // Draw waveform with slight delay to ensure canvas is ready
     setTimeout(() => {
         drawAudioWaveform();
@@ -1653,7 +1401,7 @@ function updateAudioDurationDisplay() {
 function drawAudioWaveform() {
     const canvas = document.getElementById('studentAudioCanvas');
     if (!canvas) {
-        console.warn('Canvas element not found');
+        // Canvas tidak dipakai di layout ini, skip
         return;
     }
     
@@ -1901,20 +1649,106 @@ async function selectAudioFile(filePath, filename) {
                     title: fileMetadata.title || filename.replace('.mp3', '')
                 };
                 console.log('✅ Loaded audio metadata:', studentAudioMetadata);
+                
+                // Populate selected song preview card
+                const titleEl = document.getElementById('selectedSongTitle');
+                const artistEl = document.getElementById('selectedSongArtist');
+                const thumbImg = document.getElementById('selectedSongThumbnail');
+                const thumbFallback = document.getElementById('selectedSongThumbnailFallback');
+                
+                if (titleEl) titleEl.textContent = studentAudioMetadata.title;
+                if (artistEl) artistEl.textContent = studentAudioMetadata.artist;
+                
+                if (fileMetadata.thumbnailUrl && thumbImg) {
+                    thumbImg.src = fileMetadata.thumbnailUrl;
+                    thumbImg.style.display = 'block';
+                    if (thumbFallback) thumbFallback.style.display = 'none';
+                } else {
+                    if (thumbImg) thumbImg.style.display = 'none';
+                    if (thumbFallback) thumbFallback.style.display = 'flex';
+                }
             }
         }
     } catch (error) {
         console.warn('Could not load audio metadata:', error);
-        // Reset metadata if failed to load
         studentAudioMetadata = null;
     }
     
     displayStudentAudio();
-    displayStudentLyricsSection();  // Update form inputs when file selection changes
+    displayStudentLyricsSection();
     popup.success(`Kamu pilih: ${filename}`);
 }
 
 // Format file size in human readable format
+// ===== SONG PREVIEW PLAYER =====
+
+function toggleSongPreview() {
+    const player  = document.getElementById('studentAudioPlayer');
+    const btnIcon = document.getElementById('songPreviewBtnIcon');
+    const playIcon = document.getElementById('songPlayIcon');
+    const overlay = document.getElementById('songPlayOverlay');
+    if (!player) return;
+
+    if (player.paused) {
+        player.play();
+        if (btnIcon) { btnIcon.className = 'fas fa-pause'; }
+        if (playIcon) { playIcon.className = 'fas fa-pause'; }
+        if (overlay) overlay.style.opacity = '1';
+        startSongProgressUpdate();
+    } else {
+        player.pause();
+        if (btnIcon) { btnIcon.className = 'fas fa-play'; }
+        if (playIcon) { playIcon.className = 'fas fa-play'; }
+        if (overlay) overlay.style.opacity = '0';
+    }
+}
+
+let _songProgressInterval = null;
+function startSongProgressUpdate() {
+    if (_songProgressInterval) clearInterval(_songProgressInterval);
+    const player   = document.getElementById('studentAudioPlayer');
+    const fill     = document.getElementById('songProgressFill');
+    const timeEl   = document.getElementById('songProgressTime');
+    const bar      = document.getElementById('songProgressBar');
+    const barTime  = document.getElementById('songProgressTime');
+    if (bar) bar.style.display = 'block';
+    if (barTime) barTime.style.display = 'block';
+
+    _songProgressInterval = setInterval(() => {
+        if (!player || player.paused || player.ended) {
+            clearInterval(_songProgressInterval);
+            const btnIcon  = document.getElementById('songPreviewBtnIcon');
+            const playIcon = document.getElementById('songPlayIcon');
+            const overlay  = document.getElementById('songPlayOverlay');
+            if (btnIcon)  btnIcon.className  = 'fas fa-play';
+            if (playIcon) playIcon.className = 'fas fa-play';
+            if (overlay)  overlay.style.opacity = '0';
+            return;
+        }
+        const pct = player.duration ? (player.currentTime / player.duration) * 100 : 0;
+        if (fill)   fill.style.width = pct + '%';
+        if (timeEl) timeEl.textContent = `${formatTime(player.currentTime)} / ${formatTime(player.duration)}`;
+    }, 300);
+}
+
+// Show play overlay on thumbnail hover
+document.addEventListener('DOMContentLoaded', () => {
+    const wrap = document.getElementById('selectedSongThumbnailWrap');
+    const overlay = document.getElementById('songPlayOverlay');
+    if (wrap && overlay) {
+        wrap.addEventListener('mouseenter', () => {
+            const player = document.getElementById('studentAudioPlayer');
+            if (player && player.paused) overlay.style.opacity = '1';
+        });
+        wrap.addEventListener('mouseleave', () => {
+            const player = document.getElementById('studentAudioPlayer');
+            if (player && player.paused) overlay.style.opacity = '0';
+        });
+    }
+});
+
+// ===== END SONG PREVIEW PLAYER =====
+
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -2091,67 +1925,6 @@ function closeLoadingDialog(dialog) {
     }
 }
 
-/**
- * Search lyrics melalui web (AZLyrics, Lyrics.com)
- */
-async function transcribeAudioOnSave(studentId, audioPath, trimStart = 0, trimEnd = null) {
-    try {
-        console.log('🎵 Starting lyrics search for:', { studentId, audioPath });
-        
-        // Use metadata if available, otherwise fallback to filename parsing
-        let artist = 'Unknown';
-        let title = 'Unknown';
-        
-        if (studentAudioMetadata && studentAudioMetadata.artist && studentAudioMetadata.title) {
-            // Use stored metadata from audio file info
-            artist = studentAudioMetadata.artist;
-            title = studentAudioMetadata.title;
-            console.log('📂 Using metadata from audio file info');
-        } else {
-            // Fallback: Extract from filename
-            const filename = audioPath.split('/').pop().split('\\').pop();
-            const songMetadata = extractSongMetadata(filename);
-            artist = songMetadata.artist || 'Unknown';
-            title = songMetadata.title || filename.replace(/\.[^/.]+$/, '');
-            console.log('📝 Using metadata from filename parsing');
-        }
-        
-        console.log('🎵 Extracted metadata:', { artist, title });
-        
-        // Search lyrics online dari AZLyrics, Lyrics.com dengan proper artist info
-        if (title) {
-            const webLyrics = await searchLyricsOnline(title, artist);
-            if (webLyrics && webLyrics.success) {
-                console.log('✅ Found lyrics from web source!');
-                
-                // Save web lyrics
-                const lyricsPath = await saveLyricsToProfile(studentId, webLyrics);
-                
-                popup.success(
-                    `✅ Lyrics Found!\n\n` +
-                    `Song: ${webLyrics.title}\n` +
-                    `Artist: ${webLyrics.artist || 'Unknown'}\n` +
-                    `Lines: ${webLyrics.segments.length}\n\n` +
-                    `Source: AZLyrics Database`
-                );
-                
-                return webLyrics;
-            }
-        }
-        
-        // If no lyrics found
-        popup.error(
-            `❌ Lagu ini gak Punya Lirik!\n\n` +
-            `Song: ${title}\n` +
-            `Artist: ${artist}`
-        );
-        
-        return null;
-    } catch (error) {
-        console.error('❌ Lyrics search error:', error);
-        throw error;
-    }
-}
 
 /**
  * Extract song metadata dari filename
@@ -2282,7 +2055,7 @@ async function loadStudentLyricsFromBackend(studentId) {
         const actualContainer = document.getElementById('studentLyricsKaraokeContainer');
         
         if (!actualContainer) {
-            console.warn('Lyrics container not found');
+            // Container belum ada di DOM saat ini, skip
             return;
         }
 
@@ -2786,17 +2559,7 @@ async function selectAndEditStudent(studentId) {
             adminAudioPath = student.audioFile;
             displayAdminAudio();
             
-            // Load trim settings
-            const trimStart = student.audioTrimStart || 0;
-            const trimEnd = student.audioTrimEnd || null;
-            
-            document.getElementById('adminAudioTrimStart').value = trimStart;
-            document.getElementById('adminAudioTrimStartInput').value = trimStart;
-            
-            if (trimEnd) {
-                document.getElementById('adminAudioTrimEnd').value = trimEnd;
-                document.getElementById('adminAudioTrimEndInput').value = trimEnd;
-            }
+
         } else {
             adminAudioPath = null;
             removeAdminAudio();
@@ -2942,7 +2705,6 @@ function displayAdminAudio() {
         // Load trim settings and duration
         player.addEventListener('loadedmetadata', function onLoadedMetadata() {
             updateAdminAudioDurationDisplay();
-            updateAdminAudioTrimInfo();
             syncAdminTrimSliders();
             
             // Remove listener after first call
@@ -2950,12 +2712,6 @@ function displayAdminAudio() {
         });
         
         // Update trim info when user changes inputs
-        document.getElementById('adminAudioTrimStart').addEventListener('change', syncAdminTrimInputs);
-        document.getElementById('adminAudioTrimEnd').addEventListener('change', syncAdminTrimInputs);
-        document.getElementById('adminAudioTrimStart').addEventListener('input', updateAdminAudioTrimInfo);
-        document.getElementById('adminAudioTrimEnd').addEventListener('input', updateAdminAudioTrimInfo);
-        document.getElementById('adminAudioTrimStartInput').addEventListener('change', syncAdminTrimInputs);
-        document.getElementById('adminAudioTrimEndInput').addEventListener('change', syncAdminTrimInputs);
         
         // Update playhead position
         player.addEventListener('timeupdate', updateAdminPlayhead);
@@ -2971,12 +2727,8 @@ function updateAdminAudioDurationDisplay() {
         durationSpan.textContent = formatTime(player.duration);
         
         // Set slider max value
-        document.getElementById('adminAudioTrimStart').max = Math.floor(player.duration);
-        document.getElementById('adminAudioTrimEnd').max = Math.floor(player.duration);
         
         // Set end time default to full duration if not set
-        const endInput = document.getElementById('adminAudioTrimEnd');
-        const endInputNum = document.getElementById('adminAudioTrimEndInput');
         if (!endInput.value || endInput.value === '0') {
             endInput.value = Math.floor(player.duration);
             endInputNum.value = Math.floor(player.duration);
@@ -2987,69 +2739,6 @@ function updateAdminAudioDurationDisplay() {
     }
 }
 
-// Update admin trim info display
-function updateAdminAudioTrimInfo() {
-    const player = document.getElementById('adminAudioPlayer');
-    const startSlider = document.getElementById('adminAudioTrimStart');
-    const endSlider = document.getElementById('adminAudioTrimEnd');
-    const startDisplay = document.getElementById('adminAudioTrimStartDisplay');
-    const endDisplay = document.getElementById('adminAudioTrimEndDisplay');
-    const trimInfo = document.getElementById('adminAudioTrimInfo');
-    const highlight = document.getElementById('adminAudioTrimHighlight');
-    
-    const startTime = parseFloat(startSlider.value) || 0;
-    const endTime = parseFloat(endSlider.value) || (player.duration || 0);
-    const duration = player.duration || 0;
-    
-    // Update displays
-    startDisplay.textContent = formatTime(startTime);
-    endDisplay.textContent = formatTime(endTime);
-    
-    // Update highlight on timeline
-    const startPercent = (startTime / duration) * 100;
-    const endPercent = (endTime / duration) * 100;
-    highlight.style.left = startPercent + '%';
-    highlight.style.width = (endPercent - startPercent) + '%';
-    
-    // Update trim info
-    if (startTime > 0 || endTime < duration) {
-        const trimDuration = Math.max(0, endTime - startTime);
-        trimInfo.textContent = `${formatTime(startTime)} → ${formatTime(endTime)} (${formatTime(trimDuration)})`;
-    } else {
-        trimInfo.textContent = 'No trim (full audio)';
-    }
-}
-
-// Sync admin trim sliders with input fields
-function syncAdminTrimInputs() {
-    const startSlider = document.getElementById('adminAudioTrimStart');
-    const endSlider = document.getElementById('adminAudioTrimEnd');
-    const startInput = document.getElementById('adminAudioTrimStartInput');
-    const endInput = document.getElementById('adminAudioTrimEndInput');
-    
-    // Sync from sliders to inputs
-    startInput.value = startSlider.value;
-    endInput.value = endSlider.value;
-    
-    updateAdminAudioTrimInfo();
-}
-
-// Sync admin trim sliders from input fields
-function syncAdminTrimSliders() {
-    const startSlider = document.getElementById('adminAudioTrimStart');
-    const endSlider = document.getElementById('adminAudioTrimEnd');
-    const startInput = document.getElementById('adminAudioTrimStartInput');
-    const endInput = document.getElementById('adminAudioTrimEndInput');
-    
-    // Get current values or defaults
-    const startVal = startInput.value || 0;
-    const endVal = endInput.value || document.getElementById('adminAudioPlayer').duration || 0;
-    
-    startSlider.value = startVal;
-    endSlider.value = endVal;
-    
-    updateAdminAudioTrimInfo();
-}
 
 // Draw admin audio waveform on canvas
 function drawAdminAudioWaveform() {
@@ -3100,48 +2789,6 @@ function updateAdminPlayhead() {
     playhead.style.left = currentPercent + '%';
 }
 
-// Preview admin trimmed audio
-function previewAdminAudioTrim() {
-    const player = document.getElementById('adminAudioPlayer');
-    const startTime = parseFloat(document.getElementById('adminAudioTrimStart').value) || 0;
-    const endTime = parseFloat(document.getElementById('adminAudioTrimEnd').value) || player.duration;
-    
-    // Validate times
-    if (startTime >= endTime) {
-        popup.error('Trim nya gak valid coba reset lagi');
-        return;
-    }
-    
-    // Play from start time
-    player.currentTime = startTime;
-    player.play();
-    
-    // Pause at end time
-    const checkInterval = setInterval(() => {
-        if (player.currentTime >= endTime) {
-            player.pause();
-            clearInterval(checkInterval);
-        }
-    }, 100);
-    
-    document.getElementById('adminAudioPlayhead').style.display = 'block';
-}
-
-// Reset admin trim to full audio
-function resetAdminAudioTrim() {
-    const player = document.getElementById('adminAudioPlayer');
-    const startSlider = document.getElementById('adminAudioTrimStart');
-    const endSlider = document.getElementById('adminAudioTrimEnd');
-    const startInput = document.getElementById('adminAudioTrimStartInput');
-    const endInput = document.getElementById('adminAudioTrimEndInput');
-    
-    startSlider.value = 0;
-    endSlider.value = player.duration || 0;
-    startInput.value = 0;
-    endInput.value = Math.floor(player.duration || 0);
-    
-    updateAdminAudioTrimInfo();
-}
 
 // Remove admin audio
 function removeAdminAudio() {
@@ -5019,48 +4666,6 @@ async function displayStudentLyricsSection(downloadedArtist = null, downloadedTi
     }
 }
 
-// Sync lyrics with audio playback
-function syncLyricsWithAudio(audioElement, trimStart = 0, trimEnd = null) {
-    if (!audioElement || currentLyricsSegments.length === 0) return;
-    
-    const currentTime = audioElement.currentTime;
-    const lyricsDisplay = document.getElementById('lyricsDisplay');
-    
-    if (!lyricsDisplay) return;
-    
-    const lyricsLines = lyricsDisplay.querySelectorAll('.lyric-line');
-    
-    let activeIndex = -1;
-    
-    // Find active lyric line based on current time and trim settings
-    for (let i = 0; i < currentLyricsSegments.length; i++) {
-        const segment = currentLyricsSegments[i];
-        const nextSegment = currentLyricsSegments[i + 1];
-        
-        const segmentStart = segment.start - trimStart;
-        const segmentEnd = nextSegment ? nextSegment.start - trimStart : (trimEnd || audioElement.duration);
-        
-        if (currentTime >= segmentStart && currentTime < segmentEnd) {
-            activeIndex = i;
-            break;
-        }
-    }
-    
-    // Update UI
-    lyricsLines.forEach((line, index) => {
-        line.classList.remove('active', 'past');
-        
-        if (index === activeIndex) {
-            line.classList.add('active');
-            // Auto scroll to active lyric
-            line.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else if (index < activeIndex) {
-            line.classList.add('past');
-        }
-    });
-    
-    currentLyricsActiveIndex = activeIndex;
-}
 
 // Seek to lyric timestamp
 function seekToLyricTime(timeInSeconds) {
@@ -5119,83 +4724,3 @@ function copyAllLyrics() {
 }
 
 // ============================================================================= //
-// LYRICS + TRIM INTEGRATION
-// ============================================================================= //
-
-/**
- * Initialize lyrics with trim support
- */
-async function initializeLyricsWithTrimSupport(audioPath, studentName, trimStart = 0, trimEnd = null) {
-    try {
-        // Store current trim settings
-        window.currentLyricsTrimStart = trimStart;
-        window.currentLyricsTrimEnd = trimEnd;
-        
-        console.log(`🎵 Initializing lyrics with trim support - Start: ${trimStart}s, End: ${trimEnd}s`);
-        
-        // Initialize normal lyrics
-        await initializeLyricsKaraoke(audioPath, studentName);
-        
-    } catch (error) {
-        console.error('❌ Lyrics trim initialization error:', error);
-    }
-}
-
-/**
- * Sync lyrics with audio and trim support (for beranda.js)
- */
-function syncLyricsWithAudioAndTrim(audioElement, trimStart = 0, trimEnd = null) {
-    try {
-        const lyricsSection = document.getElementById('lyricsKaraokeSection');
-        if (!lyricsSection || !lyricsSection.style.display || lyricsSection.style.display === 'none') {
-            return;
-        }
-        
-        const lyricsDisplay = lyricsSection.querySelector('#lyricsDisplay');
-        if (!lyricsDisplay) return;
-        
-        const lyricLines = lyricsDisplay.querySelectorAll('.lyric-line');
-        if (lyricLines.length === 0) return;
-        
-        // Get audio current time, adjusted for trim
-        let currentTime = audioElement.currentTime;
-        
-        // If audio is trimmed, adjust the timing for lyrics sync
-        // Lyrics are stored with original timing, so we need to add trimStart
-        const adjustedTime = currentTime + trimStart;
-        
-        let activeIndex = -1;
-        
-        // Parse segments from lyric lines
-        for (let i = 0; i < lyricLines.length; i++) {
-            const line = lyricLines[i];
-            const segStart = parseFloat(line.dataset.start) || 0;
-            const segEnd = parseFloat(line.dataset.end) || audioElement.duration;
-            
-            if (adjustedTime >= segStart && adjustedTime < segEnd) {
-                activeIndex = i;
-                break;
-            }
-        }
-        
-        // Update active lyric styling
-        lyricLines.forEach((line, index) => {
-            line.classList.remove('active', 'past');
-            
-            if (index === activeIndex) {
-                line.classList.add('active');
-                // Auto-scroll to active line
-                line.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
-                });
-            } else if (index < activeIndex) {
-                line.classList.add('past');
-            }
-        });
-        
-    } catch (error) {
-        // Silently fail - this shouldn't interrupt playback
-        console.debug('Lyrics sync debug:', error.message);
-    }
-}

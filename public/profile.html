@@ -451,23 +451,6 @@
                 margin-bottom: 0.5rem !important;
             }
 
-            .audio-trim-section {
-                padding: 0.6rem !important;
-                margin-bottom: 0.6rem !important;
-                border-radius: 4px !important;
-            }
-
-            .audio-trim-section h4 {
-                font-size: 0.8rem !important;
-                margin: 0 0 0.4rem 0 !important;
-            }
-
-            .audio-trim-section p {
-                font-size: 0.7rem !important;
-                margin: 0.2rem 0 !important;
-                line-height: 1.2 !important;
-            }
-
             .audio-timeline {
                 height: 35px !important;
                 margin-bottom: 0.5rem !important;
@@ -729,21 +712,6 @@
             #tabVideos {
                 padding: 0.35rem 0.5rem !important;
                 font-size: 0.65rem !important;
-            }
-
-            .audio-trim-section {
-                padding: 0.5rem !important;
-                margin-bottom: 0.5rem !important;
-            }
-
-            .audio-trim-section h4 {
-                font-size: 0.75rem !important;
-                margin: 0 0 0.3rem 0 !important;
-            }
-
-            .audio-trim-section p {
-                font-size: 0.65rem !important;
-                margin: 0.1rem 0 !important;
             }
 
             .audio-timeline {
@@ -1257,12 +1225,39 @@
                                     <label><i class="fas fa-music"></i> Profile Music</label>
                                     <div class="audio-input-group">
                                         <div class="audio-player-preview" id="studentAudioPreview" style="display: none;">
-                                            <audio id="studentAudioPlayer" controls style="width: 100%; margin-bottom: 0.8rem;">
+                                            <!-- Preview Card Lagu yang Dipilih -->
+                                            <div id="selectedSongCard" style="display: flex; align-items: center; gap: 1rem; background: linear-gradient(135deg, rgba(29,185,84,0.12), rgba(76,175,80,0.08)); border: 1px solid rgba(29,185,84,0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+                                                <div id="selectedSongThumbnailWrap" style="flex-shrink: 0; position: relative; cursor: pointer;" onclick="toggleSongPreview()">
+                                                    <img id="selectedSongThumbnail" src="" alt="cover" style="width:72px;height:72px;object-fit:cover;border-radius:10px;display:none;">
+                                                    <div id="selectedSongThumbnailFallback" style="width:72px;height:72px;border-radius:10px;background:rgba(29,185,84,0.15);display:flex;align-items:center;justify-content:center;">
+                                                        <i class="fas fa-music" style="font-size:1.8rem;color:var(--primary-color);"></i>
+                                                    </div>
+                                                    <!-- Play overlay on thumbnail -->
+                                                    <div id="songPlayOverlay" style="position:absolute;inset:0;border-radius:10px;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;">
+                                                        <i id="songPlayIcon" class="fas fa-play" style="font-size:1.6rem;color:#fff;"></i>
+                                                    </div>
+                                                </div>
+                                                <div style="flex:1;min-width:0;">
+                                                    <p style="margin:0 0 0.2rem 0;font-size:0.75rem;color:var(--primary-color);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Lagu yang dipilih</p>
+                                                    <p id="selectedSongTitle" style="margin:0 0 0.25rem 0;font-size:1rem;font-weight:700;color:var(--text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</p>
+                                                    <p id="selectedSongArtist" style="margin:0 0 0.5rem 0;font-size:0.85rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</p>
+                                                    <!-- Progress bar -->
+                                                    <div id="songProgressBar" style="height:3px;background:rgba(29,185,84,0.2);border-radius:2px;overflow:hidden;display:none;">
+                                                        <div id="songProgressFill" style="height:100%;width:0%;background:var(--primary-color);transition:width 0.3s linear;border-radius:2px;"></div>
+                                                    </div>
+                                                    <p id="songProgressTime" style="margin:0.25rem 0 0 0;font-size:0.75rem;color:var(--text-muted);display:none;">0:00 / 0:00</p>
+                                                </div>
+                                                <!-- Play/Pause button -->
+                                                <button type="button" id="songPreviewBtn" onclick="toggleSongPreview()" style="flex-shrink:0;width:44px;height:44px;border-radius:50%;border:none;background:var(--primary-color);color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(29,185,84,0.4);transition:transform 0.15s,box-shadow 0.15s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+                                                    <i id="songPreviewBtnIcon" class="fas fa-play"></i>
+                                                </button>
+                                            </div>
+
+                                            <audio id="studentAudioPlayer" style="display:none;">
                                                 <source id="studentAudioSource" type="audio/mpeg">
-                                                Your browser does not support the audio element.
                                             </audio>
-                                            
-                                            <!-- Auto-Generated Lyrics Section (REPLACES Audio Trim) -->
+
+                                            <!-- Auto-Generated Lyrics Section -->
                                             <div id="studentLyricsSection" style="display: none; background: var(--light-bg); padding: 1rem; border-radius: 0.5rem; margin-bottom: 0.8rem;">
                                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                                                     <h3 style="margin: 0; color: var(--text-color);">
@@ -1324,28 +1319,16 @@
                                             </div>
 
                                             <div class="audio-tabs">
-                                                <button type="button" class="audio-tab-btn active" data-tab="upload" onclick="switchStudentAudioTab(event)">
-                                                    <i class="fas fa-upload"></i> Upload MP3
-                                                </button>
-                                                <button type="button" class="audio-tab-btn" data-tab="download" onclick="switchStudentAudioTab(event)">
+                                                <button type="button" class="audio-tab-btn active" data-tab="download" onclick="switchStudentAudioTab(event)">
                                                     <i class="fas fa-download"></i> Download dari Link
                                                 </button>
-                                            </div>
-
-                                            <!-- Upload Tab -->
-                                            <div class="audio-tab-content active">
-                                                <input type="file" id="studentAudioFile" accept=".mp3,audio/mpeg" style="display:none;">
-                                                <button type="button" class="btn-upload" onclick="document.getElementById('studentAudioFile').click()">
-                                                    <i class="fas fa-upload"></i> Pilih MP3 File
+                                                <button type="button" class="audio-tab-btn" data-tab="upload" onclick="switchStudentAudioTab(event)">
+                                                    <i class="fas fa-upload"></i> Upload MP3
                                                 </button>
-                                                <p class="help-text">Max file size: 50MB</p>
-                                                <div id="studentAudioFilePreview" style="display: none; margin-top: 0.8rem;">
-                                                    <small>Selected: <span id="studentAudioFileName"></span></small>
-                                                </div>
                                             </div>
 
-                                            <!-- Download Tab -->
-                                            <div class="audio-tab-content">
+                                            <!-- Download Tab (sekarang aktif pertama) -->
+                                            <div class="audio-tab-content active">
                                                 <input type="text" id="studentAudioUrl" placeholder="Taro sini URL Tiktok/Spotify/Youtube song nya" class="form-input-url">
                                                 
                                                 <!-- Artist Input Field (Hidden by default, shows only for Spotify) -->
@@ -1377,6 +1360,18 @@
                                                     <div id="studentAudioFilesContainer" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.8rem;">
                                                         <p style="color: var(--text-muted); font-size: 0.9rem;"><i class="fas fa-spinner fa-spin"></i> Loading audio files...</p>
                                                     </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Upload Tab -->
+                                            <div class="audio-tab-content">
+                                                <input type="file" id="studentAudioFile" accept=".mp3,audio/mpeg" style="display:none;">
+                                                <button type="button" class="btn-upload" onclick="document.getElementById('studentAudioFile').click()">
+                                                    <i class="fas fa-upload"></i> Pilih MP3 File
+                                                </button>
+                                                <p class="help-text">Max file size: 50MB</p>
+                                                <div id="studentAudioFilePreview" style="display: none; margin-top: 0.8rem;">
+                                                    <small>Selected: <span id="studentAudioFileName"></span></small>
                                                 </div>
                                             </div>
                                         </div>

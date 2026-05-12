@@ -4495,32 +4495,8 @@ img {
         height: 40px;
     }
     
-    /* Trim Section */
-    .audio-trim-section {
-        padding: 1.2rem !important;
-        border-radius: 0.8rem !important;
-        margin-bottom: 1rem !important;
-        transition: all 0.3s ease !important;
-    }
     
-    .audio-trim-section:hover {
-        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.1) !important;
-    }
     
-    .audio-trim-section h4 {
-        font-size: 1rem !important;
-        margin-bottom: 1rem !important;
-        font-weight: 600 !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 0.5rem !important;
-    }
-    
-    .audio-trim-section p {
-        font-size: 0.9rem !important;
-        margin-bottom: 1rem !important;
-        line-height: 1.4 !important;
-    }
 
     /* Timeline Canvas */
     .audio-timeline {
@@ -4536,99 +4512,17 @@ img {
     }
 
     /* Trim Controls */
-    .audio-trim-section .form-group {
-        margin-bottom: 1rem;
-    }
 
-    .audio-trim-section .form-group label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
 
-    .audio-trim-section input[type="range"] {
-        height: 6px;
-        border-radius: 3px;
-        background: linear-gradient(to right, #ddd, #ccc);
-        outline: none;
-        -webkit-appearance: none;
-        appearance: none;
-    }
 
-    .audio-trim-section input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-        cursor: pointer;
-        box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
-        transition: all 0.2s ease;
-    }
 
-    .audio-trim-section input[type="range"]::-webkit-slider-thumb:hover {
-        transform: scale(1.15);
-        box-shadow: 0 4px 10px rgba(76, 175, 80, 0.6);
-    }
 
-    .audio-trim-section input[type="range"]::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-        cursor: pointer;
-        border: none;
-        box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
-        transition: all 0.2s ease;
-    }
 
-    .audio-trim-section input[type="range"]::-moz-range-thumb:hover {
-        transform: scale(1.15);
-        box-shadow: 0 4px 10px rgba(76, 175, 80, 0.6);
-    }
 
-    .audio-trim-section input[type="number"] {
-        font-size: 0.85rem;
-        padding: 0.5rem;
-        border: 1px solid var(--border-color);
-        border-radius: 0.3rem;
-        background: var(--bg-color);
-        color: var(--text-color);
-        transition: all 0.2s ease;
-    }
 
-    .audio-trim-section input[type="number"]:focus {
-        border-color: #4CAF50;
-        box-shadow: 0 0 6px rgba(76, 175, 80, 0.2);
-        outline: none;
-    }
 
-    .audio-trim-section .btn-small {
-        padding: 0.7rem !important;
-        font-size: 0.85rem !important;
-        font-weight: 600 !important;
-        border-radius: 0.5rem !important;
-        border: none !important;
-        cursor: pointer !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 0.5rem !important;
-        transition: all 0.3s ease !important;
-    }
 
-    .audio-trim-section .btn-small:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
 
-    .audio-trim-section .btn-small:active {
-        transform: translateY(0);
-    }
 
     /* Buttons */
     .btn-save,
@@ -4745,13 +4639,7 @@ img {
     }
     
     /* Trim Section Compact */
-    .audio-trim-section {
-        padding: 0.8rem !important;
-    }
     
-    .audio-trim-section h4 {
-        font-size: 0.9rem !important;
-    }
     
     /* Timeline */
     .audio-timeline {
@@ -4799,28 +4687,10 @@ img {
     }
     
     /* Audio Trim Section - Tablet */
-    .audio-trim-section {
-        padding: 1rem !important;
-    }
     
-    .audio-trim-section h4 {
-        font-size: 0.95rem !important;
-    }
     
-    .audio-trim-section .trim-control-group {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-    }
     
-    .audio-trim-section .audio-timeline {
-        height: 60px;
-    }
     
-    .audio-trim-section .btn-small {
-        padding: 0.7rem !important;
-        font-size: 0.85rem !important;
-    }
     
     /* Tablet Memories Layout */
     .memories-container {
@@ -4845,19 +4715,8 @@ img {
 
 /* iPad/Medium Tablets (up to 800px) */
 @media (max-width: 800px) and (min-width: 481px) {
-    .audio-trim-section {
-        padding: 1rem !important;
-    }
     
-    .audio-trim-section .trim-control-group {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 0.8rem;
-    }
     
-    .audio-trim-section .audio-timeline {
-        height: 55px;
-    }
 }
 
 /* Touch Device Optimizations */
@@ -5200,6 +5059,47 @@ select:focus {
     #studentAudioFilesContainer {
         max-height: 300px !important;
         padding: 0.5rem !important;
+    }
+}
+
+/* Selected Song Preview Card — Mobile */
+@media (max-width: 768px) {
+    #selectedSongCard {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.75rem;
+        padding: 1.2rem 1rem;
+    }
+
+    #selectedSongThumbnail,
+    #selectedSongThumbnailFallback {
+        width: 110px !important;
+        height: 110px !important;
+        border-radius: 12px !important;
+    }
+
+    #selectedSongThumbnailFallback i {
+        font-size: 2.2rem !important;
+    }
+
+    #selectedSongTitle {
+        font-size: 1rem;
+        white-space: normal !important;
+    }
+
+    #selectedSongArtist {
+        white-space: normal !important;
+    }
+
+    #songPreviewBtn {
+        width: 52px !important;
+        height: 52px !important;
+        font-size: 1.3rem !important;
+    }
+
+    #songPlayOverlay i {
+        font-size: 2rem !important;
     }
 }
 
