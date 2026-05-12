@@ -209,8 +209,6 @@ function displayGalleryImages(imagesToDisplay) {
                     style="background-color: ${placeholderColor};"
                 >
                 <div class="memory-overlay">
-                    <h3>${cleanName}</h3>
-                    <p>A moment to remember</p>
                 </div>
             </div>
         `;
@@ -1292,7 +1290,6 @@ function updatePopupImage() {
     
     const image = popupCurrentImages[popupCurrentIndex];
     const popupImage = document.getElementById('popupImage');
-    const popupTitle = document.getElementById('popupImageTitle');
     const popupCounter = document.getElementById('popupImageCounter');
     
     if (popupImage) {
@@ -1300,15 +1297,6 @@ function updatePopupImage() {
         popupImage.alt = image.name || `Image ${popupCurrentIndex + 1}`;
     }
     
-    if (popupTitle) {
-        const filename = image.name || image.filename || `Photo ${popupCurrentIndex + 1}`;
-        const cleanName = filename
-            .replace(/^\d+_/, '')
-            .replace(/\.[^/.]+$/, "")
-            .replace(/_/g, ' ')
-            .substring(0, 50);
-        popupTitle.textContent = cleanName;
-    }
     
     if (popupCounter) {
         popupCounter.textContent = `${popupCurrentIndex + 1} of ${popupCurrentImages.length}`;
@@ -1549,11 +1537,10 @@ document.addEventListener('touchend', (e) => {
             // ---- Info kiri bawah ----
             const info = document.createElement('div');
             info.className = 'reels-item-info';
-            const cleanName = (video.name || `Video ${idx + 1}`).replace(/\.[^/.]+$/, '');
             info.innerHTML = `
-                <h3>${cleanName}</h3>
+                <h3></h3>
                 <p><i class="fas fa-compact-disc" style="margin-right:4px;opacity:0.7;"></i>RPL Yearbook 2026</p>
-            `;
+            `; //h3 nya kosong karna gatau mau isi apa selain nama (cleanName) karena kalo nama video jadi jelek
 
             // ---- Action buttons kanan (like, share, volume) ----
             const actions = document.createElement('div');
@@ -1580,6 +1567,19 @@ document.addEventListener('touchend', (e) => {
                 likeBtn.querySelector('.reels-action-icon').style.color = '#ff4757';
                 likeBtn.querySelector('i').style.color = '#ff4757';
                 likeBtn.querySelector('.reels-action-label').textContent = 'Disukai';
+
+                // Track like ke server
+                try {
+                    const user = JSON.parse(localStorage.getItem('user'));
+                    if (user && user.id) {
+                        const videoFilename = video.name || video.filename || `video_${idx}`;
+                        fetch('/api/track/reels-like', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ accountId: user.id, filename: videoFilename })
+                        }).catch(() => {});
+                    }
+                } catch (_) {}
             });
 
             // Share button
@@ -1829,6 +1829,7 @@ document.addEventListener('touchend', (e) => {
                 begin() {
                     overlay.classList.remove('reels-entering');
                     overlay.classList.add('reels-active');
+                    overlay.setAttribute('aria-hidden', 'false');
                     // Kunci scroll body saat animasi mulai
                     document.body.style.overflow = 'hidden';
                     document.documentElement.style.overflow = 'hidden';
@@ -1904,6 +1905,7 @@ document.addEventListener('touchend', (e) => {
                 complete() {
                     overlay.classList.remove('reels-active', 'reels-exiting');
                     overlay.style.display = 'none';
+                    overlay.setAttribute('aria-hidden', 'true');
                     // Sembunyikan class UI elements
                     uiEls.forEach(el => el && el.classList.remove('reels-active'));
                 }

@@ -180,11 +180,66 @@ function renderVisitorIPs() {
     }
 
     container.innerHTML = ips.slice(0, 30).map(ip => `
-        <div class="ip-row">
+        <div class="ip-row" onclick="showVisitorIPDetail('${ip.ip}')" style="cursor:pointer;" title="Lihat log aktivitas">
             <div class="ip-addr"><i class="fas fa-globe"></i> ${ip.ip}</div>
-            <div class="ip-meta">${ip.visits} requests &bull; Last: ${timeAgo(ip.lastSeen)}</div>
+            <div class="ip-meta">${ip.visits} requests &bull; Last: ${timeAgo(ip.lastSeen)} &bull; <span style="color:var(--accent-primary)"><i class="fas fa-list-alt"></i> Lihat Log</span></div>
         </div>
     `).join('');
+}
+
+async function showVisitorIPDetail(ip) {
+    const modal = document.getElementById('accountModal');
+    document.getElementById('modalAccountName').textContent = ip;
+    document.getElementById('modalAccountType').textContent = 'Visitor IP';
+    document.getElementById('modalAccountId').textContent = ip;
+
+    // Sembunyikan section "Registered IPs" — tidak relevan untuk visitor IP
+    const ipSection = document.getElementById('modalIPSection');
+    if (ipSection) ipSection.style.display = 'none';
+
+    const logsContainer = document.getElementById('modalAccountLogs');
+    if (logsContainer) logsContainer.innerHTML = '<p class="empty-msg"><i class="fas fa-spinner fa-spin"></i> Memuat log...</p>';
+    modal.classList.add('active');
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/visitor-logs/${encodeURIComponent(ip)}`);
+        const data = await res.json();
+
+        const geo = data.geo || {};
+        const screens = data.screens || [];
+        const visits = data.visits || [];
+        const pages = [...new Set(visits.map(v => v.page).filter(Boolean))];
+
+        // Inject geo + screen info di atas logs sebagai info card
+        const infoHtml = `
+            <div class="modal-section" style="margin-bottom:0.75rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border-color);">
+                <h4 style="margin-bottom:0.5rem;font-size:0.85rem;"><i class="fas fa-globe"></i> Info Visitor</h4>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.35rem 1rem;font-size:0.78rem;">
+                    <div><span style="color:var(--text-muted)"><i class="fas fa-flag" style="width:14px"></i> Country</span><br><strong>${geo.country || '-'}</strong></div>
+                    <div><span style="color:var(--text-muted)"><i class="fas fa-map-marker-alt" style="width:14px"></i> City</span><br><strong>${geo.city || '-'}</strong></div>
+                    <div><span style="color:var(--text-muted)"><i class="fas fa-map" style="width:14px"></i> Region</span><br><strong>${geo.region || '-'}</strong></div>
+                    <div><span style="color:var(--text-muted)"><i class="fas fa-wifi" style="width:14px"></i> ISP</span><br><strong style="word-break:break-word">${geo.isp || '-'}</strong></div>
+                    <div><span style="color:var(--text-muted)"><i class="fas fa-desktop" style="width:14px"></i> Screen</span><br><strong>${screens.length ? screens.join(', ') : '-'}</strong></div>
+                    <div><span style="color:var(--text-muted)"><i class="fas fa-eye" style="width:14px"></i> Halaman</span><br><strong style="word-break:break-all;font-size:0.72rem">${pages.length ? pages.join(', ') : '-'}</strong></div>
+                </div>
+            </div>`;
+
+        const logs = data.logs || [];
+        if (logsContainer) {
+            logsContainer.innerHTML = infoHtml + (
+                logs.slice(0, 50).map(log => `
+                    <div class="modal-log">
+                        <div class="log-action ${getLogClass(log.action)}">
+                            <i class="fas fa-${getLogIcon(log.action)}"></i> ${formatAction(log.action)}
+                        </div>
+                        <div class="log-details">${log.details || '-'}${log.accountName ? ` <span style="opacity:.6">· ${log.accountName} (${log.accountType})</span>` : ''}</div>
+                        <div class="log-meta"><code>${log.ip || ip}</code> &bull; ${timeAgo(log.timestamp)}</div>
+                    </div>`).join('') || '<p class="empty-msg">Belum ada log aktivitas untuk IP ini</p>'
+            );
+        }
+    } catch (err) {
+        if (logsContainer) logsContainer.innerHTML = `<p class="empty-msg" style="color:var(--danger)">Gagal memuat log: ${err.message}</p>`;
+    }
 }
 
 // ========== ACCOUNTS & ACTIVITY LOGS ==========
@@ -228,6 +283,10 @@ function showAccountDetail(accountId) {
     document.getElementById('modalAccountName').textContent = acc.name;
     document.getElementById('modalAccountType').textContent = acc.type;
     document.getElementById('modalAccountId').textContent = accountId;
+
+    // Pastikan section Registered IPs tampil (bisa tersembunyi dari showVisitorIPDetail)
+    const ipSection = document.getElementById('modalIPSection');
+    if (ipSection) ipSection.style.display = '';
 
     // IPs
     const ipsEl = document.getElementById('modalAccountIPs');
@@ -739,7 +798,9 @@ function getLogIcon(action) {
         'view_kolase_photo': 'image', 'view_kolase_video': 'video',
         'view_teacher': 'chalkboard-teacher',
         'admin_edit_profile': 'user-edit', 'admin_edit_teacher': 'user-edit',
-        'admin_delete_kolase': 'trash'
+        'admin_delete_kolase': 'trash',
+        'like_reels_video': 'heart',
+        'pin_photo': 'thumbtack', 'unpin_photo': 'thumbtack'
     };
     return icons[action] || 'circle';
 }
@@ -750,6 +811,8 @@ function getLogClass(action) {
     if (action.includes('view')) return 'log-view';
     if (action.includes('update') || action.includes('edit')) return 'log-edit';
     if (action.includes('delete')) return 'log-delete';
+    if (action === 'like_reels_video') return 'log-view';
+    if (action === 'pin_photo' || action === 'unpin_photo') return 'log-edit';
     return '';
 }
 

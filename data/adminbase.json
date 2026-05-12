@@ -13,8 +13,8 @@
         {
           "ip": "110.138.133.139",
           "firstUsed": "2026-05-11T10:14:47.973Z",
-          "lastUsed": "2026-05-12T08:12:37.834Z",
-          "count": 6
+          "lastUsed": "2026-05-12T09:48:54.716Z",
+          "count": 7
         }
       ],
       "logs": [
@@ -227,10 +227,34 @@
           "details": "Logged out",
           "ip": "110.138.133.139",
           "timestamp": "2026-05-12T08:12:48.251Z"
+        },
+        {
+          "action": "login",
+          "details": "Logged in as student",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:48:54.716Z"
+        },
+        {
+          "action": "like_reels_video",
+          "details": "Liked reels video: AQPJgop2IktYMUON1WBzC4M0zyxoHSbvQVdT2zXUeu6LmyVJQbd4Vfb639kniTEBakys-6LYzAW5lJFTm0EiM8xoKDYbPaHt",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:49:15.865Z"
+        },
+        {
+          "action": "like_reels_video",
+          "details": "Liked reels video: AQPJgop2IktYMUON1WBzC4M0zyxoHSbvQVdT2zXUeu6LmyVJQbd4Vfb639kniTEBakys-6LYzAW5lJFTm0EiM8xoKDYbPaHt",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:49:36.859Z"
+        },
+        {
+          "action": "like_reels_video",
+          "details": "Liked reels video: AQPJgop2IktYMUON1WBzC4M0zyxoHSbvQVdT2zXUeu6LmyVJQbd4Vfb639kniTEBakys-6LYzAW5lJFTm0EiM8xoKDYbPaHt",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:57:16.258Z"
         }
       ],
       "firstSeen": "2026-05-10T22:52:55.009Z",
-      "lastActive": "2026-05-12T08:12:48.251Z"
+      "lastActive": "2026-05-12T09:57:16.258Z"
     },
     "student_001": {
       "name": "ALMA RADITYA KHALID",
@@ -345,8 +369,8 @@
         {
           "ip": "110.138.133.139",
           "firstUsed": "2026-05-11T11:05:41.515Z",
-          "lastUsed": "2026-05-11T11:05:41.515Z",
-          "count": 1
+          "lastUsed": "2026-05-12T09:33:45.048Z",
+          "count": 2
         },
         {
           "ip": "180.247.62.135",
@@ -421,10 +445,112 @@
           "details": "Logged in as admin",
           "ip": "114.10.68.173",
           "timestamp": "2026-05-12T00:12:52.720Z"
+        },
+        {
+          "action": "login",
+          "details": "Logged in as admin",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:33:45.048Z"
+        },
+        {
+          "action": "pin_photo",
+          "details": "Pinned photo: 1778499392842_2026_03_31_14_10_03.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:45:50.192Z"
+        },
+        {
+          "action": "pin_photo",
+          "details": "Pinned photo: 1778497782775_1000022212.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:45:55.739Z"
+        },
+        {
+          "action": "pin_photo",
+          "details": "Pinned photo: 1778497591706_1000070896.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:46:01.061Z"
+        },
+        {
+          "action": "pin_photo",
+          "details": "Pinned photo: 1778497591706_1000070896.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:46:25.421Z"
+        },
+        {
+          "action": "pin_photo",
+          "details": "Pinned photo: 1778497591706_1000070896.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:46:28.728Z"
+        },
+        {
+          "action": "pin_photo",
+          "details": "Pinned photo: 1778497591706_1000070896.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:46:32.218Z"
+        },
+        {
+          "action": "unpin_photo",
+          "details": "Unpinned photo: 1778499392842_2026_03_31_14_10_03.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:56:10.615Z"
+        },
+        {
+          "action": "unpin_photo",
+          "details": "Unpinned photo: 1778497782775_1000022212.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:56:13.147Z"
+        },
+        {
+          "action": "unpin_photo",
+          "details": "Unpinned photo: 1778497591706_1000070896.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:56:15.670Z"
+        },
+        {
+          "action": "pin_photo",
+          "details": "Pinned photo: 1778497591706_1000070896.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T09:56:17.799Z"
+        },
+        {
+          "action": "pin_photo",
+          "details": "Pinned photo: 1778499648091_20250923_105706.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T10:02:25.900Z"
+        },
+        {
+          "action": "pin_photo",
+          "details": "Pinned photo: 1778499648066_20251127_123007.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T10:02:28.679Z"
+        },
+        {
+          "action": "like_reels_video",
+          "details": "Liked reels video: AQN_DIei5uPRjDqNlf5krR2xHZL71H_kdWMAHMhobdJrSyZkog_TUdI8fFRJx31nwCvwPcEG1Ur7AhRA1sQa3cBlu89p7npZ",
+          "ip": "114.4.215.38",
+          "timestamp": "2026-05-12T10:09:56.234Z"
+        },
+        {
+          "action": "like_reels_video",
+          "details": "Liked reels video: AQOoSyczpLAzDHJuAQVBdPJZrTpAyK_3EwUeRVG29SK-hwfRNBau3xSbnMG2KjrOP8AHNHuqCzFqiBDATGt-Clj0h8I6hF-M",
+          "ip": "114.4.215.38",
+          "timestamp": "2026-05-12T10:10:08.304Z"
+        },
+        {
+          "action": "like_reels_video",
+          "details": "Liked reels video: AQPULsM6EZllHdRk8xoF4nKnOoRioMwctB5LwV6lizKWkK7c-X_3pnBs5nH1Os7juGi9tgAdXax2r8LJ-RNry8SNxXeHmTA6",
+          "ip": "114.4.215.38",
+          "timestamp": "2026-05-12T10:10:30.244Z"
+        },
+        {
+          "action": "pin_photo",
+          "details": "Pinned photo: 1778499648086_20251006_133156.jpg",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-12T11:14:01.744Z"
         }
       ],
       "firstSeen": "2026-05-11T10:58:38.795Z",
-      "lastActive": "2026-05-12T00:12:52.720Z"
+      "lastActive": "2026-05-12T11:14:01.744Z"
     },
     "student_031": {
       "name": "RAFIE YULOUANSYAH RIZQI",
@@ -2199,17 +2325,54 @@
       "page": "/api/track/profile-view",
       "accountId": null,
       "timestamp": "2026-05-12T09:06:06.805Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/reels-like",
+      "accountId": null,
+      "timestamp": "2026-05-12T09:49:15.865Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/reels-like",
+      "accountId": null,
+      "timestamp": "2026-05-12T09:49:36.859Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/reels-like",
+      "accountId": null,
+      "timestamp": "2026-05-12T09:57:16.258Z"
+    },
+    {
+      "ip": "192.42.116.51",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "timestamp": "2026-05-12T10:07:39.430Z"
+    },
+    {
+      "ip": "114.4.215.38",
+      "page": "/api/track/reels-like",
+      "accountId": null,
+      "timestamp": "2026-05-12T10:09:56.234Z"
+    },
+    {
+      "ip": "114.4.215.38",
+      "page": "/api/track/reels-like",
+      "accountId": null,
+      "timestamp": "2026-05-12T10:10:08.304Z"
+    },
+    {
+      "ip": "114.4.215.38",
+      "page": "/api/track/reels-like",
+      "accountId": null,
+      "timestamp": "2026-05-12T10:10:30.244Z"
     }
   ],
   "topVisited": {
     "student_001": {
-      "count": 52,
+      "count": 53,
       "visitors": [
-        {
-          "ip": "45.66.35.33",
-          "accountId": "student_002",
-          "timestamp": "2026-05-10T23:09:04.984Z"
-        },
         {
           "ip": "unknown",
           "accountId": null,
@@ -2454,17 +2617,17 @@
           "ip": "unknown",
           "accountId": null,
           "timestamp": "2026-05-12T09:21:57.642Z"
+        },
+        {
+          "ip": "192.42.116.51",
+          "accountId": null,
+          "timestamp": "2026-05-12T10:07:39.431Z"
         }
       ]
     },
     "student_002": {
-      "count": 86,
+      "count": 87,
       "visitors": [
-        {
-          "ip": "110.138.133.139",
-          "accountId": "student_002",
-          "timestamp": "2026-05-11T10:14:47.973Z"
-        },
         {
           "ip": "unknown",
           "accountId": null,
@@ -2709,6 +2872,11 @@
           "ip": "unknown",
           "accountId": null,
           "timestamp": "2026-05-12T08:36:29.241Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_002",
+          "timestamp": "2026-05-12T09:48:54.716Z"
         }
       ]
     },
@@ -3644,7 +3812,7 @@
     }
   },
   "accessTimeline": {
-    "10": 2,
+    "10": 6,
     "11": 1,
     "12": 33,
     "13": 32,
@@ -3659,7 +3827,7 @@
     "00": 125,
     "04": 7,
     "03": 2,
-    "09": 3,
+    "09": 6,
     "06": 23,
     "07": 21,
     "08": 14
@@ -4020,11 +4188,25 @@
       "name": "ALMA RADITYA KHALID",
       "ip": "110.138.133.139",
       "timestamp": "2026-05-12T09:06:02.541Z"
+    },
+    {
+      "userId": "admin",
+      "type": "admin",
+      "name": "Admin",
+      "ip": "110.138.133.139",
+      "timestamp": "2026-05-12T09:33:45.049Z"
+    },
+    {
+      "userId": "student_002",
+      "type": "student",
+      "name": "ALYA HANIN NAFISA",
+      "ip": "110.138.133.139",
+      "timestamp": "2026-05-12T09:48:54.716Z"
     }
   ],
   "pageVisits": {
-    "student_001": 193,
-    "student_002": 97,
+    "student_001": 194,
+    "student_002": 98,
     "student_003": 7,
     "student_031": 65,
     "student_012": 25,
@@ -4068,10 +4250,10 @@
   },
   "summary": {
     "totalAccounts": 11,
-    "totalVisits": 508,
+    "totalVisits": 510,
     "totalUpdates": 64,
-    "uniqueIPs": 14,
-    "totalLogins": 54,
-    "lastUpdated": "2026-05-12T09:31:26.187Z"
+    "uniqueIPs": 16,
+    "totalLogins": 56,
+    "lastUpdated": "2026-05-12T11:24:54.354Z"
   }
 }

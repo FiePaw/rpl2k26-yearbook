@@ -9,7 +9,98 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [3.3.8] — 2026-05-12
+## [3.4.0] — 2026-05-12
+
+### Admin Dashboard — Major Update
+
+Pembaruan besar pada sistem admin dashboard mencakup perbaikan CORS, fitur pin foto, log aktivitas reels, dan peningkatan tampilan Visitor IPs.
+
+---
+
+### Fixed — CORS: Method `PATCH` Tidak Diizinkan (`server.js`)
+
+#### Root Cause
+Header `Access-Control-Allow-Methods` tidak menyertakan method `PATCH`, sehingga setiap request dari `www.rpl2k26.site` ke `rpl2k26.site` menggunakan method `PATCH` diblokir oleh browser pada tahap preflight.
+
+#### Perubahan
+- Tambah `PATCH` ke header `Access-Control-Allow-Methods` pada middleware CORS global.
+
+---
+
+### Added — Endpoint Pin Foto Kolase (`server.js`)
+
+#### Latar Belakang
+Frontend memanggil `PATCH /api/admin/kolase/pin/:filename` namun endpoint tersebut tidak ada di server — hanya ada `PATCH /api/admin/kolase/photo/:filename` untuk update `photoType`.
+
+#### Perubahan `server.js`
+- Tambah endpoint baru `PATCH /api/admin/kolase/pin/:filename` yang membaca dan menulis field `pinned` per foto ke `database.json`.
+- Jika foto belum punya entri di `galleries`, otomatis dibuat entri baru.
+- Setiap aksi pin/unpin tercatat di activity log sebagai `pin_photo` / `unpin_photo`.
+
+---
+
+### Fixed — Pin Foto Tidak Tampil Paling Atas di Halaman Kolase (`server.js`)
+
+#### Root Cause
+Terdapat dua endpoint berbeda untuk mengambil foto galeri:
+- `GET /api/admin/kolase` — digunakan oleh admin dashboard (sudah diperbaiki sebelumnya)
+- `GET /api/gallery/images` — digunakan oleh halaman kolase publik
+
+Endpoint `GET /api/gallery/images` sudah membaca `galleryMetadata` dari `database.json`, namun hanya mengambil field `photoType` dan mengabaikan `pinned`. Akibatnya foto yang di-pin tidak pernah mendapat flag `pinned: true`, dan sorting tetap berdasarkan tanggal upload saja.
+
+#### Perubahan `server.js`
+- `GET /api/gallery/images`: baca field `photo.pinned` dari `database.json` ke dalam `galleryMetadata`.
+- Attach `pinned: true/false` ke setiap objek image di response.
+- Ubah sorting: foto yang di-pin muncul paling atas, sisanya tetap urut terbaru.
+
+---
+
+### Added — Log Like Video Reels (`server.js`, `src/client/js/kolase.js`)
+
+#### Perubahan `server.js`
+- Tambah endpoint `POST /api/track/reels-like` yang menerima `accountId` dan `filename`, lalu mencatat aktivitas `like_reels_video` ke activity log akun.
+
+#### Perubahan `kolase.js`
+- Tombol like di mode reels sekarang mengirim request ke `/api/track/reels-like` setelah diklik, dengan `accountId` dari `localStorage` dan `filename` video yang sedang ditampilkan.
+
+---
+
+### Fixed — Visitor IPs: Modal Tidak Bisa Ditutup (`src/client/js/admin-dashboard.js`)
+
+#### Root Cause
+Fungsi `showVisitorIPDetail` membuka modal dengan `style.display = 'flex'`, sementara `closeAccountModal` menutupnya dengan `classList.remove('active')` — dua mekanisme yang tidak kompatibel satu sama lain.
+
+#### Perubahan
+- Samakan mekanisme buka modal ke `classList.add('active')`.
+- Tambah reset `modalAccountIPs` saat modal dibuka untuk mencegah data akun sebelumnya tersisa.
+
+---
+
+### Improved — Visitor IPs: Tampilan Log Aktivitas Seragam dengan Log Accounts (`src/client/js/admin-dashboard.js`)
+
+#### Latar Belakang
+Log aktivitas pada modal Visitor IPs sebelumnya menggunakan struktur HTML dan styling inline yang berbeda dari modal Accounts, sehingga tampilannya tidak konsisten.
+
+#### Perubahan `admin-dashboard.js`
+- Rewrite `showVisitorIPDetail` untuk menggunakan struktur HTML yang identik dengan `showAccountDetail`: class `modal-log`, `log-action`, `log-details`, `log-meta`.
+- Halaman yang dikunjungi ditampilkan di bagian `modalAccountIPs` menggunakan class `modal-ip` yang sama.
+- Gunakan helper yang sudah ada: `getLogIcon()`, `getLogClass()`, `formatAction()` — konsisten dengan tampilan log akun.
+- Tambah `like_reels_video`, `pin_photo`, dan `unpin_photo` ke `getLogIcon()` dan `getLogClass()`.
+
+---
+
+### Fixed — `aria-hidden` Warning pada Tombol Like Reels (`public/kolase.html`, `src/client/js/kolase.js`)
+
+#### Root Cause
+Elemen `#reels-mode-overlay` memiliki atribut statis `aria-hidden="true"` di HTML. Ketika overlay aktif dan tombol like mendapat fokus, browser memunculkan warning aksesibilitas karena elemen yang difokus berada di dalam ancestor dengan `aria-hidden`.
+
+#### Perubahan
+- `kolase.html`: ubah atribut statis menjadi `aria-hidden="false"` sebagai nilai default aman.
+- `kolase.js`: toggle `aria-hidden` secara dinamis — `false` saat overlay dibuka, `true` saat overlay selesai menutup.
+
+---
+
+
 
 ### Fixed — Kolase: Space Kosong pada `memory-frame` (`src/client/styles/style.css`)
 

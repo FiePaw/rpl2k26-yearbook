@@ -105,7 +105,7 @@ app.use((req, res, next) => {
     
     // Set CORS headers on response object - these will apply to ALL responses
     res.setHeader('Access-Control-Allow-Origin', responseOrigin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     res.setHeader('Access-Control-Max-Age', '86400');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -1474,15 +1474,16 @@ app.get('/api/gallery/images', async (req, res) => {
             const database = JSON.parse(data);
             
             if (database.galleries && Array.isArray(database.galleries)) {
-                // Create a map of filename -> photoType from uploaded photos
+                // Create a map of filename -> photoType + pinned from uploaded photos
                 database.galleries.forEach(gallery => {
                     if (gallery.photos && Array.isArray(gallery.photos)) {
                         gallery.photos.forEach(photo => {
                             // Extract filename from URL or name
                             const filename = photo.url ? photo.url.split('/').pop() : photo.name;
                             galleryMetadata[filename] = {
-                                photoType: gallery.photoType || 'all',
-                                uploadedAt: gallery.uploadedAt
+                                photoType: photo.photoType || gallery.photoType || 'all',
+                                uploadedAt: gallery.uploadedAt,
+                                pinned: !!photo.pinned
                             };
                         });
                     }
@@ -1500,7 +1501,7 @@ app.get('/api/gallery/images', async (req, res) => {
             try {
                 const stats = await fs.stat(filepath);
                 
-                const metadata = galleryMetadata[filename] || { photoType: 'all', uploadedAt: stats.mtime.toISOString() };
+                const metadata = galleryMetadata[filename] || { photoType: 'all', uploadedAt: stats.mtime.toISOString(), pinned: false };
                 
                 images.push({
                     name: filename.replace(/^\d+_/, '').replace(/\.[^/.]+$/, ''),
@@ -1509,15 +1510,20 @@ app.get('/api/gallery/images', async (req, res) => {
                     size: stats.size,
                     uploadedAt: stats.mtime.toISOString(),
                     isImage: true,
-                    photoType: metadata.photoType  // Add photoType from metadata
+                    photoType: metadata.photoType,  // Add photoType from metadata
+                    pinned: !!metadata.pinned        // Add pinned from metadata
                 });
             } catch (err) {
                 console.error(`Error reading file info for ${filename}:`, err);
             }
         }
         
-        // Sort by modification time (newest first)
-        images.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+        // Sort: pinned first, then by modification time (newest first)
+        images.sort((a, b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+        });
         
         console.log(`✅ Returning ${images.length} images with photoType`);
         
@@ -2177,6 +2183,29 @@ const trackingData = {
     profileUpdates: {}   // Legacy: { [profileId]: updateCount }
 };
 
+// IP metadata cache — { [ip]: { region, city, country, isp, fetchedAt } }
+const ipMetaCache = {};
+
+async function fetchIPMeta(ip) {
+    if (!ip || ip === 'unknown' || ip === '127.0.0.1' || ip === '::1') return null;
+    if (ipMetaCache[ip]) return ipMetaCache[ip];
+    try {
+        const resp = await axios.get(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city,isp`, { timeout: 3000 });
+        if (resp.data && resp.data.status === 'success') {
+            const meta = {
+                country: resp.data.country || '-',
+                region: resp.data.regionName || '-',
+                city: resp.data.city || '-',
+                isp: resp.data.isp || '-',
+                fetchedAt: new Date().toISOString()
+            };
+            ipMetaCache[ip] = meta;
+            return meta;
+        }
+    } catch { /* silent */ }
+    return null;
+}
+
 // Load tracking data from adminbase.json on startup
 async function loadTrackingData() {
     try {
@@ -2292,19 +2321,25 @@ function registerAccountIP(accountId, ip) {
 }
 
 // Helper: Record visitor IP
-function recordVisitorIP(ip, page, accountId) {
+function recordVisitorIP(ip, page, accountId, screenResolution) {
     if (!ip || ip === 'unknown') return;
     
     trackingData.visitorIPs.push({
         ip: ip,
         page: page || '/',
         accountId: accountId || null,
+        screenResolution: screenResolution || null,
         timestamp: new Date().toISOString()
     });
     
     // Keep only last 500
     if (trackingData.visitorIPs.length > 500) {
         trackingData.visitorIPs = trackingData.visitorIPs.slice(-500);
+    }
+
+    // Prefetch IP metadata in background (non-blocking)
+    if (!ipMetaCache[ip]) {
+        fetchIPMeta(ip).catch(() => {});
     }
 }
 
@@ -2484,6 +2519,75 @@ app.post('/api/track/logout', (req, res) => {
     }
     
     res.json({ success: true });
+});
+
+// Frontend ping — records IP + screen resolution on page load (anonymous)
+app.post('/api/track/ping', (req, res) => {
+    const { screenResolution, page } = req.body;
+    const ip = getClientIP(req);
+    recordVisitorIP(ip, page || req.headers.referer || '/', null, screenResolution || null);
+    res.json({ success: true });
+});
+
+// Frontend reports like on reels video
+app.post('/api/track/reels-like', (req, res) => {
+    const { accountId, filename } = req.body;
+    const ip = getClientIP(req);
+
+    if (!accountId) {
+        return res.json({ success: false, error: 'accountId required' });
+    }
+
+    if (trackingData.accounts[accountId]) {
+        addActivityLog(accountId, 'like_reels_video', `Liked reels video: ${filename || 'unknown'}`, ip);
+    }
+
+    res.json({ success: true });
+});
+
+// Admin: get activity logs for a specific IP
+app.get('/api/admin/visitor-logs/:ip', async (req, res) => {
+    const targetIP = decodeURIComponent(req.params.ip);
+
+    // Gather all visits from visitorIPs for this IP
+    const visits = trackingData.visitorIPs.filter(v => v.ip === targetIP);
+
+    // Collect unique screen resolutions seen from this IP
+    const screens = [...new Set(visits.map(v => v.screenResolution).filter(Boolean))];
+
+    // Gather all logs across accounts that match this IP
+    const logs = [];
+    Object.entries(trackingData.accounts).forEach(([accountId, acc]) => {
+        // acc.ips may be array of objects {ip, count, lastUsed} or strings
+        const ipList = (acc.ips || []).map(e => (typeof e === 'string' ? e : e.ip));
+        if (ipList.includes(targetIP)) {
+            (acc.logs || []).forEach(log => {
+                logs.push({
+                    accountId,
+                    accountName: acc.name,
+                    accountType: acc.type,
+                    action: log.action,
+                    details: log.details,
+                    timestamp: log.timestamp,
+                    ip: log.ip || targetIP
+                });
+            });
+        }
+    });
+
+    logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // Fetch geo metadata (cached after first call)
+    const geoMeta = await fetchIPMeta(targetIP);
+
+    res.json({
+        success: true,
+        ip: targetIP,
+        geo: geoMeta || {},
+        screens,
+        visits,
+        logs: logs.slice(0, 100)
+    });
 });
 
 // ========== ADMIN DASHBOARD API ENDPOINTS ==========
@@ -2804,6 +2908,7 @@ app.get('/api/admin/kolase', async (req, res) => {
         
         // Apply custom video order if stored in database.json
         let sortedVideos = videos.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+        let pinnedMap = {}; // filename -> { pinned, photoType }
         try {
             const databasePath = path.join(__dirname, 'database.json');
             const dbData = await fs.readFile(databasePath, 'utf8');
@@ -2817,11 +2922,38 @@ app.get('/api/admin/kolase', async (req, res) => {
                     return ia - ib;
                 });
             }
+            // Build pinned/photoType map from galleries
+            if (database.galleries && Array.isArray(database.galleries)) {
+                database.galleries.forEach(gallery => {
+                    if (gallery.photos && Array.isArray(gallery.photos)) {
+                        gallery.photos.forEach(photo => {
+                            const fn = photo.url ? photo.url.split('/').pop() : photo.name;
+                            if (fn) {
+                                pinnedMap[fn] = {
+                                    pinned: !!photo.pinned,
+                                    photoType: photo.photoType || gallery.photoType || null
+                                };
+                            }
+                        });
+                    }
+                });
+            }
         } catch { /* no custom order */ }
+
+        // Attach pinned & photoType metadata, then sort: pinned first, then by date
+        const enrichedImages = images.map(img => ({
+            ...img,
+            pinned: !!(pinnedMap[img.filename]?.pinned),
+            photoType: pinnedMap[img.filename]?.photoType || null
+        })).sort((a, b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+        });
 
         res.json({
             success: true,
-            images: images.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt)),
+            images: enrichedImages,
             videos: sortedVideos,
             totalImages: images.length,
             totalVideos: videos.length,
@@ -2854,6 +2986,54 @@ app.delete('/api/admin/kolase/:filename', async (req, res) => {
 });
 
 // Admin: update photoType for a specific image
+// Admin: pin/unpin foto kolase
+app.patch('/api/admin/kolase/pin/:filename', async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const { pinned } = req.body;
+        const ip = getClientIP(req);
+
+        const databasePath = path.join(__dirname, 'database.json');
+        let database = { galleries: [] };
+        try {
+            const data = await fs.readFile(databasePath, 'utf8');
+            database = JSON.parse(data);
+            if (!database.galleries) database.galleries = [];
+        } catch { /* new db */ }
+
+        let updated = false;
+        database.galleries.forEach(gallery => {
+            if (gallery.photos && Array.isArray(gallery.photos)) {
+                gallery.photos.forEach(photo => {
+                    const fn = photo.url ? photo.url.split('/').pop() : photo.name;
+                    if (fn === filename) {
+                        photo.pinned = !!pinned;
+                        updated = true;
+                    }
+                });
+            }
+        });
+
+        if (!updated) {
+            database.galleries.push({
+                id: Date.now().toString(),
+                title: filename,
+                date: new Date().toISOString().split('T')[0],
+                description: '',
+                photos: [{ url: `/OurGallery/${filename}`, name: filename, pinned: !!pinned }],
+                videos: [],
+                uploadedAt: new Date().toISOString()
+            });
+        }
+
+        await fs.writeFile(databasePath, JSON.stringify(database, null, 2));
+        addActivityLog('admin', pinned ? 'pin_photo' : 'unpin_photo', `${pinned ? 'Pinned' : 'Unpinned'} photo: ${filename}`, ip);
+        res.json({ success: true, filename, pinned: !!pinned });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 app.patch('/api/admin/kolase/photo/:filename', async (req, res) => {
     try {
         const { filename } = req.params;
