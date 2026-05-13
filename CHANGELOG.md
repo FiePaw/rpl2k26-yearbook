@@ -5,6 +5,45 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.10.3] — 2026-05-13
+
+### Changed
+- **Admin Dashboard — Tab Music — Download Music (refaktor total)**: Bagian download lagu dari link di-refaktor agar identik dengan implementasi di halaman Profile page:
+  - **Platform yang didukung diselaraskan**: Sebelumnya admin menerima YouTube & YouTube Music juga, sekarang hanya **TikTok** dan **Spotify** — sama seperti profile page. Pesan error URL tidak didukung juga diselaraskan.
+  - **Field Artist untuk Spotify**: Input "Nama Pembuat Lagu (Artist)" kini muncul secara otomatis saat URL Spotify terdeteksi pada input (live detection via event `input`), persis seperti di profile page. Field otomatis tersembunyi dan dikosongkan saat URL bukan Spotify. Field artist wajib diisi sebelum download Spotify bisa dilanjutkan.
+  - **Smart Wait Messages**: Selama download berlangsung, pesan berganti setiap 10 detik dari pool 10 pesan informal (sama persis dengan profile page) agar admin tahu proses masih berjalan.
+  - **Timeout 180 detik**: Download kini dibatasi 3 menit via `AbortController`, dengan pesan timeout yang jelas jika terlampaui.
+  - **Error handling lengkap**: Semua kasus error kini ditangani seperti di profile — `isSetupError`, `isRateLimit` + `waitTimeSeconds`, `Unsupported URL`, `spotdl is not installed`, `Invalid Spotify URL`, fallback ke `data.details` / `data.message`.
+  - **Reset form otomatis**: Setelah download berhasil, input URL dan artist dikosongkan dan field artist disembunyikan. Status sukses ditampilkan 4 detik lalu hilang otomatis sebelum daftar musik di-refresh.
+  - **Enter key pada kedua input**: Baik input URL maupun input artist kini bisa men-trigger download dengan menekan Enter.
+  - CSS baru: `.music-artist-label`, `.music-artist-input`, `.music-artist-hint` di `admin-dashboard.css`.
+
+---
+
+## [2.10.2] — 2026-05-13
+
+### Fixed
+- **Admin Dashboard — Input musik (dan semua input) tidak bisa diketik — root cause ditemukan**: Masalah sesungguhnya bukan hanya `z-index`, melainkan dua sumber yang saling memperparah:
+  1. **`loading.js` — `pointer-events: none` tidak sepenuhnya di-reset**: Saat loading aktif, `loading.js` menyuntikkan style `body.loading-active > * { pointer-events: none }` pada elemen *direct child* `<body>` (termasuk `<main class="admin-layout">`). Setelah loading selesai, `showPageContent()` menyuntikkan `contentTransitionStyle` yang meng-reset `pointer-events: auto` — tapi hanya pada `body > *` (satu level). Elemen bersarang seperti `<input>` di dalam `<section> → <div> → <div>` tidak tersentuh. Diperbaiki: `contentTransitionStyle` kini dihapus dari DOM setelah transisi selesai agar tidak ada residual override.
+  2. **`admin-dashboard.css` — tidak ada isolasi `pointer-events` untuk elemen bersarang**: Ditambahkan reset menyeluruh di awal file: `.admin-layout *` mendapat `pointer-events: auto !important`, dan `input`, `textarea`, `button`, `a` di dalam `.admin-layout` secara eksplisit diberi `pointer-events: auto`, `cursor`, `user-select`, dan `opacity: 1` agar kebal dari override style apapun yang datang dari `style.css` atau `loading.js`.
+
+---
+
+## [2.10.1] — 2026-05-13
+
+### Fixed
+- **Admin Dashboard — Tab Music — Input URL tidak bisa diketik**: `music-input-wrap` input sebelumnya tidak responsif terhadap klik/ketik pada kondisi tertentu karena tidak ada `z-index` eksplisit sehingga elemen `position: absolute` lain bisa menutupinya. Diperbaiki dengan:
+  - Menambahkan `z-index: 1` pada `.music-input-wrap` dan `z-index: 1` + `pointer-events: auto` + `cursor: text` + `-webkit-user-select: text` pada `.music-input-wrap input`.
+  - Menambahkan `z-index: 2` pada `.music-input-icon` agar ikon link tetap di atas input tapi tidak menghalangi interaksi (sudah `pointer-events: none`).
+- **Admin Dashboard — Tab Music — Tombol aksi card musik salah fungsi**: Tombol `btn-dl-music` (ikon download hijau) di setiap card musik library sebelumnya berfungsi sebagai download file MP3. Fungsi ini keliru — tombol tersebut seharusnya menjadi tombol **preview / play** lagu. Diperbaiki:
+  - Elemen `<a download>` diganti dengan `<button class="btn-preview-music">` berikon play/pause.
+  - Ditambahkan fungsi `adminPreviewMusic(safeId, encodedFilename, btn)` — singleton audio player: hanya satu lagu yang bisa diputar sekaligus. Klik tombol saat lagu sedang diputar → pause; klik lagi → resume; klik lagu lain → stop yang sedang diputar lalu mulai lagu baru.
+  - Tombol menampilkan state visual: ikon `fa-spinner` saat buffering, `fa-pause` saat playing, kembali ke `fa-play` saat selesai/pause.
+  - CSS baru `.btn-preview-music` (biru) dan state `.playing` (highlight border + background).
+  - `loadMusicFiles()` kini menghentikan audio preview yang sedang berjalan sebelum me-render ulang daftar musik agar tidak ada audio zombie.
+
+---
+
 ## [2.10.0] — 2026-05-13
 
 ### Fixed

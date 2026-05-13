@@ -124,17 +124,31 @@
                 </div>
                 <div class="panel-body">
                     <div class="music-download-form">
+                        <!-- URL Input Row -->
                         <div class="music-url-row">
                             <div class="music-input-wrap">
                                 <i class="fas fa-link music-input-icon"></i>
                                 <input type="text" id="musicUrlInput"
-                                    placeholder="Spotify · YouTube · YouTube Music · TikTok URL…"
+                                    placeholder="Taro sini URL TikTok / Spotify / YouTube song nya"
                                     autocomplete="off">
                             </div>
                             <button class="btn-action btn-save" id="musicDownloadBtn" onclick="adminDownloadMusic()">
                                 <i class="fas fa-download"></i><span> Download</span>
                             </button>
                         </div>
+                        <!-- Artist Input (muncul hanya saat Spotify terdeteksi) -->
+                        <div id="musicArtistInputGroup" style="display:none; margin-top:0.75rem;">
+                            <label class="music-artist-label">
+                                <i class="fas fa-user"></i> Nama Pembuat Lagu (Artist)
+                            </label>
+                            <input type="text" id="musicArtistInput"
+                                placeholder="Contoh: Joji, Billie Eilish, HYOHYO, dsb..."
+                                class="music-artist-input">
+                            <small class="music-artist-hint">
+                                💡 Lebih enak pake link dari YouTube kalau Spotify kadang ngeleg.
+                            </small>
+                        </div>
+                        <!-- Status -->
                         <div id="musicDownloadStatus" style="display:none;"></div>
                     </div>
                     <div id="musicFileList"></div>

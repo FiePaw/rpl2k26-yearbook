@@ -1,9 +1,38 @@
 /* Admin Dashboard v3 Styles */
 
-/* Fix scroll - ensure page is scrollable */
+/* ── Reset: Batalkan semua override dari style.css & loading.js ── */
 html, body {
     overflow-y: auto !important;
     height: auto !important;
+    pointer-events: auto !important;
+}
+
+/* Pastikan semua elemen dalam admin bisa diklik/diketik,
+   termasuk yang di dalam nested div (loading.js hanya reset body > *) */
+.admin-layout,
+.admin-layout *,
+.admin-tabs,
+.admin-tabs * {
+    pointer-events: auto !important;
+}
+
+/* Input & textarea di admin selalu bisa diketik */
+.admin-layout input,
+.admin-layout textarea,
+.admin-layout select {
+    pointer-events: auto !important;
+    cursor: text !important;
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    opacity: 1 !important;
+}
+
+/* Tombol di admin selalu bisa diklik */
+.admin-layout button,
+.admin-layout a {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
 }
 
 /* Layout */
@@ -521,6 +550,7 @@ html, body {
     position: relative;
     display: flex;
     align-items: center;
+    z-index: 1;
 }
 .music-input-icon {
     position: absolute;
@@ -528,6 +558,7 @@ html, body {
     color: var(--text-muted, #666);
     font-size: 0.82rem;
     pointer-events: none;
+    z-index: 2;
 }
 .music-input-wrap input {
     width: 100%;
@@ -539,6 +570,12 @@ html, body {
     font-size: 0.87rem;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+    cursor: text;
+    -webkit-user-select: text;
+    user-select: text;
 }
 .music-input-wrap input:focus {
     border-color: var(--primary-color);
@@ -562,7 +599,47 @@ html, body {
 #musicDownloadStatus.ds-error   { border-left-color: #F44336; color: #F44336; background: rgba(244,67,54,0.06); }
 #musicDownloadStatus.ds-success { border-left-color: #4CAF50; color: #4CAF50; background: rgba(76,175,80,0.06); }
 
-/* File list header */
+/* Artist input group (muncul saat Spotify terdeteksi) */
+#musicArtistInputGroup {
+    animation: fadeIn 0.2s ease;
+}
+.music-artist-label {
+    display: block;
+    margin-bottom: 0.45rem;
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+.music-artist-input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1.5px solid var(--border-color, #333);
+    border-radius: 10px;
+    background: rgba(0,0,0,0.25);
+    color: var(--text-color);
+    font-size: 0.87rem;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    pointer-events: auto !important;
+    cursor: text !important;
+    -webkit-user-select: text !important;
+    user-select: text !important;
+}
+.music-artist-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
+}
+.music-artist-input::placeholder { color: var(--text-muted, #666); }
+.music-artist-hint {
+    display: block;
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+
 .music-list-header {
     display: flex;
     align-items: center;
@@ -757,16 +834,26 @@ html, body {
 .mslr-name { flex: 1; font-size: 0.78rem; font-weight: 600; color: var(--text-color); min-width: 120px; }
 .mslr-name small { display: block; font-weight: 400; font-size: 0.68rem; color: var(--text-secondary); }
 
-.btn-dl-music {
-    background: rgba(29,185,84,0.1);
-    color: var(--primary-color, #1DB954);
-    border: 1px solid rgba(29,185,84,0.2);
+.btn-preview-music {
+    background: rgba(33,150,243,0.1);
+    color: #2196F3;
+    border: 1px solid rgba(33,150,243,0.25);
     text-decoration: none;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
 }
-.btn-dl-music:hover { background: rgba(29,185,84,0.2); }
+.btn-preview-music:hover { background: rgba(33,150,243,0.2); transform: scale(1.1); }
+.btn-preview-music.playing {
+    background: rgba(33,150,243,0.22);
+    color: #fff;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 2px rgba(33,150,243,0.25);
+}
+/* compat alias kept for any leftover markup */
+.btn-dl-music { display: none !important; }
 
 /* Inline generate form di dalam lyrics section */
 .music-gen-form {

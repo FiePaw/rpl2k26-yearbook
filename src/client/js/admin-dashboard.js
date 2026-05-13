@@ -846,84 +846,166 @@ async function renderMusicTab() {
     await loadMusicFiles();
 }
 
+// ── Smart wait messages (sama seperti profile page) ─────────────
+const adminSmartWaitMessages = [
+    'Lagi download file nya, sabar aja cuy...',
+    'Nunggu lagi download emang lama...',
+    'Dikit lagi selesai download...',
+    'Sebentar doang kok download nya sabar ya...',
+    'Okeee abis ini kelar download nya...',
+    'Prosessss kebut download',
+    'Tungguin aja jangan keluar dulu...',
+    'Sabar lah download butuh waktu...',
+    'Internet cepet buat apa😂',
+    '⌛ Masih loading, tunggu sebentar... '
+];
+
+function adminStartSmartWait(statusEl) {
+    let idx = 0;
+    const id = setInterval(() => {
+        if (!statusEl || statusEl.style.display === 'none') { clearInterval(id); return; }
+        idx = (idx + 1) % adminSmartWaitMessages.length;
+        statusEl.style.display = 'flex';
+        statusEl.className = '';
+        statusEl.innerHTML = `<i class="fas fa-spinner fa-spin"></i>&nbsp; ${adminSmartWaitMessages[idx]}`;
+    }, 10000);
+    return id;
+}
+
 // ── Download Music ──────────────────────────────────────────────
 async function adminDownloadMusic() {
-    const input  = document.getElementById('musicUrlInput');
-    const btn    = document.getElementById('musicDownloadBtn');
-    const status = document.getElementById('musicDownloadStatus');
-    const url    = input?.value?.trim();
+    const input       = document.getElementById('musicUrlInput');
+    const artistInput = document.getElementById('musicArtistInput');
+    const btn         = document.getElementById('musicDownloadBtn');
+    const status      = document.getElementById('musicDownloadStatus');
+    const url         = input?.value?.trim();
+    const artist      = artistInput?.value?.trim() || '';
 
     if (!url) { showToast('Masukkan URL terlebih dahulu', 'error'); return; }
 
-    // Validasi URL sebelum kirim ke server
-    const isSpotify      = /spotify\.com/i.test(url);
-    const isYoutube      = /youtube\.com|youtu\.be/i.test(url);
-    const isYoutubeMusic = /music\.youtube\.com/i.test(url);
-    const isTikTok       = /tiktok\.com/i.test(url);
+    const isSpotify = /spotify\.com/i.test(url);
+    const isTikTok  = /tiktok\.com/i.test(url);
 
-    if (!isSpotify && !isYoutube && !isYoutubeMusic && !isTikTok) {
+    // Validasi: hanya Spotify & TikTok (sama seperti profile page)
+    if (!isSpotify && !isTikTok) {
         status.style.display = 'flex';
         status.className = 'ds-error';
-        status.innerHTML = '<i class="fas fa-exclamation-circle"></i>&nbsp; URL tidak didukung. Gunakan link Spotify, YouTube, YouTube Music, atau TikTok.';
+        status.innerHTML = `<i class="fas fa-exclamation-circle"></i>&nbsp; Gak bisa pake URL ini!<br>
+            <span style="font-size:0.8rem;opacity:0.85">Bisa nya cuma:<br>
+            &mdash; TikTok (tiktok.com)<br>
+            &mdash; Spotify (open.spotify.com)</span>`;
         return;
     }
 
+    // Spotify butuh nama artist
+    if (isSpotify && !artist) {
+        showToast('Isi dulu nama artist untuk Spotify', 'error');
+        artistInput?.focus();
+        return;
+    }
+
+    // UI: loading state
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> Downloading…</span>';
     status.style.display = 'flex';
     status.className = '';
-    status.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Mendownload lagu, harap tunggu…';
+    status.innerHTML = `<i class="fas fa-spinner fa-spin"></i>&nbsp; ${adminSmartWaitMessages[0]}`;
+
+    const msgInterval = adminStartSmartWait(status);
 
     try {
-        const endpoint = isTikTok ? `${API_URL}/api/audio/download` : `${API_URL}/api/spotify/download`;
-        const body     = isTikTok ? { url } : { spotifyUrl: url };
+        // Timeout 180 detik (sama seperti profile page)
+        const controller = new AbortController();
+        const timeoutId  = setTimeout(() => controller.abort(), 180000);
+
+        const endpoint = isSpotify ? `${API_URL}/api/spotify/download` : `${API_URL}/api/audio/download`;
+        const body     = isSpotify ? { spotifyUrl: url, artist } : { url };
 
         const res  = await fetch(endpoint, {
-            method: 'POST',
+            method : 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            body   : JSON.stringify(body),
+            signal : controller.signal
         });
+        clearTimeout(timeoutId);
+        clearInterval(msgInterval);
+
         const data = await res.json();
 
         if (data.success) {
-            const filename = data.latestFile?.filename || data.filename || '';
-            const src      = data.source ? ` <span style="opacity:0.7;font-size:0.75rem">[${data.source}]</span>` : '';
+            let filename = '';
+            if (isSpotify) {
+                filename = data.latestFile?.filename || data.tracks?.[0]?.filename || '';
+            } else {
+                filename = data.filename || '';
+            }
+            const srcTag = data.source
+                ? ` <span style="opacity:0.65;font-size:0.75rem">[${data.source}]</span>` : '';
+
             status.className = 'ds-success';
-            status.innerHTML = `<i class="fas fa-check-circle"></i>&nbsp; Berhasil!${filename ? ` <strong>${filename}</strong>` : ''}${src}`;
+            status.innerHTML = `<i class="fas fa-check-circle"></i>&nbsp; ✅ ${data.message || 'Download berhasil!'}${filename ? ` &mdash; <strong>${filename}</strong>` : ''}${srcTag}`;
+
+            // Reset form
             input.value = '';
-            musicTabLoaded = false;
-            await loadMusicFiles();
+            if (artistInput) artistInput.value = '';
+            const artistGroup = document.getElementById('musicArtistInputGroup');
+            if (artistGroup) artistGroup.style.display = 'none';
 
-        } else if (data.isSetupError) {
-            // Python / yt-dlp tidak terinstall
-            status.className = 'ds-error';
-            status.innerHTML = `<i class="fas fa-wrench"></i>&nbsp; Setup Error: ${data.message || 'Python atau yt-dlp tidak ditemukan di server.'}`;
-
-        } else if (data.isRateLimit) {
-            // Rate limited — tampilkan sisa waktu tunggu
-            const wait = data.waitTimeSeconds ? ` Coba lagi dalam <strong>${data.waitTimeSeconds}s</strong>.` : '';
-            status.className = 'ds-error';
-            status.innerHTML = `<i class="fas fa-clock"></i>&nbsp; Rate limit. ${data.message || ''}${wait}`;
+            setTimeout(async () => {
+                status.style.display = 'none';
+                musicTabLoaded = false;
+                await loadMusicFiles();
+            }, 4000);
 
         } else {
-            // Error umum — tampilkan detail selengkap mungkin
-            const msg = data.details || data.message || data.error || 'Download gagal';
+            clearInterval(msgInterval);
+            let errorMsg = data.error || data.message || 'Download gagal';
+
+            if (data.isSetupError) {
+                errorMsg = '⚙️ Setup Error: Python atau yt-dlp tidak ditemukan di server.';
+            } else if (data.isRateLimit) {
+                const wait = data.waitTimeSeconds ? ` Coba lagi dalam <strong>${data.waitTimeSeconds}s</strong>.` : '';
+                errorMsg   = `⏳ Rate limit.${wait} ${data.message || ''}`;
+            } else if (data.error === 'Unsupported URL') {
+                errorMsg = '❌ URL tidak didukung.<br><span style="font-size:0.8rem">Gunakan link TikTok atau Spotify.</span>';
+            } else if (data.error === 'spotdl is not installed') {
+                errorMsg = '❌ spotdl belum terinstall.<br><span style="font-size:0.8rem">Jalankan: <code>pip install spotdl</code> lalu restart server.</span>';
+            } else if (data.error === 'Invalid Spotify URL') {
+                errorMsg = '❌ URL Spotify tidak valid.<br><span style="font-size:0.8rem">Gunakan link track/playlist Spotify yang benar.</span>';
+            } else if (data.details) {
+                errorMsg = data.details;
+            }
+
             status.className = 'ds-error';
-            status.innerHTML = `<i class="fas fa-times-circle"></i>&nbsp; ${msg}`;
+            status.innerHTML = `<i class="fas fa-exclamation-circle"></i>&nbsp; ${errorMsg}`;
         }
+
     } catch (err) {
+        clearInterval(msgInterval);
+        let errorMsg = err.message || 'Koneksi gagal';
+        if (err.name === 'AbortError') {
+            errorMsg = '⏱️ Timeout — download terlalu lama. Coba URL lain atau cek koneksi server.';
+        }
         status.className = 'ds-error';
-        status.innerHTML = `<i class="fas fa-times-circle"></i>&nbsp; Koneksi gagal: ${err.message}`;
+        status.innerHTML = `<i class="fas fa-times-circle"></i>&nbsp; ${errorMsg}`;
+
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-download"></i><span> Download</span>';
     }
 }
-
 // ── Daftar file musik + inline lyrics per file ──────────────────
 async function loadMusicFiles() {
     const container = document.getElementById('musicFileList');
     if (!container) return;
+
+    // Stop preview jika sedang diputar
+    if (_previewAudio) {
+        _previewAudio.pause();
+        _previewAudio.src = '';
+        _previewAudio = null;
+        _previewSafeId = null;
+    }
 
     container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)">
         <i class="fas fa-spinner fa-spin" style="font-size:1.5rem;margin-bottom:0.5rem;display:block"></i>
@@ -1018,11 +1100,10 @@ async function loadMusicFiles() {
                     <div class="music-card-meta">
                         ${sizeMB ? `<span class="music-card-size">${sizeMB}</span>` : ''}
                         <div class="music-card-actions">
-                            <a class="btn-icon-sm btn-dl-music"
-                                href="${API_URL}/profile_music/${encodeURIComponent(f.filename)}?download=1"
-                                download="${f.filename}" title="Download lagu">
-                                <i class="fas fa-download"></i>
-                            </a>
+                            <button class="btn-icon-sm btn-preview-music" id="prevbtn-${safeId}" title="Preview lagu"
+                                onclick="adminPreviewMusic('${safeId}', '${encodeURIComponent(f.filename)}', this)">
+                                <i class="fas fa-play"></i>
+                            </button>
                             <button class="btn-icon-sm btn-del-music" title="Hapus lagu"
                                 onclick="adminDeleteMusic('${f.filename}')">
                                 <i class="fas fa-trash"></i>
@@ -1149,6 +1230,72 @@ function encodeFilename(filename) {
     return filename.replace(/[^a-zA-Z0-9]/g, '_');
 }
 
+// ── Preview / Play lagu di admin ────────────────────────────────
+// Singleton audio player: hanya satu lagu yang bisa diputar sekaligus
+let _previewAudio = null;
+let _previewSafeId = null;
+
+function adminPreviewMusic(safeId, encodedFilename, btn) {
+    const url = `${API_URL}/profile_music/${encodedFilename}`;
+
+    // Jika lagu yang sama sedang diputar → pause / stop
+    if (_previewAudio && _previewSafeId === safeId) {
+        if (!_previewAudio.paused) {
+            _previewAudio.pause();
+            btn.classList.remove('playing');
+            btn.innerHTML = '<i class="fas fa-play"></i>';
+        } else {
+            _previewAudio.play();
+            btn.classList.add('playing');
+            btn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+        return;
+    }
+
+    // Stop lagu yang sedang diputar sebelumnya
+    if (_previewAudio) {
+        _previewAudio.pause();
+        _previewAudio.src = '';
+        // Reset tombol sebelumnya
+        if (_previewSafeId) {
+            const prevBtn = document.getElementById(`prevbtn-${_previewSafeId}`);
+            if (prevBtn) {
+                prevBtn.classList.remove('playing');
+                prevBtn.innerHTML = '<i class="fas fa-play"></i>';
+            }
+        }
+    }
+
+    // Buat audio baru
+    _previewAudio = new Audio(url);
+    _previewSafeId = safeId;
+
+    btn.classList.add('playing');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    _previewAudio.addEventListener('canplay', () => {
+        _previewAudio.play();
+        btn.innerHTML = '<i class="fas fa-pause"></i>';
+    }, { once: true });
+
+    _previewAudio.addEventListener('ended', () => {
+        btn.classList.remove('playing');
+        btn.innerHTML = '<i class="fas fa-play"></i>';
+        _previewAudio = null;
+        _previewSafeId = null;
+    }, { once: true });
+
+    _previewAudio.addEventListener('error', () => {
+        showToast('Gagal memutar preview lagu', 'error');
+        btn.classList.remove('playing');
+        btn.innerHTML = '<i class="fas fa-play"></i>';
+        _previewAudio = null;
+        _previewSafeId = null;
+    }, { once: true });
+
+    _previewAudio.load();
+}
+
 async function adminDeleteMusic(filename) {
     if (!confirm(`Hapus file "${filename}"?`)) return;
     try {
@@ -1235,8 +1382,46 @@ async function adminDeleteLyrics(studentId, btn) {
     }
 }
 
-// Enter key pada input URL musik
+// ── Event listeners untuk music download form ───────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('musicUrlInput');
-    if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') adminDownloadMusic(); });
+    const urlInput    = document.getElementById('musicUrlInput');
+    const artistGroup = document.getElementById('musicArtistInputGroup');
+    const artistInput = document.getElementById('musicArtistInput');
+
+    if (!urlInput) return;
+
+    // Enter key pada URL → download
+    urlInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') adminDownloadMusic();
+    });
+
+    // Enter key pada artist → download
+    if (artistInput) {
+        artistInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') adminDownloadMusic();
+        });
+    }
+
+    // Deteksi Spotify → tampilkan field artist (sama seperti profile page)
+    urlInput.addEventListener('input', e => {
+        const val       = e.target.value.trim();
+        const isSpotify = /spotify\.com/i.test(val);
+        if (artistGroup) {
+            artistGroup.style.display = isSpotify ? 'block' : 'none';
+        }
+        if (!isSpotify && artistInput) {
+            artistInput.value = '';
+        }
+        if (isSpotify && artistInput) {
+            artistInput.focus();
+        }
+    });
+
+    // Reset artist jika URL dikosongkan
+    urlInput.addEventListener('change', e => {
+        if (!e.target.value.trim()) {
+            if (artistGroup) artistGroup.style.display = 'none';
+            if (artistInput) artistInput.value = '';
+        }
+    });
 });
