@@ -932,70 +932,285 @@ async function loadMobileCards() {
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Load floating collage cards in the mobile hero section.
- * Uses student profile photos randomly scattered as decorative cards.
+ * 8 slot dengan komposisi tetap:
+ *   Slot 0-2  → boy  (3 foto)
+ *   Slot 3-5  → girl (3 foto)
+ *   Slot 6-7  → walas / with-teacher (2 foto)
+ *
+ * Setiap 15 detik, semua 8 slot di-refresh dengan set foto baru
+ * yang di-pick acak dari masing-masing pool tipe.
  */
-async function loadHeroCollageCards() {
-    const container = document.getElementById('mobileHeroCollage');
-    if (!container) return;
+(function initHeroCollage() {
+    if (window.innerWidth > 768) return;
 
-    console.log('🖼️ Loading hero collage cards...');
+    const ROTATE_INTERVAL = 15000; // ms
+    // Slot layout: [type, type, ...]
+    const SLOT_TYPES = ['boy','boy','boy','girl','girl','girl','walas','walas'];
 
-    // Wait a bit for data to be available (from cache or parallel fetch)
-    let students, dbData;
-    const maxWait = 4000;
-    const startTime = Date.now();
+    // Pool foto per tipe, diisi setelah fetch
+    const photoPool = { boy: [], girl: [], walas: [] };
+    // Index rotasi per tipe agar tidak repeat sebelum semua terpakai
+    const poolIdx   = { boy: 0, girl: 0, walas: 0 };
 
-    while (Date.now() - startTime < maxWait) {
-        if (jsonDataCache.students && jsonDataCache.database) {
-            students = jsonDataCache.students;
-            dbData = jsonDataCache.database;
-            break;
+    let rotateTimer = null;
+    let cards = [];   // referensi ke elemen DOM .collage-card
+
+    // Shuffle array in-place (Fisher-Yates)
+    function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
         }
-        await new Promise(r => setTimeout(r, 200));
+        return arr;
     }
 
-    // If cache still empty, try fetching
-    if (!students || !dbData) {
+    // Ambil foto berikutnya dari pool tipe tertentu (cyclic)
+    function nextPhoto(type) {
+        const pool = photoPool[type];
+        if (!pool || pool.length === 0) return null;
+        const url = pool[poolIdx[type] % pool.length];
+        poolIdx[type]++;
+        // Reshuffle saat satu putaran selesai
+        if (poolIdx[type] >= pool.length) {
+            shuffle(pool);
+            poolIdx[type] = 0;
+        }
+        return url;
+    }
+
+    // Update satu card: cross-fade pada <img> saja
+    // (card tidak disentuh agar CSS collageFadeIn+collageFloat tidak konflik)
+    function updateCard(cardEl, newUrl) {
+        if (!newUrl) return;
+        const img = cardEl.querySelector('img');
+        if (!img) return;
+
+        img.style.transition = 'opacity 0.5s ease';
+
+        // Fade out
+        img.style.opacity = '0';
+
+        setTimeout(() => {
+            img.src = newUrl;
+
+            const fadeIn = () => {
+                img.style.opacity = '1';
+                img.removeEventListener('load',  fadeIn);
+                img.removeEventListener('error', fadeIn);
+            };
+            img.addEventListener('load',  fadeIn);
+            img.addEventListener('error', fadeIn);
+            // Fallback
+            setTimeout(fadeIn, 600);
+        }, 520);
+    }
+
+    // Refresh semua 8 slot sekaligus (staggered sedikit)
+    function refreshAllSlots() {
+        cards.forEach((card, i) => {
+            const type  = SLOT_TYPES[i] || 'boy';
+            const url   = nextPhoto(type);
+            // Stagger kecil per card agar tidak semua ganti serentak
+            setTimeout(() => updateCard(card, url), i * 120);
+        });
+        console.log('🖼️ Hero collage rotated');
+    }
+
+    // Render struktur awal (8 card kosong) dan isi foto pertama
+    function renderCollage() {
+        const container = document.getElementById('mobileHeroCollage');
+        if (!container) return;
+
+        // Buat 8 card dengan foto awal
+        container.innerHTML = SLOT_TYPES.map((type, i) => {
+            const url = nextPhoto(type) || '';
+            return `
+            <div class="collage-card" style="animation-delay:${i*0.15}s,${i*0.15}s;">
+                <img src="${url}" alt="" loading="lazy" decoding="async" draggable="false">
+            </div>`;
+        }).join('');
+
+        cards = Array.from(container.querySelectorAll('.collage-card'));
+        console.log(`🖼️ Hero collage rendered: 3 boy + 3 girl + 2 walas`);
+
+        // Mulai rotasi 15 detik
+        if (rotateTimer) clearInterval(rotateTimer);
+        rotateTimer = setInterval(refreshAllSlots, ROTATE_INTERVAL);
+    }
+
+    // Fetch foto dari /api/gallery/images lalu pisahkan per tipe
+    async function loadAndInit() {
         try {
-            const [sRes, dRes] = await Promise.all([
-                fetch(`${API_URL}/api/students/names`, { cache: 'no-cache' }),
-                fetch(`${API_URL}/api/students`, { cache: 'no-cache' })
-            ]);
-            students = await sRes.json();
-            const studentsFullArr = await dRes.json();
-            dbData = { students: Array.isArray(studentsFullArr) ? studentsFullArr : [] };
+            const res  = await fetch(`${API_URL}/api/gallery/images`, { cache: 'no-cache' });
+            const data = res.ok ? await res.json() : {};
+            const images = Array.isArray(data) ? data : (data.images || []);
+
+            images.forEach(img => {
+                if (!img || !img.url) return;
+                const t = img.photoType || 'all';
+                if (t === 'boy')   photoPool.boy.push(img.url);
+                else if (t === 'girl')  photoPool.girl.push(img.url);
+                else if (t === 'walas') photoPool.walas.push(img.url);
+                // 'all' tidak dimasukkan ke slot khusus
+            });
         } catch (err) {
-            console.warn('⚠️ Hero collage fetch failed:', err.message);
+            console.warn('⚠️ Gallery fetch failed for hero collage:', err.message);
+        }
+
+        // Fallback per tipe yang kosong: gunakan foto profil siswa (semua tipe)
+        const allEmpty = photoPool.boy.length === 0 && photoPool.girl.length === 0 && photoPool.walas.length === 0;
+        if (allEmpty) {
+            let dbData = jsonDataCache.database;
+            if (!dbData) {
+                try {
+                    const arr = await (await fetch(`${API_URL}/api/students`, { cache: 'no-cache' })).json();
+                    dbData = { students: Array.isArray(arr) ? arr : [] };
+                } catch (e) { dbData = { students: [] }; }
+            }
+            const fallback = (dbData?.students || []).filter(s => s?.photo).map(s => s.photo);
+            photoPool.boy   = [...fallback];
+            photoPool.girl  = [...fallback];
+            photoPool.walas = [...fallback];
+        } else {
+            // Kalau salah satu tipe kosong, cross-fill dari tipe lain
+            const allPhotos = [...photoPool.boy, ...photoPool.girl, ...photoPool.walas];
+            if (photoPool.boy.length   === 0) photoPool.boy   = [...allPhotos];
+            if (photoPool.girl.length  === 0) photoPool.girl  = [...allPhotos];
+            if (photoPool.walas.length === 0) photoPool.walas = [...allPhotos];
+        }
+
+        // Shuffle masing-masing pool
+        shuffle(photoPool.boy);
+        shuffle(photoPool.girl);
+        shuffle(photoPool.walas);
+
+        if (photoPool.boy.length + photoPool.girl.length + photoPool.walas.length === 0) {
+            console.warn('⚠️ No photos available for hero collage');
             return;
         }
+
+        renderCollage();
     }
 
-    // Get student photos
-    const photosAvailable = (dbData?.students || [])
-        .filter(s => s && s.photo && s.id && s.id.startsWith('student_'))
-        .map(s => s.photo);
+    loadAndInit();
+})();
 
-    if (photosAvailable.length === 0) {
-        console.warn('⚠️ No photos available for hero collage');
-        return;
+
+// ═══════════════════════════════════════════════════════════════
+//  MOBILE CARDS SCROLL — Auto-scroll dengan pause saat manual
+// ═══════════════════════════════════════════════════════════════
+
+(function initMobileCardsAutoScroll() {
+    const SCROLL_SPEED  = 0.8;   // px per frame
+    const RESUME_DELAY  = 2500;  // ms idle sebelum auto-scroll nyala lagi
+
+    let rafId        = null;
+    let isPaused     = false;
+    let isUserTouch  = false;   // true selama jari masih di layar
+    let resumeTimer  = null;
+
+    function getStrip() {
+        return document.getElementById('mobileCardsScroll');
     }
 
-    // Shuffle and pick up to 8 photos
-    const shuffled = photosAvailable.sort(() => Math.random() - 0.5);
-    const selectedPhotos = shuffled.slice(0, 8);
+    // Nonaktifkan scroll-snap agar scrollLeft bisa bergerak bebas
+    function disableSnap(strip) {
+        strip.style.scrollSnapType = 'none';
+    }
 
-    // Render collage cards
-    container.innerHTML = selectedPhotos.map((photoUrl, i) => `
-        <div class="collage-card" style="animation-delay: ${i * 0.15}s, ${i * 0.15}s;">
-            <img src="${photoUrl}" alt="" loading="lazy" decoding="async" draggable="false">
-        </div>
-    `).join('');
+    function tick() {
+        const strip = getStrip();
+        if (!strip) return;
 
-    console.log(`🖼️ Hero collage rendered: ${selectedPhotos.length} floating cards`);
-}
+        if (!isPaused && !isUserTouch) {
+            const maxScroll = strip.scrollWidth - strip.clientWidth;
+            if (maxScroll > 0) {
+                strip.scrollLeft += SCROLL_SPEED;
+                // Loop seamless: sampai ujung → balik ke awal
+                if (strip.scrollLeft >= maxScroll - 1) {
+                    strip.scrollLeft = 0;
+                }
+            }
+        }
 
-// Initialize hero collage on mobile
-if (window.innerWidth <= 768) {
-    loadHeroCollageCards();
-}
+        rafId = requestAnimationFrame(tick);
+    }
+
+    function pauseAutoScroll() {
+        isPaused = true;
+        clearTimeout(resumeTimer);
+    }
+
+    function scheduleResume() {
+        clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(() => {
+            isPaused = false;
+        }, RESUME_DELAY);
+    }
+
+    function attachListeners(strip) {
+        // --- Touch: pakai flag isUserTouch (paling reliable di mobile) ---
+        strip.addEventListener('touchstart', () => {
+            isUserTouch = true;
+            pauseAutoScroll();
+        }, { passive: true });
+
+        strip.addEventListener('touchend', () => {
+            isUserTouch = false;
+            scheduleResume();
+        }, { passive: true });
+
+        strip.addEventListener('touchcancel', () => {
+            isUserTouch = false;
+            scheduleResume();
+        }, { passive: true });
+
+        // --- Pointer (desktop drag) ---
+        strip.addEventListener('pointerdown', () => { pauseAutoScroll(); }, { passive: true });
+        strip.addEventListener('pointerup',   () => { scheduleResume(); },  { passive: true });
+        strip.addEventListener('pointercancel',() => { scheduleResume(); }, { passive: true });
+    }
+
+    function start() {
+        const strip = getStrip();
+        if (!strip) return;
+
+        if (strip.scrollWidth <= strip.clientWidth + 2) {
+            // Konten belum cukup lebar, coba lagi
+            setTimeout(start, 500);
+            return;
+        }
+
+        disableSnap(strip);
+        attachListeners(strip);
+
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(tick);
+        console.log('📱 Mobile cards auto-scroll started');
+    }
+
+    function waitAndStart() {
+        const strip = getStrip();
+        if (!strip) { setTimeout(waitAndStart, 300); return; }
+
+        const observer = new MutationObserver((_, obs) => {
+            if (strip.querySelector('.mobile-card')) {
+                obs.disconnect();
+                setTimeout(start, 400);
+            }
+        });
+        observer.observe(strip, { childList: true });
+
+        // Fallback jika cards sudah ada sebelum observer dipasang
+        setTimeout(() => {
+            if (strip.querySelector('.mobile-card')) {
+                observer.disconnect();
+                start();
+            }
+        }, 1500);
+    }
+
+    if (window.innerWidth <= 768) {
+        waitAndStart();
+    }
+})();

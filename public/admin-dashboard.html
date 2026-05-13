@@ -36,6 +36,7 @@
             <button class="tab-btn" data-tab="visitors"><i class="fas fa-globe"></i> <span>Visitors</span></button>
             <button class="tab-btn" data-tab="profiles"><i class="fas fa-user-edit"></i> <span>Profiles</span></button>
             <button class="tab-btn" data-tab="kolase"><i class="fas fa-images"></i> <span>Kolase</span></button>
+            <button class="tab-btn" data-tab="music"><i class="fas fa-music"></i> <span>Music</span></button>
         </nav>
 
         <!-- Tab: Overview -->
@@ -110,9 +111,59 @@
                 <div class="panel-body" id="kolaseMgmtContent"><p class="empty-msg">Loading...</p></div>
             </div>
         </section>
+
+        <!-- Tab: Music Management -->
+        <section id="tab-music" class="tab-content">
+            <!-- Download Music -->
+            <div class="panel panel-full">
+                <div class="panel-header">
+                    <h3><i class="fas fa-cloud-download-alt"></i> Download Music</h3>
+                    <button class="btn-action" onclick="loadMusicFiles()" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <div class="music-download-form">
+                        <div class="music-url-row">
+                            <div class="music-input-wrap">
+                                <i class="fas fa-link music-input-icon"></i>
+                                <input type="text" id="musicUrlInput"
+                                    placeholder="Spotify · YouTube · YouTube Music · TikTok URL…"
+                                    autocomplete="off">
+                            </div>
+                            <button class="btn-action btn-save" id="musicDownloadBtn" onclick="adminDownloadMusic()">
+                                <i class="fas fa-download"></i><span> Download</span>
+                            </button>
+                        </div>
+                        <div id="musicDownloadStatus" style="display:none;"></div>
+                    </div>
+                    <div id="musicFileList"></div>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <!-- Account Detail Modal -->\n    <div class="modal-overlay" id="accountModal">\n        <div class="modal-content">\n            <div class="modal-header">\n                <h3><i class="fas fa-user-circle"></i> <span id="modalAccountName">-</span></h3>\n                <button class="btn-close" onclick="closeAccountModal()"><i class="fas fa-times"></i></button>\n            </div>\n            <div class="modal-meta">\n                <span class="badge" id="modalAccountType">-</span>\n                <code id="modalAccountId">-</code>\n            </div>\n            <div class="modal-section" id="modalIPSection">\n                <h4 id="modalIPSectionTitle"><i class="fas fa-network-wired"></i> Registered IPs</h4>\n                <div id="modalAccountIPs"></div>\n            </div>\n            <div class="modal-section">\n                <h4><i class="fas fa-list-alt"></i> Activity Log</h4>\n                <div class="modal-logs-scroll" id="modalAccountLogs"></div>\n            </div>\n        </div>\n    </div>
+    <!-- Account Detail Modal -->
+    <div class="modal-overlay" id="accountModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-circle"></i> <span id="modalAccountName">-</span></h3>
+                <button class="btn-close" onclick="closeAccountModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-meta">
+                <span class="badge" id="modalAccountType">-</span>
+                <code id="modalAccountId">-</code>
+            </div>
+            <div class="modal-section" id="modalIPSection">
+                <h4 id="modalIPSectionTitle"><i class="fas fa-network-wired"></i> Registered IPs</h4>
+                <div id="modalAccountIPs"></div>
+            </div>
+            <div class="modal-section">
+                <h4><i class="fas fa-list-alt"></i> Activity Log</h4>
+                <div class="modal-logs-scroll" id="modalAccountLogs"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- Edit Profile Modal -->
     <div class="modal-overlay" id="editProfileModal">

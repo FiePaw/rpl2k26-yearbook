@@ -507,7 +507,329 @@ html, body {
 }
 .edit-actions { display: flex; gap: 0.8rem; justify-content: flex-end; margin-top: 0.5rem; }
 
-/* Toast */
+/* ========== MUSIC TAB ========== */
+.music-download-form {
+    margin-bottom: 1.5rem;
+}
+.music-url-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+}
+.music-input-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.music-input-icon {
+    position: absolute;
+    left: 0.85rem;
+    color: var(--text-muted, #666);
+    font-size: 0.82rem;
+    pointer-events: none;
+}
+.music-input-wrap input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.2rem;
+    border: 1.5px solid var(--border-color, #333);
+    border-radius: 10px;
+    background: rgba(0,0,0,0.25);
+    color: var(--text-color);
+    font-size: 0.87rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.music-input-wrap input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
+}
+.music-input-wrap input::placeholder { color: var(--text-muted, #666); }
+
+/* Status bar */
+#musicDownloadStatus {
+    margin-top: 0.65rem;
+    font-size: 0.82rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.18);
+    border-left: 3px solid var(--primary-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+#musicDownloadStatus.ds-error   { border-left-color: #F44336; color: #F44336; background: rgba(244,67,54,0.06); }
+#musicDownloadStatus.ds-success { border-left-color: #4CAF50; color: #4CAF50; background: rgba(76,175,80,0.06); }
+
+/* File list header */
+.music-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.music-list-header h4 {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.music-count-badge {
+    font-size: 0.68rem;
+    background: rgba(29,185,84,0.15);
+    color: var(--primary-color);
+    border: 1px solid rgba(29,185,84,0.25);
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    font-weight: 700;
+}
+
+/* Individual music card */
+.music-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 0.7rem;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+.music-card:hover { border-color: rgba(29,185,84,0.3); }
+
+.music-card-main {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+}
+.music-thumb {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #1DB954 0%, #085078 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.2rem;
+    overflow: hidden;
+}
+.music-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.music-card-info { flex: 1; min-width: 0; }
+.music-card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0.15rem;
+}
+.music-card-artist {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.music-card-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+.music-card-size {
+    font-size: 0.68rem;
+    color: var(--text-muted, #666);
+    background: rgba(0,0,0,0.2);
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+}
+.music-card-actions { display: flex; gap: 0.35rem; }
+.btn-icon-sm {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: all 0.15s;
+}
+.btn-icon-sm:hover { transform: scale(1.1); }
+.btn-del-music { background: rgba(244,67,54,0.1); color: #F44336; border: 1px solid rgba(244,67,54,0.2); }
+.btn-del-music:hover { background: rgba(244,67,54,0.2); }
+
+/* Lyrics accordion inside music card */
+.music-lyrics-section {
+    border-top: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    background: rgba(0,0,0,0.12);
+}
+.music-lyrics-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+}
+.music-lyrics-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.lyrics-pill {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    font-weight: 700;
+}
+.lyrics-pill.has  { background: rgba(29,185,84,0.12); color: #1DB954; border: 1px solid rgba(29,185,84,0.25); }
+.lyrics-pill.none { background: rgba(255,152,0,0.1);  color: #FF9800; border: 1px solid rgba(255,152,0,0.25); }
+.music-lyrics-btns { display: flex; gap: 0.4rem; align-items: center; }
+.btn-lyrics {
+    font-size: 0.72rem;
+    padding: 0.32rem 0.75rem;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: opacity 0.15s, transform 0.15s;
+}
+.btn-lyrics:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+.btn-lyrics:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-lyrics-gen  { background: var(--primary-color,#1DB954); color: #000; }
+.btn-lyrics-regen { background: rgba(29,185,84,0.15); color: var(--primary-color); border: 1px solid rgba(29,185,84,0.3); }
+.btn-lyrics-del  { background: rgba(244,67,54,0.08); color: #F44336; border: 1px solid rgba(244,67,54,0.2); }
+
+/* Used by students info inside lyrics section */
+.music-used-by {
+    font-size: 0.7rem;
+    color: var(--text-muted, #666);
+    margin-top: 0.45rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+.music-used-chip {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+}
+
+/* Lyrics status per student inside card */
+.music-student-lyrics-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    flex-wrap: wrap;
+}
+.music-student-lyrics-row:last-child { border-bottom: none; }
+.mslr-name { flex: 1; font-size: 0.78rem; font-weight: 600; color: var(--text-color); min-width: 120px; }
+.mslr-name small { display: block; font-weight: 400; font-size: 0.68rem; color: var(--text-secondary); }
+
+.btn-dl-music {
+    background: rgba(29,185,84,0.1);
+    color: var(--primary-color, #1DB954);
+    border: 1px solid rgba(29,185,84,0.2);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-dl-music:hover { background: rgba(29,185,84,0.2); }
+
+/* Inline generate form di dalam lyrics section */
+.music-gen-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.music-gen-inputs {
+    display: flex;
+    gap: 0.5rem;
+}
+.music-gen-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color, #333);
+    border-radius: 7px;
+    background: rgba(0,0,0,0.25);
+    color: var(--text-color);
+    font-size: 0.78rem;
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 0;
+}
+.music-gen-input:focus { border-color: var(--primary-color); }
+.music-gen-input::placeholder { color: var(--text-muted, #666); }
+.music-gen-status {
+    font-size: 0.76rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 7px;
+    background: rgba(0,0,0,0.15);
+    border-left: 3px solid var(--primary-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.music-gen-status.ds-error   { border-left-color: #F44336; color: #F44336; }
+.music-gen-status.ds-success { border-left-color: #4CAF50; color: #4CAF50; }
+
+/* Students section */
+.music-students-section { display: flex; flex-direction: column; gap: 0; }
+.music-students-label {
+    font-size: 0.7rem;
+    color: var(--text-muted, #666);
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.music-no-usage {
+    font-size: 0.75rem;
+    color: var(--text-muted, #666);
+    margin: 0;
+    padding: 0.2rem 0;
+    font-style: italic;
+}
+
+@media (max-width: 480px) {
+    .music-gen-inputs { flex-direction: column; }
+}
 .toast {
     position: fixed;
     bottom: 2rem;

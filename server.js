@@ -1127,6 +1127,12 @@ app.get('/profile_music/:filename', async (req, res) => {
         
         // Check if file exists
         await fs.access(filepath);
+
+        // Jika ada query ?download=1, kirim sebagai attachment (trigger browser download)
+        if (req.query.download === '1') {
+            res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        }
+
         res.sendFile(filepath);
     } catch (error) {
         res.status(404).json({ error: 'File not found' });

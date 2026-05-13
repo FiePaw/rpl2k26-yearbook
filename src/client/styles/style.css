@@ -6540,6 +6540,8 @@ select:focus {
     height: 100%;
     object-fit: cover;
     display: block;
+    opacity: 1;
+    transition: opacity 0.5s ease;
 }
 
 /* Positions and rotations for each collage card — spread across entire hero including center */
@@ -6758,7 +6760,9 @@ select:focus {
     padding: 0.6rem 0.65rem 0.65rem;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    flex: 1;
+    justify-content: flex-end;
+    gap: 0.25rem;
 }
 
 .mobile-card-name {

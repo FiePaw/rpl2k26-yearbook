@@ -2367,6 +2367,76 @@
       "page": "/api/track/reels-like",
       "accountId": null,
       "timestamp": "2026-05-12T10:10:30.244Z"
+    },
+    {
+      "ip": "45.148.10.5",
+      "page": "/api/.env",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-12T19:26:13.749Z"
+    },
+    {
+      "ip": "212.58.184.37",
+      "page": "/api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-12T19:38:54.862Z"
+    },
+    {
+      "ip": "155.94.139.220",
+      "page": "/api/.env",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-12T19:41:09.147Z"
+    },
+    {
+      "ip": "3.148.247.40",
+      "page": "/api/.env",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-12T21:16:38.265Z"
+    },
+    {
+      "ip": "3.148.247.40",
+      "page": "/api/v1/.env",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-12T21:16:51.073Z"
+    },
+    {
+      "ip": "3.148.247.40",
+      "page": "/api/v2/.env",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-12T21:16:51.300Z"
+    },
+    {
+      "ip": "3.148.247.40",
+      "page": "/api/v3/.env",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-12T21:16:52.797Z"
+    },
+    {
+      "ip": "3.148.247.40",
+      "page": "/api/dev/.env",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-12T21:16:53.524Z"
+    },
+    {
+      "ip": "3.148.247.40",
+      "page": "/api/staging/.env",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-12T21:16:53.758Z"
+    },
+    {
+      "ip": "208.84.101.20",
+      "page": "/api/.env",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T00:34:36.434Z"
     }
   ],
   "topVisited": {
@@ -3820,11 +3890,12 @@
     "15": 17,
     "16": 82,
     "17": 6,
-    "19": 13,
+    "19": 16,
     "20": 17,
+    "21": 6,
     "22": 138,
     "23": 10,
-    "00": 125,
+    "00": 126,
     "04": 7,
     "03": 2,
     "09": 6,
@@ -4252,8 +4323,8 @@
     "totalAccounts": 11,
     "totalVisits": 510,
     "totalUpdates": 64,
-    "uniqueIPs": 16,
+    "uniqueIPs": 21,
     "totalLogins": 56,
-    "lastUpdated": "2026-05-12T11:24:54.354Z"
+    "lastUpdated": "2026-05-13T06:17:41.780Z"
   }
 }

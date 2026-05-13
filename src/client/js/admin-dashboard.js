@@ -132,6 +132,7 @@ function renderAll() {
 function onTabSwitch(tab) {
     if (tab === 'profiles') renderProfileManagement();
     if (tab === 'kolase') renderKolaseManagement();
+    if (tab === 'music') renderMusicTab();
 }
 
 // ========== SUMMARY STATS ==========
@@ -831,3 +832,411 @@ function showToast(msg, type = 'success') {
 
 // Cleanup
 window.addEventListener('beforeunload', stopAutoRefresh);
+
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║                    MUSIC TAB                                ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+let musicTabLoaded = false;
+
+async function renderMusicTab() {
+    if (musicTabLoaded) return;
+    musicTabLoaded = true;
+    await loadMusicFiles();
+}
+
+// ── Download Music ──────────────────────────────────────────────
+async function adminDownloadMusic() {
+    const input  = document.getElementById('musicUrlInput');
+    const btn    = document.getElementById('musicDownloadBtn');
+    const status = document.getElementById('musicDownloadStatus');
+    const url    = input?.value?.trim();
+
+    if (!url) { showToast('Masukkan URL terlebih dahulu', 'error'); return; }
+
+    // Validasi URL sebelum kirim ke server
+    const isSpotify      = /spotify\.com/i.test(url);
+    const isYoutube      = /youtube\.com|youtu\.be/i.test(url);
+    const isYoutubeMusic = /music\.youtube\.com/i.test(url);
+    const isTikTok       = /tiktok\.com/i.test(url);
+
+    if (!isSpotify && !isYoutube && !isYoutubeMusic && !isTikTok) {
+        status.style.display = 'flex';
+        status.className = 'ds-error';
+        status.innerHTML = '<i class="fas fa-exclamation-circle"></i>&nbsp; URL tidak didukung. Gunakan link Spotify, YouTube, YouTube Music, atau TikTok.';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> Downloading…</span>';
+    status.style.display = 'flex';
+    status.className = '';
+    status.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Mendownload lagu, harap tunggu…';
+
+    try {
+        const endpoint = isTikTok ? `${API_URL}/api/audio/download` : `${API_URL}/api/spotify/download`;
+        const body     = isTikTok ? { url } : { spotifyUrl: url };
+
+        const res  = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            const filename = data.latestFile?.filename || data.filename || '';
+            const src      = data.source ? ` <span style="opacity:0.7;font-size:0.75rem">[${data.source}]</span>` : '';
+            status.className = 'ds-success';
+            status.innerHTML = `<i class="fas fa-check-circle"></i>&nbsp; Berhasil!${filename ? ` <strong>${filename}</strong>` : ''}${src}`;
+            input.value = '';
+            musicTabLoaded = false;
+            await loadMusicFiles();
+
+        } else if (data.isSetupError) {
+            // Python / yt-dlp tidak terinstall
+            status.className = 'ds-error';
+            status.innerHTML = `<i class="fas fa-wrench"></i>&nbsp; Setup Error: ${data.message || 'Python atau yt-dlp tidak ditemukan di server.'}`;
+
+        } else if (data.isRateLimit) {
+            // Rate limited — tampilkan sisa waktu tunggu
+            const wait = data.waitTimeSeconds ? ` Coba lagi dalam <strong>${data.waitTimeSeconds}s</strong>.` : '';
+            status.className = 'ds-error';
+            status.innerHTML = `<i class="fas fa-clock"></i>&nbsp; Rate limit. ${data.message || ''}${wait}`;
+
+        } else {
+            // Error umum — tampilkan detail selengkap mungkin
+            const msg = data.details || data.message || data.error || 'Download gagal';
+            status.className = 'ds-error';
+            status.innerHTML = `<i class="fas fa-times-circle"></i>&nbsp; ${msg}`;
+        }
+    } catch (err) {
+        status.className = 'ds-error';
+        status.innerHTML = `<i class="fas fa-times-circle"></i>&nbsp; Koneksi gagal: ${err.message}`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-download"></i><span> Download</span>';
+    }
+}
+
+// ── Daftar file musik + inline lyrics per file ──────────────────
+async function loadMusicFiles() {
+    const container = document.getElementById('musicFileList');
+    if (!container) return;
+
+    container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)">
+        <i class="fas fa-spinner fa-spin" style="font-size:1.5rem;margin-bottom:0.5rem;display:block"></i>
+        Memuat daftar musik…
+    </div>`;
+
+    try {
+        const [audioRes, studentsRes] = await Promise.all([
+            fetch(`${API_URL}/api/audio/list`),
+            fetch(`${API_URL}/api/students`)
+        ]);
+        const audioData    = await audioRes.json();
+        const studentsData = await studentsRes.json();
+
+        const files    = audioData.files || [];
+        const students = Array.isArray(studentsData) ? studentsData : [];
+
+        if (files.length === 0) {
+            container.innerHTML = `<div style="text-align:center;padding:2.5rem;color:var(--text-muted)">
+                <i class="fas fa-music" style="font-size:2rem;margin-bottom:0.6rem;display:block;opacity:0.3"></i>
+                <p style="margin:0;font-size:0.88rem">Belum ada file musik tersimpan.</p>
+                <p style="margin:0.3rem 0 0;font-size:0.75rem;opacity:0.7">Download lagu dari URL di atas.</p>
+            </div>`;
+            return;
+        }
+
+        // Map: filename → siswa yang pakai lagu ini
+        const usageMap = {};
+        students.forEach(s => {
+            if (!s.audioFile) return;
+            const key = s.audioFile.split('/').pop();
+            if (!usageMap[key]) usageMap[key] = [];
+            usageMap[key].push(s);
+        });
+
+        const listHtml = files.map(f => {
+            const sizeMB    = f.size ? (f.size / (1024*1024)).toFixed(1) + ' MB' : '';
+            const thumbHtml = f.thumbnailUrl
+                ? `<div class="music-thumb"><img src="${f.thumbnailUrl}" alt=""></div>`
+                : `<div class="music-thumb"><i class="fas fa-music"></i></div>`;
+            const usedBy    = usageMap[f.filename] || [];
+            const safeId    = encodeFilename(f.filename);
+
+            // ── Inline generate form ──
+            const genFormHtml = `
+            <div class="music-gen-form" id="genform-${safeId}">
+                <div class="music-gen-inputs">
+                    <input class="music-gen-input" id="gen-artist-${safeId}"
+                        placeholder="Artis…" value="${(f.artist || '').replace(/"/g,'&quot;')}">
+                    <input class="music-gen-input" id="gen-title-${safeId}"
+                        placeholder="Judul lagu…" value="${(f.title || '').replace(/"/g,'&quot;')}">
+                </div>
+                <button class="btn-lyrics btn-lyrics-gen" id="gen-btn-${safeId}"
+                    onclick="adminGenerateForFile('${safeId}','${f.filename}')">
+                    <i class="fas fa-magic"></i> Generate Lirik
+                </button>
+                <div class="music-gen-status" id="gen-status-${safeId}" style="display:none;"></div>
+            </div>`;
+
+            // ── Baris per siswa yang memakai lagu ini ──
+            const studentRowsHtml = usedBy.length > 0
+                ? `<div class="music-students-label">
+                    <i class="fas fa-users" style="font-size:0.7rem"></i> Dipakai oleh ${usedBy.length} siswa:
+                   </div>
+                   ${usedBy.map(s => {
+                    const hasLyrics = !!s.studentLyrics;
+                    return `<div class="music-student-lyrics-row" id="mslr-${s.id}">
+                        <div class="mslr-name">${s.name}<small>${s.nickname || ''}</small></div>
+                        <span class="lyrics-pill ${hasLyrics ? 'has' : 'none'}">${hasLyrics ? '✓ Ada' : 'Belum'}</span>
+                        <div class="music-lyrics-btns">
+                            <button class="btn-lyrics ${hasLyrics ? 'btn-lyrics-regen' : 'btn-lyrics-gen'}"
+                                onclick="adminGenerateLyrics('${s.id}','${(f.artist||'').replace(/'/g,"\\'")}','${(f.title||'').replace(/'/g,"\\'")}','${f.filename}', this)">
+                                <i class="fas fa-${hasLyrics ? 'sync-alt' : 'magic'}"></i> ${hasLyrics ? 'Regen' : 'Generate'}
+                            </button>
+                            ${hasLyrics ? `<button class="btn-lyrics btn-lyrics-del"
+                                onclick="adminDeleteLyrics('${s.id}', this)">
+                                <i class="fas fa-trash"></i>
+                            </button>` : ''}
+                        </div>
+                    </div>`;
+                   }).join('')}`
+                : `<p class="music-no-usage">Belum ada siswa yang memakai lagu ini.</p>`;
+
+            return `
+            <div class="music-card" id="mcard-${safeId}">
+                <div class="music-card-main">
+                    ${thumbHtml}
+                    <div class="music-card-info">
+                        <div class="music-card-title">${f.title || f.filename}</div>
+                        <div class="music-card-artist">${f.artist || '—'}</div>
+                    </div>
+                    <div class="music-card-meta">
+                        ${sizeMB ? `<span class="music-card-size">${sizeMB}</span>` : ''}
+                        <div class="music-card-actions">
+                            <a class="btn-icon-sm btn-dl-music"
+                                href="${API_URL}/profile_music/${encodeURIComponent(f.filename)}?download=1"
+                                download="${f.filename}" title="Download lagu">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            <button class="btn-icon-sm btn-del-music" title="Hapus lagu"
+                                onclick="adminDeleteMusic('${f.filename}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="music-lyrics-section">
+                    <div class="music-lyrics-header">
+                        <span class="music-lyrics-label"><i class="fas fa-microphone-alt"></i> Generate & Kelola Lirik</span>
+                    </div>
+                    ${genFormHtml}
+                    <div class="music-students-section">
+                        ${studentRowsHtml}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="music-list-header">
+                <h4><i class="fas fa-music"></i> Library</h4>
+                <span class="music-count-badge">${files.length} lagu</span>
+            </div>
+            ${listHtml}`;
+
+    } catch (err) {
+        container.innerHTML = `<p class="empty-msg" style="color:var(--danger)">Gagal memuat: ${err.message}</p>`;
+    }
+}
+
+// ── Generate lirik bebas dari form inline per lagu ──────────────
+// Hasilnya disimpan ke SEMUA siswa yang memakai lagu tersebut sekaligus
+async function adminGenerateForFile(safeId, filename) {
+    const artistInput = document.getElementById(`gen-artist-${safeId}`);
+    const titleInput  = document.getElementById(`gen-title-${safeId}`);
+    const btn         = document.getElementById(`gen-btn-${safeId}`);
+    const statusEl    = document.getElementById(`gen-status-${safeId}`);
+
+    const artistName = artistInput?.value?.trim();
+    const songTitle  = titleInput?.value?.trim();
+
+    if (!artistName || !songTitle) {
+        showToast('Isi Artis dan Judul lagu terlebih dahulu', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating…';
+    statusEl.style.display = 'flex';
+    statusEl.className = 'music-gen-status';
+    statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Mengambil lirik, harap tunggu…';
+
+    try {
+        // Generate lirik
+        const genRes  = await fetch(`${API_URL}/api/student/lyrics/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                studentId  : filename, // pakai filename sebagai key unik
+                artistName,
+                songTitle,
+                audioFile  : `/profile_music/${filename}`
+            })
+        });
+        const genData = await genRes.json();
+
+        if (!genData.success || !genData.lyrics) {
+            statusEl.className = 'music-gen-status ds-error';
+            statusEl.innerHTML = `<i class="fas fa-times-circle"></i>&nbsp; ${genData.error || 'Gagal generate lirik'}`;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-magic"></i> Generate Lirik';
+            return;
+        }
+
+        // Ambil siswa yang memakai lagu ini, simpan lirik ke masing-masing
+        const studentsRes  = await fetch(`${API_URL}/api/students`);
+        const allStudents  = await studentsRes.json();
+        const usedBy       = (Array.isArray(allStudents) ? allStudents : [])
+            .filter(s => s.audioFile && s.audioFile.split('/').pop() === filename);
+
+        if (usedBy.length > 0) {
+            // Simpan ke semua siswa yang memakai lagu ini
+            await Promise.all(usedBy.map(s =>
+                fetch(`${API_URL}/api/student/lyrics/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentId  : s.id,
+                        lyricsText : genData.lyrics,
+                        source     : 'admin-file-generate'
+                    })
+                })
+            ));
+            statusEl.className = 'music-gen-status ds-success';
+            statusEl.innerHTML = `<i class="fas fa-check-circle"></i>&nbsp; Lirik "<strong>${genData.title}</strong>" disimpan ke ${usedBy.length} siswa!`;
+        } else {
+            // Tidak ada siswa → simpan sebagai standalone lyrics file
+            await fetch(`${API_URL}/api/lyrics/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filename     : filename.replace(/\.mp3$/i, ''),
+                    transcription: genData.lyrics
+                })
+            });
+            statusEl.className = 'music-gen-status ds-success';
+            statusEl.innerHTML = `<i class="fas fa-check-circle"></i>&nbsp; Lirik disimpan! (standalone — belum ada siswa yang memakai lagu ini)`;
+        }
+
+        showToast(`✅ Lirik "${genData.title}" berhasil di-generate!`);
+        musicTabLoaded = false;
+        await loadMusicFiles();
+
+    } catch (err) {
+        statusEl.className = 'music-gen-status ds-error';
+        statusEl.innerHTML = `<i class="fas fa-times-circle"></i>&nbsp; Error: ${err.message}`;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic"></i> Generate Lirik';
+    }
+}
+
+function encodeFilename(filename) {
+    return filename.replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+async function adminDeleteMusic(filename) {
+    if (!confirm(`Hapus file "${filename}"?`)) return;
+    try {
+        const res  = await fetch(`${API_URL}/api/audio/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('File musik dihapus');
+            musicTabLoaded = false;
+            await loadMusicFiles();
+        } else {
+            showToast(data.error || 'Gagal hapus', 'error');
+        }
+    } catch (err) {
+        showToast('Network error', 'error');
+    }
+}
+
+// ── Generate / Regenerate Lirik ─────────────────────────────────
+// artistName, songTitle, audioFilename dikirim langsung dari data file musik
+// sehingga endpoint tidak perlu guess lagi → fix bug "Unable to determine..."
+async function adminGenerateLyrics(studentId, artistName, songTitle, audioFilename, btn) {
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
+    try {
+        const res  = await fetch(`${API_URL}/api/student/lyrics/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                studentId,
+                artistName : artistName  || undefined,
+                songTitle  : songTitle   || undefined,
+                audioFile  : audioFilename ? `/profile_music/${audioFilename}` : undefined
+            })
+        });
+        const data = await res.json();
+
+        if (data.success && data.lyrics) {
+            const saveRes  = await fetch(`${API_URL}/api/student/lyrics/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ studentId, lyricsText: data.lyrics, source: 'admin-generate' })
+            });
+            const saveData = await saveRes.json();
+            if (saveData.success) {
+                showToast(`✅ Lirik "${data.title}" berhasil disimpan!`);
+                // Refresh baris siswa ini saja tanpa full reload
+                musicTabLoaded = false;
+                await loadMusicFiles();
+            } else {
+                showToast(`Generate OK tapi gagal simpan: ${saveData.error}`, 'error');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Generate'; }
+            }
+        } else {
+            showToast(`Gagal generate: ${data.error || 'Unknown error'}`, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Generate'; }
+        }
+    } catch (err) {
+        showToast(`Error: ${err.message}`, 'error');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Generate'; }
+    }
+}
+
+async function adminDeleteLyrics(studentId, btn) {
+    if (!confirm('Hapus lirik siswa ini?')) return;
+    if (btn) { btn.disabled = true; }
+    try {
+        const res  = await fetch(`${API_URL}/api/student/lyrics/${studentId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Lirik dihapus');
+            musicTabLoaded = false;
+            await loadMusicFiles();
+        } else {
+            showToast(data.error || 'Gagal hapus lirik', 'error');
+            if (btn) btn.disabled = false;
+        }
+    } catch (err) {
+        showToast('Network error', 'error');
+        if (btn) btn.disabled = false;
+    }
+}
+
+// Enter key pada input URL musik
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('musicUrlInput');
+    if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') adminDownloadMusic(); });
+});

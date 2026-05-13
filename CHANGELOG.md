@@ -5,7 +5,62 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased]
+## [2.10.0] — 2026-05-13
+
+### Fixed
+- **Admin Dashboard — Tab Music — Download Music**: Input URL download sebelumnya tidak menampilkan pesan error yang benar karena client hanya membaca field `data.error`, sementara server mengembalikan error di `data.details` (download gagal), `data.message` (setup error / rate limit), dan `data.waitTimeSeconds` (rate limit). Semua kasus error kini ditangani:
+  - **Validasi URL sisi client**: URL divalidasi sebelum dikirim ke server — Spotify, YouTube, YouTube Music, TikTok diterima; URL lain langsung ditolak dengan pesan jelas tanpa fetch.
+  - **Setup Error** (`isSetupError: true`): Tampil pesan khusus bahwa Python atau yt-dlp tidak terinstall di server.
+  - **Rate Limit** (`isRateLimit: true`): Tampil sisa waktu tunggu (`waitTimeSeconds`) agar admin tahu kapan bisa coba lagi.
+  - **Error umum**: Fallback chain `data.details → data.message → data.error` untuk memastikan pesan error selengkap mungkin selalu ditampilkan.
+  - **Download sukses**: Sekarang juga menampilkan `source` (platform asal download).
+
+### Added
+- **Admin Dashboard — Tab Music — Generate Lirik per Lagu**: Setiap card lagu di library kini memiliki form generate lirik inline:
+  - Input **Artis** dan **Judul** pre-filled dari metadata file musik.
+  - Tombol **Generate Lirik** memanggil `/api/student/lyrics/generate` dengan `artistName` + `songTitle` dari form (bukan dari data siswa), sehingga tidak lagi error "Unable to determine artist name".
+  - Jika lagu dipakai oleh siswa → lirik otomatis disimpan ke **semua siswa** yang memakai lagu tersebut sekaligus.
+  - Jika belum ada siswa yang memakai lagu → lirik disimpan sebagai standalone via `/api/lyrics/save`.
+  - Status generate tampil inline di bawah form.
+- **Admin Dashboard — Tab Music — Tombol Download File**: Setiap card lagu kini memiliki tombol download (ikon hijau) yang memicu browser download file MP3 langsung.
+- **Server — `/profile_music/:filename`**: Endpoint kini mendukung query `?download=1` yang menambahkan header `Content-Disposition: attachment` sehingga browser men-trigger download file alih-alih streaming.
+
+---
+
+
+
+### Fixed
+- **Admin Dashboard — Literal `\n` pada modal**: Blok HTML *Account Detail Modal* di `admin-dashboard.html` tersimpan dalam satu baris panjang dengan `\n` literal (backslash + n) bukan actual newline, sehingga teks `\n` muncul sebagai teks biasa di halaman. Diperbaiki dengan memecah 20 `\n` literal menjadi actual newlines yang benar.
+
+### Added
+- **Landing Page (Mobile) — Floating Hero Collage dari Galeri Kolase**: Foto pada floating collage card di hero section mobile sekarang diambil dari foto galeri kolase (`/api/gallery/images`) bukan lagi foto profil siswa.
+  - **Komposisi slot tetap per tipe**: 8 slot dibagi 3 foto `boy` (slot 0–2), 3 foto `girl` (slot 3–5), dan 2 foto `walas` (slot 6–7).
+  - **Rotasi otomatis setiap 15 detik**: Semua 8 slot di-refresh dengan set foto baru yang dipilih acak dari pool tipe masing-masing, dengan stagger 120ms per card.
+  - **Animasi fade smooth**: Fade dilakukan pada elemen `<img>` di dalam card (bukan card-nya), sehingga tidak konflik dengan CSS animation `collageFadeIn` + `collageFloat` yang berjalan pada card parent. `img` fade out 0.5s → ganti `src` → tunggu event `load` → fade in kembali ke opacity 1.
+  - **Pool cyclic per tipe**: Foto di-shuffle Fisher-Yates, diambil cyclic, reshuffle otomatis saat satu putaran selesai sehingga tidak ada foto yang repeat sebelum semua foto terpakai.
+  - **Fallback berlapis**: Jika salah satu tipe kosong → di-fill dari tipe lain; jika semua kosong → fallback ke foto profil siswa.
+  - CSS tambahan: `.mobile-hero-collage .collage-card img` sekarang memiliki `opacity: 1` dan `transition: opacity 0.5s ease` sebagai baseline agar fade berjalan dari awal.
+- **Landing Page (Mobile) — Auto-scroll `mobile-cards-scroll`**: Strip kartu horizontal di mobile sekarang bisa scroll otomatis pelan dan smooth.
+  - Menggunakan `requestAnimationFrame` (bukan `setInterval`) dengan kecepatan 0.7px/frame.
+  - **Root cause fix**: `scroll-snap-type: x mandatory` di CSS menyebabkan browser snap kembali setiap frame sehingga scroll tidak bisa bergerak. Diperbaiki dengan `disableSnap()` yang set `scrollSnapType: 'none'` via inline style saat auto-scroll dimulai.
+  - **Loop seamless**: Saat scroll mencapai ujung kanan, `scrollLeft` direset ke 0 tanpa jeda.
+  - **Pause saat manual scroll**: Deteksi via `touchstart` / `pointerdown` menggunakan flag `isUserTouch`, bukan event `scroll` (yang sebelumnya self-trigger oleh auto-scroll sendiri).
+  - **Resume otomatis** 2.5 detik setelah user berhenti interaksi (`touchend`, `pointerup`).
+  - `MutationObserver` memastikan auto-scroll baru mulai setelah cards selesai di-inject oleh `loadMobileCards()`.
+
+### Changed
+- **Landing Page (Mobile) — `mobile-card-class` selalu di bawah**: CSS `.mobile-card-info` diubah dari `justify-content: space-between` menjadi `justify-content: flex-end` sehingga label "RPL 2k26" selalu berada di bagian bawah card, tidak mengikuti panjang nama.
+
+### Added
+- **Admin Dashboard — Tab Music**: Tab baru *Music* ditambahkan ke admin dashboard dengan dua fitur utama:
+  - **Download Music**: Form input URL mendukung Spotify, YouTube, YouTube Music, dan TikTok. Deteksi platform otomatis dari URL — TikTok menggunakan `/api/audio/download`, platform lain menggunakan `/api/spotify/download`. Menampilkan status download real-time dan daftar semua file musik (`/api/audio/list`) dengan thumbnail, judul, artis, ukuran file, dan tombol hapus.
+  - **Lyrics Management**: Daftar semua siswa lengkap dengan status lirik masing-masing (✓ Ada Lirik / Belum Ada / No Song). Tombol *Generate* untuk siswa yang belum punya lirik, tombol *Regenerate* + *Hapus* untuk siswa yang sudah punya lirik. Generate memanggil `/api/student/lyrics/generate` lalu auto-save via `/api/student/lyrics/save` dalam satu operasi. Hapus memanggil `DELETE /api/student/lyrics/:studentId`.
+  - CSS baru: `.music-download-form`, `.music-url-row`, `.music-status`, `.music-file-item`, `.music-file-thumb`, `.lyrics-student-row`, `.btn-gen`, dll. di `admin-dashboard.css`.
+  - Tab hanya di-render sekali saat pertama kali dibuka (`musicTabLoaded` flag), refresh ulang hanya setelah aksi download/delete.
+  - Enter key pada input URL otomatis trigger download.
+
+---
+
 
 ---
 
