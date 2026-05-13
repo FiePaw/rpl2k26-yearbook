@@ -536,86 +536,87 @@ html, body {
 }
 .edit-actions { display: flex; gap: 0.8rem; justify-content: flex-end; margin-top: 0.5rem; }
 
-/* ========== MUSIC TAB ========== */
+/* ========== MUSIC TAB — DOWNLOAD FORM (redesign) ========== */
 .music-download-form {
+    background: rgba(29,185,84,0.04);
+    border: 1px solid rgba(29,185,84,0.15);
+    border-radius: 14px;
+    padding: 1.25rem 1.4rem;
     margin-bottom: 1.5rem;
 }
-.music-url-row {
-    display: flex;
-    gap: 0.6rem;
-    align-items: center;
-}
-.music-input-wrap {
-    flex: 1;
-    position: relative;
-    display: flex;
-    align-items: center;
-    z-index: 1;
-}
-.music-input-icon {
-    position: absolute;
-    left: 0.85rem;
-    color: var(--text-muted, #666);
-    font-size: 0.82rem;
-    pointer-events: none;
-    z-index: 2;
-}
-.music-input-wrap input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.2rem;
-    border: 1.5px solid var(--border-color, #333);
-    border-radius: 10px;
-    background: rgba(0,0,0,0.25);
-    color: var(--text-color);
-    font-size: 0.87rem;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    position: relative;
-    z-index: 1;
-    pointer-events: auto;
-    cursor: text;
-    -webkit-user-select: text;
-    user-select: text;
-}
-.music-input-wrap input:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
-}
-.music-input-wrap input::placeholder { color: var(--text-muted, #666); }
 
-/* Status bar */
-#musicDownloadStatus {
-    margin-top: 0.65rem;
-    font-size: 0.82rem;
-    padding: 0.6rem 0.9rem;
-    border-radius: 8px;
-    background: rgba(0,0,0,0.18);
-    border-left: 3px solid var(--primary-color);
+/* Source platform badges */
+.mdf-source-badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.1rem;
+    flex-wrap: wrap;
+}
+.mdf-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.22rem 0.65rem;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+}
+.mdf-badge-yt { background: rgba(255,0,0,0.1);     color: #f44; border: 1px solid rgba(255,0,0,0.2); }
+.mdf-badge-sp { background: rgba(29,185,84,0.12);  color: #1DB954; border: 1px solid rgba(29,185,84,0.25); }
+.mdf-badge-tt { background: rgba(255,255,255,0.06); color: #ccc; border: 1px solid rgba(255,255,255,0.12); }
+
+/* Field wrapper */
+.mdf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-bottom: 0.9rem;
+}
+.mdf-field:last-child { margin-bottom: 0; }
+
+.mdf-label {
+    font-size: 0.78rem;
+    font-weight: 700;
     color: var(--text-secondary);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
-#musicDownloadStatus.ds-error   { border-left-color: #F44336; color: #F44336; background: rgba(244,67,54,0.06); }
-#musicDownloadStatus.ds-success { border-left-color: #4CAF50; color: #4CAF50; background: rgba(76,175,80,0.06); }
-
-/* Artist input group (muncul saat Spotify terdeteksi) */
-#musicArtistInputGroup {
-    animation: fadeIn 0.2s ease;
-}
-.music-artist-label {
-    display: block;
-    margin-bottom: 0.45rem;
-    font-size: 0.83rem;
+.mdf-label i { color: var(--primary-color); }
+.mdf-label-hint {
+    font-size: 0.68rem;
+    color: #1DB954;
     font-weight: 600;
-    color: var(--text-color);
+    background: rgba(29,185,84,0.1);
+    padding: 0.1rem 0.45rem;
+    border-radius: 10px;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 0.2rem;
 }
+
+/* Input + button row */
+.mdf-input-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: stretch;
+}
+
+/* Input wrap */
+.mdf-input-wrap {
+    flex: 1;
+    position: relative;
+}
+.mdf-input-wrap input,
 .music-artist-input {
     width: 100%;
-    padding: 0.7rem 1rem;
+    padding: 0.8rem 1.1rem;
     border: 1.5px solid var(--border-color, #333);
     border-radius: 10px;
-    background: rgba(0,0,0,0.25);
+    background: rgba(0,0,0,0.3);
     color: var(--text-color);
     font-size: 0.87rem;
     outline: none;
@@ -626,17 +627,77 @@ html, body {
     -webkit-user-select: text !important;
     user-select: text !important;
 }
+.mdf-input-wrap input:focus,
 .music-artist-input:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.12);
 }
-.music-artist-input::placeholder { color: var(--text-muted, #666); }
-.music-artist-hint {
-    display: block;
-    margin-top: 0.4rem;
+.mdf-input-wrap input::placeholder,
+.music-artist-input::placeholder {
+    color: var(--text-muted, #555);
+    font-size: 0.83rem;
+}
+
+/* Download button */
+.mdf-btn-download {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1.4rem;
+    background: var(--primary-color, #1DB954);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.87rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    flex-shrink: 0;
+}
+.mdf-btn-download:hover {
+    background: #1ed760;
+    box-shadow: 0 4px 14px rgba(29,185,84,0.35);
+    transform: translateY(-1px);
+}
+.mdf-btn-download:active { transform: translateY(0); }
+.mdf-btn-download i { font-size: 0.95rem; }
+
+/* Tip text */
+.mdf-tip {
+    margin: 0;
     font-size: 0.75rem;
     color: var(--text-secondary);
-    opacity: 0.8;
+    opacity: 0.75;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.mdf-tip i { color: #f0a030; font-size: 0.7rem; }
+
+/* Status bar */
+#musicDownloadStatus {
+    margin-top: 0.8rem;
+    font-size: 0.82rem;
+    padding: 0.65rem 1rem;
+    border-radius: 9px;
+    background: rgba(0,0,0,0.18);
+    border-left: 3px solid var(--primary-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+#musicDownloadStatus.ds-error   { border-left-color: #F44336; color: #F44336; background: rgba(244,67,54,0.06); }
+#musicDownloadStatus.ds-success { border-left-color: #4CAF50; color: #4CAF50; background: rgba(76,175,80,0.06); }
+
+/* Artist input group animation */
+#musicArtistInputGroup { animation: fadeIn 0.2s ease; }
+
+@media (max-width: 600px) {
+    .mdf-input-row { flex-direction: column; }
+    .mdf-btn-download { width: 100%; justify-content: center; padding: 0.8rem 1rem; }
+    .music-download-form { padding: 1rem; }
 }
 
 
@@ -868,6 +929,12 @@ html, body {
     display: flex;
     gap: 0.5rem;
 }
+/* Row tombol Simpan + Generate Lirik */
+.music-gen-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
 .music-gen-input {
     flex: 1;
     padding: 0.5rem 0.75rem;
@@ -914,8 +981,25 @@ html, body {
     font-style: italic;
 }
 
+/* Status generate lirik inline per siswa */
+.lyrics-gen-status {
+    font-size: 0.68rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.18rem 0.55rem;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.lgs-loading { background: rgba(29,185,84,0.1);  color: #1DB954; border: 1px solid rgba(29,185,84,0.25); }
+.lgs-saving  { background: rgba(33,150,243,0.1);  color: #2196F3; border: 1px solid rgba(33,150,243,0.25); }
+.lgs-ok      { background: rgba(76,175,80,0.12);  color: #4CAF50; border: 1px solid rgba(76,175,80,0.3); }
+.lgs-error   { background: rgba(244,67,54,0.1);   color: #F44336; border: 1px solid rgba(244,67,54,0.25); }
+
 @media (max-width: 480px) {
     .music-gen-inputs { flex-direction: column; }
+    .music-gen-actions { flex-direction: column; align-items: stretch; }
 }
 .toast {
     position: fixed;

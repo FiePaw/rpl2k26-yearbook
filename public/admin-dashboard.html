@@ -124,30 +124,43 @@
                 </div>
                 <div class="panel-body">
                     <div class="music-download-form">
-                        <!-- URL Input Row -->
-                        <div class="music-url-row">
-                            <div class="music-input-wrap">
-                                <i class="fas fa-link music-input-icon"></i>
-                                <input type="text" id="musicUrlInput"
-                                    placeholder="Taro sini URL TikTok / Spotify / YouTube song nya"
-                                    autocomplete="off">
+
+                        <!-- Source Badges -->
+                        <div class="mdf-source-badges">
+                            <span class="mdf-badge mdf-badge-yt"><i class="fab fa-youtube"></i> YouTube</span>
+                            <span class="mdf-badge mdf-badge-sp"><i class="fab fa-spotify"></i> Spotify</span>
+                            <span class="mdf-badge mdf-badge-tt"><i class="fab fa-tiktok"></i> TikTok</span>
+                        </div>
+
+                        <!-- URL Input -->
+                        <div class="mdf-field">
+                            <label class="mdf-label"><i class="fas fa-link"></i> Link Lagu</label>
+                            <div class="mdf-input-row">
+                                <div class="mdf-input-wrap">
+                                    <input type="text" id="musicUrlInput"
+                                        placeholder="Paste URL YouTube / Spotify / TikTok di sini..."
+                                        autocomplete="off">
+                                </div>
+                                <button class="mdf-btn-download" id="musicDownloadBtn" onclick="adminDownloadMusic()">
+                                    <i class="fas fa-cloud-download-alt"></i>
+                                    <span>Download</span>
+                                </button>
                             </div>
-                            <button class="btn-action btn-save" id="musicDownloadBtn" onclick="adminDownloadMusic()">
-                                <i class="fas fa-download"></i><span> Download</span>
-                            </button>
                         </div>
+
                         <!-- Artist Input (muncul hanya saat Spotify terdeteksi) -->
-                        <div id="musicArtistInputGroup" style="display:none; margin-top:0.75rem;">
-                            <label class="music-artist-label">
-                                <i class="fas fa-user"></i> Nama Pembuat Lagu (Artist)
-                            </label>
-                            <input type="text" id="musicArtistInput"
-                                placeholder="Contoh: Joji, Billie Eilish, HYOHYO, dsb..."
-                                class="music-artist-input">
-                            <small class="music-artist-hint">
-                                💡 Lebih enak pake link dari YouTube kalau Spotify kadang ngeleg.
-                            </small>
+                        <div id="musicArtistInputGroup" style="display:none;">
+                            <div class="mdf-field">
+                                <label class="mdf-label"><i class="fas fa-user-music"></i> Nama Artist <span class="mdf-label-hint">(Spotify detected)</span></label>
+                                <div class="mdf-input-wrap">
+                                    <input type="text" id="musicArtistInput"
+                                        placeholder="Contoh: Joji, Billie Eilish, HYOHYO..."
+                                        class="music-artist-input">
+                                </div>
+                                <p class="mdf-tip"><i class="fas fa-lightbulb"></i> Tips: YouTube lebih stabil dibanding Spotify kalau ngelag.</p>
+                            </div>
                         </div>
+
                         <!-- Status -->
                         <div id="musicDownloadStatus" style="display:none;"></div>
                     </div>

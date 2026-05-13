@@ -484,7 +484,7 @@ app.post('/api/student/lyrics/generate', async (req, res) => {
 
         // Set longer timeout (600 seconds / 10 minutes) - AI API processing can take several minutes
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Request timeout - Qwen took too long')), 600000)
+            setTimeout(() => reject(new Error('Request timeout - Qwen took too long')), 1800000)
         );
 
         // Use AIAPILyricsFetcher to search lyrics
@@ -1074,6 +1074,45 @@ app.get('/api/audio/list', async (req, res) => {
             error: 'Failed to list audio files',
             details: error.message
         });
+    }
+});
+
+// Update artist & title metadata untuk file audio (simpan ke .info.json)
+app.post('/api/audio/metadata', async (req, res) => {
+    try {
+        const { filename, artist, title } = req.body;
+        if (!filename || !artist || !title) {
+            return res.status(400).json({ success: false, error: 'filename, artist, dan title wajib diisi' });
+        }
+
+        // Security: cegah directory traversal
+        const musicDir  = path.join(__dirname, 'profile_music');
+        const filepath  = path.join(musicDir, filename);
+        if (!filepath.startsWith(musicDir)) {
+            return res.status(403).json({ success: false, error: 'Access denied' });
+        }
+
+        // Pastikan file MP3-nya ada
+        try { await fs.access(filepath); } catch {
+            return res.status(404).json({ success: false, error: 'File tidak ditemukan' });
+        }
+
+        // Baca .info.json lama kalau ada, merge dengan data baru
+        const infoPath = filepath.replace(/\.mp3$/i, '.info.json');
+        let existing = {};
+        try {
+            const raw = await fs.readFile(infoPath, 'utf8');
+            existing = JSON.parse(raw);
+        } catch { /* belum ada, buat baru */ }
+
+        const updated = { ...existing, artist, title, updatedAt: new Date().toISOString() };
+        await fs.writeFile(infoPath, JSON.stringify(updated, null, 2), 'utf8');
+
+        console.log(`✏️  Metadata diperbarui: ${filename} → ${artist} — ${title}`);
+        res.json({ success: true, artist, title });
+    } catch (error) {
+        console.error('Update metadata error:', error);
+        res.status(500).json({ success: false, error: 'Gagal menyimpan metadata', details: error.message });
     }
 });
 

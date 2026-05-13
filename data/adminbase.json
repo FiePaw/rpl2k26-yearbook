@@ -559,8 +559,8 @@
         {
           "ip": "110.138.133.139",
           "firstUsed": "2026-05-11T12:34:28.224Z",
-          "lastUsed": "2026-05-12T08:12:58.716Z",
-          "count": 3
+          "lastUsed": "2026-05-13T07:12:27.965Z",
+          "count": 4
         }
       ],
       "logs": [
@@ -863,10 +863,94 @@
           "details": "Logged out",
           "ip": "110.138.133.139",
           "timestamp": "2026-05-12T09:05:51.067Z"
+        },
+        {
+          "action": "login",
+          "details": "Logged in as student",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T07:12:27.965Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: ALYA HANIN NAFISA",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T07:12:40.422Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: ALYA HANIN NAFISA",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T07:12:43.629Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T07:13:10.969Z"
+        },
+        {
+          "action": "profile_update",
+          "details": "Updated own profile",
+          "ip": "unknown",
+          "timestamp": "2026-05-13T07:21:41.409Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T07:21:50.416Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T07:22:10.244Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: REYHAN IQHBAR BAYHAQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T07:26:00.470Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RISKI MAULANA RAMADHANI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T07:29:49.521Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T07:38:39.869Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: ALYA HANIN NAFISA",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T09:55:46.758Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T10:32:24.362Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T10:33:00.049Z"
+        },
+        {
+          "action": "view_profile",
+          "details": "Viewed profile: RAFIE YULOUANSYAH RIZQI",
+          "ip": "110.138.133.139",
+          "timestamp": "2026-05-13T10:33:33.433Z"
         }
       ],
       "firstSeen": "2026-05-11T12:34:28.224Z",
-      "lastActive": "2026-05-12T09:05:51.067Z"
+      "lastActive": "2026-05-13T10:33:33.433Z"
     },
     "student_024": {
       "name": "Muhammad Yusuf Saputra",
@@ -2437,6 +2521,90 @@
       "accountId": null,
       "screenResolution": null,
       "timestamp": "2026-05-13T00:34:36.434Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T07:12:40.415Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T07:12:43.629Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T07:13:10.968Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T07:21:50.400Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T07:22:10.243Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T07:26:00.469Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T07:29:49.520Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T07:38:39.869Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T09:55:46.744Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T10:32:24.349Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T10:33:00.049Z"
+    },
+    {
+      "ip": "110.138.133.139",
+      "page": "/api/track/profile-view",
+      "accountId": null,
+      "screenResolution": null,
+      "timestamp": "2026-05-13T10:33:33.433Z"
     }
   ],
   "topVisited": {
@@ -2696,38 +2864,8 @@
       ]
     },
     "student_002": {
-      "count": 87,
+      "count": 93,
       "visitors": [
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T10:15:00.714Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T12:29:34.394Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T12:29:57.104Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T12:31:38.845Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T12:33:52.927Z"
-        },
-        {
-          "ip": "110.138.133.139",
-          "accountId": "student_002",
-          "timestamp": "2026-05-11T14:56:06.791Z"
-        },
         {
           "ip": "unknown",
           "accountId": null,
@@ -2947,6 +3085,36 @@
           "ip": "110.138.133.139",
           "accountId": "student_002",
           "timestamp": "2026-05-12T09:48:54.716Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:12:40.410Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T07:12:40.422Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T07:12:43.629Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:12:43.632Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T09:55:46.737Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T09:55:46.757Z"
         }
       ]
     },
@@ -2986,7 +3154,7 @@
       ]
     },
     "student_032": {
-      "count": 33,
+      "count": 35,
       "visitors": [
         {
           "ip": "45.66.35.33",
@@ -3152,112 +3320,22 @@
           "ip": "unknown",
           "accountId": null,
           "timestamp": "2026-05-12T08:36:18.797Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T07:26:00.470Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:26:00.471Z"
         }
       ]
     },
     "student_031": {
-      "count": 58,
+      "count": 78,
       "visitors": [
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T12:39:21.166Z"
-        },
-        {
-          "ip": "110.138.133.139",
-          "accountId": "student_031",
-          "timestamp": "2026-05-11T12:39:28.964Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T12:39:28.966Z"
-        },
-        {
-          "ip": "110.138.133.139",
-          "accountId": "admin",
-          "timestamp": "2026-05-11T12:39:33.632Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T12:39:33.633Z"
-        },
-        {
-          "ip": "110.138.133.139",
-          "accountId": "student_031",
-          "timestamp": "2026-05-11T12:43:11.054Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T12:43:11.056Z"
-        },
-        {
-          "ip": "110.138.133.139",
-          "accountId": "student_032",
-          "timestamp": "2026-05-11T15:49:19.090Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T15:49:19.093Z"
-        },
-        {
-          "ip": "110.138.133.139",
-          "accountId": "student_031",
-          "timestamp": "2026-05-11T16:21:25.421Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T16:21:36.923Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T16:22:25.335Z"
-        },
-        {
-          "ip": "110.138.133.139",
-          "accountId": "student_031",
-          "timestamp": "2026-05-11T16:23:47.985Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T16:23:47.987Z"
-        },
-        {
-          "ip": "110.138.133.139",
-          "accountId": "student_031",
-          "timestamp": "2026-05-11T16:28:32.695Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T16:28:32.698Z"
-        },
-        {
-          "ip": "110.138.133.139",
-          "accountId": "student_031",
-          "timestamp": "2026-05-11T16:29:56.977Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-11T16:29:56.981Z"
-        },
-        {
-          "ip": "110.138.133.139",
-          "accountId": "student_031",
-          "timestamp": "2026-05-12T06:48:35.394Z"
-        },
-        {
-          "ip": "unknown",
-          "accountId": null,
-          "timestamp": "2026-05-12T06:48:35.403Z"
-        },
         {
           "ip": "unknown",
           "accountId": null,
@@ -3407,6 +3485,106 @@
           "ip": "unknown",
           "accountId": null,
           "timestamp": "2026-05-12T09:05:27.515Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T07:12:27.965Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:12:53.948Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:12:53.993Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T07:13:10.969Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:13:10.970Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:21:29.515Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:21:29.548Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:21:39.482Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T07:21:50.416Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:21:50.421Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T07:22:10.243Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:22:10.245Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T07:38:39.869Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T07:38:39.870Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T10:32:24.362Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T10:32:24.365Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T10:33:00.049Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T10:33:00.080Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T10:33:33.433Z"
+        },
+        {
+          "ip": "unknown",
+          "accountId": null,
+          "timestamp": "2026-05-13T10:33:33.436Z"
         }
       ]
     },
@@ -3746,7 +3924,7 @@
       ]
     },
     "student_033": {
-      "count": 3,
+      "count": 4,
       "visitors": [
         {
           "ip": "110.138.133.139",
@@ -3762,6 +3940,11 @@
           "ip": "110.138.133.139",
           "accountId": "student_032",
           "timestamp": "2026-05-12T07:38:58.365Z"
+        },
+        {
+          "ip": "110.138.133.139",
+          "accountId": "student_031",
+          "timestamp": "2026-05-13T07:29:49.521Z"
         }
       ]
     },
@@ -3882,7 +4065,7 @@
     }
   },
   "accessTimeline": {
-    "10": 6,
+    "10": 9,
     "11": 1,
     "12": 33,
     "13": 32,
@@ -3898,9 +4081,9 @@
     "00": 126,
     "04": 7,
     "03": 2,
-    "09": 6,
+    "09": 7,
     "06": 23,
-    "07": 21,
+    "07": 29,
     "08": 14
   },
   "loginHistory": [
@@ -4273,13 +4456,20 @@
       "name": "ALYA HANIN NAFISA",
       "ip": "110.138.133.139",
       "timestamp": "2026-05-12T09:48:54.716Z"
+    },
+    {
+      "userId": "student_031",
+      "type": "student",
+      "name": "RAFIE YULOUANSYAH RIZQI",
+      "ip": "110.138.133.139",
+      "timestamp": "2026-05-13T07:12:27.965Z"
     }
   ],
   "pageVisits": {
     "student_001": 194,
-    "student_002": 98,
+    "student_002": 104,
     "student_003": 7,
-    "student_031": 65,
+    "student_031": 85,
     "student_012": 25,
     "student_013": 2,
     "student_018": 3,
@@ -4288,7 +4478,7 @@
     "student_023": 2,
     "student_024": 17,
     "student_025": 2,
-    "student_032": 36,
+    "student_032": 38,
     "student_034": 16,
     "student_038": 12,
     "student_041": 2,
@@ -4296,7 +4486,7 @@
     "student_004": 3,
     "student_011": 3,
     "student_035": 3,
-    "student_033": 3,
+    "student_033": 4,
     "student_036": 2,
     "student_017": 9
   },
@@ -4316,15 +4506,15 @@
     "student_034": 2,
     "student_038": 3,
     "student_041": 1,
-    "student_031": 8,
+    "student_031": 9,
     "student_017": 1
   },
   "summary": {
     "totalAccounts": 11,
-    "totalVisits": 510,
-    "totalUpdates": 64,
+    "totalVisits": 539,
+    "totalUpdates": 65,
     "uniqueIPs": 21,
-    "totalLogins": 56,
-    "lastUpdated": "2026-05-13T06:51:58.627Z"
+    "totalLogins": 57,
+    "lastUpdated": "2026-05-13T14:14:08.531Z"
   }
 }

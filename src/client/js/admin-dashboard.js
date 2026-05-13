@@ -1050,6 +1050,7 @@ async function loadMusicFiles() {
             const safeId    = encodeFilename(f.filename);
 
             // ── Inline generate form ──
+            // SAFE: data dinamis disimpan di data-* attribute, bukan di onclick string
             const genFormHtml = `
             <div class="music-gen-form" id="genform-${safeId}">
                 <div class="music-gen-inputs">
@@ -1058,14 +1059,23 @@ async function loadMusicFiles() {
                     <input class="music-gen-input" id="gen-title-${safeId}"
                         placeholder="Judul lagu…" value="${(f.title || '').replace(/"/g,'&quot;')}">
                 </div>
-                <button class="btn-lyrics btn-lyrics-gen" id="gen-btn-${safeId}"
-                    onclick="adminGenerateForFile('${safeId}','${f.filename}')">
-                    <i class="fas fa-magic"></i> Generate Lirik
-                </button>
+                <div class="music-gen-actions">
+                    <button class="btn-lyrics btn-lyrics-regen js-save-meta" id="meta-save-btn-${safeId}"
+                        data-safeid="${safeId}"
+                        data-filename="${(f.filename || '').replace(/"/g,'&quot;')}">
+                        <i class="fas fa-save"></i> Simpan
+                    </button>
+                    <button class="btn-lyrics btn-lyrics-gen js-gen-file" id="gen-btn-${safeId}"
+                        data-safeid="${safeId}"
+                        data-filename="${(f.filename || '').replace(/"/g,'&quot;')}">
+                        <i class="fas fa-magic"></i> Generate Lirik
+                    </button>
+                </div>
                 <div class="music-gen-status" id="gen-status-${safeId}" style="display:none;"></div>
             </div>`;
 
             // ── Baris per siswa yang memakai lagu ini ──
+            // SAFE: semua data dinamis pakai data-* attribute
             const studentRowsHtml = usedBy.length > 0
                 ? `<div class="music-students-label">
                     <i class="fas fa-users" style="font-size:0.7rem"></i> Dipakai oleh ${usedBy.length} siswa:
@@ -1074,17 +1084,23 @@ async function loadMusicFiles() {
                     const hasLyrics = !!s.studentLyrics;
                     return `<div class="music-student-lyrics-row" id="mslr-${s.id}">
                         <div class="mslr-name">${s.name}<small>${s.nickname || ''}</small></div>
-                        <span class="lyrics-pill ${hasLyrics ? 'has' : 'none'}">${hasLyrics ? '✓ Ada' : 'Belum'}</span>
+                        <span class="lyrics-pill ${hasLyrics ? 'has' : 'none'}" id="lpill-${s.id}">${hasLyrics ? '✓ Ada' : 'Belum'}</span>
                         <div class="music-lyrics-btns">
-                            <button class="btn-lyrics ${hasLyrics ? 'btn-lyrics-regen' : 'btn-lyrics-gen'}"
-                                onclick="adminGenerateLyrics('${s.id}','${(f.artist||'').replace(/'/g,"\\'")}','${(f.title||'').replace(/'/g,"\\'")}','${f.filename}', this)">
+                            <button class="btn-lyrics ${hasLyrics ? 'btn-lyrics-regen' : 'btn-lyrics-gen'} js-gen-lyrics"
+                                id="glbtn-${s.id}"
+                                data-studentid="${s.id}"
+                                data-artist="${(f.artist || '').replace(/"/g,'&quot;')}"
+                                data-title="${(f.title || '').replace(/"/g,'&quot;')}"
+                                data-filename="${(f.filename || '').replace(/"/g,'&quot;')}">
                                 <i class="fas fa-${hasLyrics ? 'sync-alt' : 'magic'}"></i> ${hasLyrics ? 'Regen' : 'Generate'}
                             </button>
-                            ${hasLyrics ? `<button class="btn-lyrics btn-lyrics-del"
-                                onclick="adminDeleteLyrics('${s.id}', this)">
+                            ${hasLyrics ? `<button class="btn-lyrics btn-lyrics-del js-del-lyrics"
+                                id="dlbtn-${s.id}"
+                                data-studentid="${s.id}">
                                 <i class="fas fa-trash"></i>
                             </button>` : ''}
                         </div>
+                        <span class="lyrics-gen-status" id="lgs-${s.id}" style="display:none;"></span>
                     </div>`;
                    }).join('')}`
                 : `<p class="music-no-usage">Belum ada siswa yang memakai lagu ini.</p>`;
@@ -1100,12 +1116,13 @@ async function loadMusicFiles() {
                     <div class="music-card-meta">
                         ${sizeMB ? `<span class="music-card-size">${sizeMB}</span>` : ''}
                         <div class="music-card-actions">
-                            <button class="btn-icon-sm btn-preview-music" id="prevbtn-${safeId}" title="Preview lagu"
-                                onclick="adminPreviewMusic('${safeId}', '${encodeURIComponent(f.filename)}', this)">
+                            <button class="btn-icon-sm btn-preview-music js-preview-music" id="prevbtn-${safeId}" title="Preview lagu"
+                                data-safeid="${safeId}"
+                                data-filename="${encodeURIComponent(f.filename)}">
                                 <i class="fas fa-play"></i>
                             </button>
-                            <button class="btn-icon-sm btn-del-music" title="Hapus lagu"
-                                onclick="adminDeleteMusic('${f.filename}')">
+                            <button class="btn-icon-sm btn-del-music js-del-music" title="Hapus lagu"
+                                data-filename="${(f.filename || '').replace(/"/g,'&quot;')}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -1232,31 +1249,31 @@ function encodeFilename(filename) {
 
 // ── Preview / Play lagu di admin ────────────────────────────────
 // Singleton audio player: hanya satu lagu yang bisa diputar sekaligus
-let _previewAudio = null;
-let _previewSafeId = null;
+let _previewAudio   = null;
+let _previewSafeId  = null;
 
 function adminPreviewMusic(safeId, encodedFilename, btn) {
     const url = `${API_URL}/profile_music/${encodedFilename}`;
 
-    // Jika lagu yang sama sedang diputar → pause / stop
+    // Lagu yang sama → toggle pause/play
     if (_previewAudio && _previewSafeId === safeId) {
         if (!_previewAudio.paused) {
             _previewAudio.pause();
             btn.classList.remove('playing');
             btn.innerHTML = '<i class="fas fa-play"></i>';
         } else {
-            _previewAudio.play();
+            _previewAudio.play().catch(() => {});
             btn.classList.add('playing');
             btn.innerHTML = '<i class="fas fa-pause"></i>';
         }
         return;
     }
 
-    // Stop lagu yang sedang diputar sebelumnya
+    // Stop & cleanup lagu sebelumnya
     if (_previewAudio) {
         _previewAudio.pause();
         _previewAudio.src = '';
-        // Reset tombol sebelumnya
+        _previewAudio.load();
         if (_previewSafeId) {
             const prevBtn = document.getElementById(`prevbtn-${_previewSafeId}`);
             if (prevBtn) {
@@ -1264,37 +1281,101 @@ function adminPreviewMusic(safeId, encodedFilename, btn) {
                 prevBtn.innerHTML = '<i class="fas fa-play"></i>';
             }
         }
+        _previewAudio = null;
+        _previewSafeId = null;
     }
-
-    // Buat audio baru
-    _previewAudio = new Audio(url);
-    _previewSafeId = safeId;
 
     btn.classList.add('playing');
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-    _previewAudio.addEventListener('canplay', () => {
-        _previewAudio.play();
-        btn.innerHTML = '<i class="fas fa-pause"></i>';
-    }, { once: true });
+    const audio = new Audio(url);
+    _previewAudio  = audio;
+    _previewSafeId = safeId;
 
-    _previewAudio.addEventListener('ended', () => {
+    // Gunakan referensi lokal agar event listener tidak terpengaruh
+    // jika _previewAudio di-null oleh event lain (race condition fix)
+    const onCanPlay = () => {
+        if (_previewAudio !== audio) return; // sudah diganti, abaikan
+        audio.play().catch(err => {
+            console.warn('Play failed:', err);
+            btn.classList.remove('playing');
+            btn.innerHTML = '<i class="fas fa-play"></i>';
+            if (_previewAudio === audio) { _previewAudio = null; _previewSafeId = null; }
+        });
+        btn.innerHTML = '<i class="fas fa-pause"></i>';
+    };
+
+    const onEnded = () => {
         btn.classList.remove('playing');
         btn.innerHTML = '<i class="fas fa-play"></i>';
-        _previewAudio = null;
-        _previewSafeId = null;
-    }, { once: true });
+        if (_previewAudio === audio) { _previewAudio = null; _previewSafeId = null; }
+    };
 
-    _previewAudio.addEventListener('error', () => {
+    const onError = () => {
         showToast('Gagal memutar preview lagu', 'error');
         btn.classList.remove('playing');
         btn.innerHTML = '<i class="fas fa-play"></i>';
-        _previewAudio = null;
-        _previewSafeId = null;
-    }, { once: true });
+        if (_previewAudio === audio) { _previewAudio = null; _previewSafeId = null; }
+        // Cleanup listener agar tidak trigger canplay setelah error
+        audio.removeEventListener('canplay', onCanPlay);
+    };
 
-    _previewAudio.load();
+    audio.addEventListener('canplay',  onCanPlay, { once: true });
+    audio.addEventListener('ended',    onEnded,   { once: true });
+    audio.addEventListener('error',    onError,   { once: true });
+    audio.load();
 }
+
+// ── Simpan perubahan Artist & Title ke .info.json ───────────────
+async function adminSaveMetadata(safeId, filename) {
+    const artistInput = document.getElementById(`gen-artist-${safeId}`);
+    const titleInput  = document.getElementById(`gen-title-${safeId}`);
+    const saveBtn     = document.getElementById(`meta-save-btn-${safeId}`);
+    const statusEl    = document.getElementById(`gen-status-${safeId}`);
+
+    const artist = artistInput?.value?.trim();
+    const title  = titleInput?.value?.trim();
+
+    if (!artist || !title) {
+        showToast('Isi Artist dan Judul terlebih dahulu', 'error');
+        return;
+    }
+
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
+    try {
+        const res  = await fetch(`${API_URL}/api/audio/metadata`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename, artist, title })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast(`✅ Metadata disimpan: ${artist} — ${title}`);
+            // Update tampilan judul & artist di card tanpa full reload
+            const card = document.getElementById(`mcard-${safeId}`);
+            if (card) {
+                const titleEl  = card.querySelector('.music-card-title');
+                const artistEl = card.querySelector('.music-card-artist');
+                if (titleEl)  titleEl.textContent  = title;
+                if (artistEl) artistEl.textContent = artist;
+            }
+            // Update data-* attributes di tombol generate lyrics agar ikut ter-update
+            card?.querySelectorAll('.js-gen-lyrics').forEach(btn => {
+                btn.dataset.artist = artist;
+                btn.dataset.title  = title;
+            });
+        } else {
+            showToast(data.error || 'Gagal simpan metadata', 'error');
+        }
+    } catch (err) {
+        showToast('Network error: ' + err.message, 'error');
+    } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> Simpan'; }
+    }
+}
+
 
 async function adminDeleteMusic(filename) {
     if (!confirm(`Hapus file "${filename}"?`)) return;
@@ -1318,10 +1399,20 @@ async function adminDeleteMusic(filename) {
 }
 
 // ── Generate / Regenerate Lirik ─────────────────────────────────
-// artistName, songTitle, audioFilename dikirim langsung dari data file musik
-// sehingga endpoint tidak perlu guess lagi → fix bug "Unable to determine..."
 async function adminGenerateLyrics(studentId, artistName, songTitle, audioFilename, btn) {
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    const pillEl   = document.getElementById(`lpill-${studentId}`);
+    const statusEl = document.getElementById(`lgs-${studentId}`);
+
+    // Set loading state
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Proses…';
+    }
+    if (statusEl) {
+        statusEl.style.display = 'inline-flex';
+        statusEl.className = 'lyrics-gen-status lgs-loading';
+        statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengambil lirik…';
+    }
 
     try {
         const res  = await fetch(`${API_URL}/api/student/lyrics/generate`, {
@@ -1337,28 +1428,63 @@ async function adminGenerateLyrics(studentId, artistName, songTitle, audioFilena
         const data = await res.json();
 
         if (data.success && data.lyrics) {
+            if (statusEl) {
+                statusEl.className = 'lyrics-gen-status lgs-saving';
+                statusEl.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Menyimpan…';
+            }
+
             const saveRes  = await fetch(`${API_URL}/api/student/lyrics/save`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ studentId, lyricsText: data.lyrics, source: 'admin-generate' })
             });
             const saveData = await saveRes.json();
+
             if (saveData.success) {
-                showToast(`✅ Lirik "${data.title}" berhasil disimpan!`);
-                // Refresh baris siswa ini saja tanpa full reload
-                musicTabLoaded = false;
-                await loadMusicFiles();
+                // Update pill status
+                if (pillEl) {
+                    pillEl.className = 'lyrics-pill has';
+                    pillEl.textContent = '✓ Ada';
+                }
+                // Update tombol → Regen
+                if (btn) {
+                    btn.disabled = false;
+                    btn.className = btn.className.replace('btn-lyrics-gen', 'btn-lyrics-regen');
+                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Regen';
+                }
+                // Tambah tombol hapus jika belum ada
+                const btnsWrap = btn?.closest('.music-lyrics-btns');
+                if (btnsWrap && !btnsWrap.querySelector('.js-del-lyrics')) {
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'btn-lyrics btn-lyrics-del js-del-lyrics';
+                    delBtn.dataset.studentid = studentId;
+                    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    btnsWrap.appendChild(delBtn);
+                }
+                // Status sukses
+                if (statusEl) {
+                    statusEl.className = 'lyrics-gen-status lgs-ok';
+                    statusEl.innerHTML = `<i class="fas fa-check-circle"></i> "${data.title || songTitle}" tersimpan!`;
+                    setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 4000);
+                }
+                showToast(`✅ Lirik "${data.title || songTitle}" berhasil disimpan!`);
             } else {
-                showToast(`Generate OK tapi gagal simpan: ${saveData.error}`, 'error');
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Generate'; }
+                throw new Error(saveData.error || 'Gagal simpan');
             }
         } else {
-            showToast(`Gagal generate: ${data.error || 'Unknown error'}`, 'error');
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Generate'; }
+            throw new Error(data.error || 'Gagal generate lirik');
         }
     } catch (err) {
-        showToast(`Error: ${err.message}`, 'error');
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> Generate'; }
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-${btn.className.includes('regen') ? 'sync-alt' : 'magic'}"></i> ${btn.className.includes('regen') ? 'Regen' : 'Generate'}`;
+        }
+        if (statusEl) {
+            statusEl.className = 'lyrics-gen-status lgs-error';
+            statusEl.innerHTML = `<i class="fas fa-times-circle"></i> ${err.message}`;
+            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 5000);
+        }
+        showToast(`Gagal generate: ${err.message}`, 'error');
     }
 }
 
@@ -1422,6 +1548,60 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!e.target.value.trim()) {
             if (artistGroup) artistGroup.style.display = 'none';
             if (artistInput) artistInput.value = '';
+        }
+    });
+
+    // ── Event delegation untuk tombol-tombol di music card ──────
+    // Menggantikan onclick inline agar data dengan karakter spesial
+    // (tanda kurung, apostrof, kutip) tidak merusak syntax HTML/JS.
+    document.addEventListener('click', e => {
+        // Simpan metadata (Artist & Title)
+        const saveMetaBtn = e.target.closest('.js-save-meta');
+        if (saveMetaBtn) {
+            const safeId   = saveMetaBtn.dataset.safeid;
+            const filename = saveMetaBtn.dataset.filename;
+            adminSaveMetadata(safeId, filename);
+            return;
+        }
+
+        // Generate lirik per file (tombol utama "Generate Lirik")
+        const genFileBtn = e.target.closest('.js-gen-file');
+        if (genFileBtn) {
+            const safeId   = genFileBtn.dataset.safeid;
+            const filename = genFileBtn.dataset.filename;
+            adminGenerateForFile(safeId, filename);
+            return;
+        }
+
+        // Generate / Regen lirik per siswa
+        const genLyricsBtn = e.target.closest('.js-gen-lyrics');
+        if (genLyricsBtn) {
+            const { studentid, artist, title, filename } = genLyricsBtn.dataset;
+            adminGenerateLyrics(studentid, artist, title, filename, genLyricsBtn);
+            return;
+        }
+
+        // Hapus lirik siswa
+        const delLyricsBtn = e.target.closest('.js-del-lyrics');
+        if (delLyricsBtn) {
+            adminDeleteLyrics(delLyricsBtn.dataset.studentid, delLyricsBtn);
+            return;
+        }
+
+        // Preview / play lagu
+        const previewBtn = e.target.closest('.js-preview-music');
+        if (previewBtn) {
+            const safeId   = previewBtn.dataset.safeid;
+            const filename = previewBtn.dataset.filename; // sudah encodeURIComponent
+            adminPreviewMusic(safeId, filename, previewBtn);
+            return;
+        }
+
+        // Hapus file musik
+        const delMusicBtn = e.target.closest('.js-del-music');
+        if (delMusicBtn) {
+            adminDeleteMusic(delMusicBtn.dataset.filename);
+            return;
         }
     });
 });
