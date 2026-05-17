@@ -567,6 +567,20 @@ app.post('/api/student/lyrics/save', async (req, res) => {
         const success = await writeJSON(DB_PATH, database);
 
         if (success) {
+            // Hapus lyric_cache (profile_lyrics) terkait studentId jika ada
+            try {
+                const lyricsDir = path.join(__dirname, 'profile_lyrics');
+                const cacheFiles = await fs.readdir(lyricsDir).catch(() => []);
+                for (const file of cacheFiles) {
+                    if (file.startsWith(studentId) && file.endsWith('_lyrics.json')) {
+                        await fs.unlink(path.join(lyricsDir, file));
+                        console.log(`🗑️ Lyric cache deleted: ${file}`);
+                    }
+                }
+            } catch (cacheErr) {
+                console.warn('⚠️ Failed to clear lyric cache:', cacheErr.message);
+            }
+
             console.log(`✅ Lyrics saved for student ${studentId}`);
             res.json({ 
                 success: true, 
@@ -587,6 +601,74 @@ app.post('/api/student/lyrics/save', async (req, res) => {
         res.status(500).json({ 
             success: false, 
             error: `Failed to save lyrics: ${error.message}` 
+        });
+    }
+});
+
+// PUT /api/student/lyrics/:studentId - Edit/update lirik siswa langsung (tanpa generate ulang)
+app.put('/api/student/lyrics/:studentId', async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const { lyricsText } = req.body;
+
+        if (!lyricsText) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required field: lyricsText'
+            });
+        }
+
+        const database = await readJSON(DB_PATH);
+        const studentIndex = database.students.findIndex(s => s.id === studentId);
+
+        if (studentIndex < 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Student not found'
+            });
+        }
+
+        database.students[studentIndex].studentLyrics = lyricsText;
+        database.students[studentIndex].lyricsGeneratedFrom = 'admin-manual-edit';
+        database.students[studentIndex].lyricsUpdatedAt = new Date().toISOString();
+
+        const success = await writeJSON(DB_PATH, database);
+
+        if (success) {
+            // Hapus lyric_cache terkait studentId jika ada
+            try {
+                const lyricsDir = path.join(__dirname, 'profile_lyrics');
+                const cacheFiles = await fs.readdir(lyricsDir).catch(() => []);
+                for (const file of cacheFiles) {
+                    if (file.startsWith(studentId) && file.endsWith('_lyrics.json')) {
+                        await fs.unlink(path.join(lyricsDir, file));
+                        console.log(`🗑️ Lyric cache deleted on edit: ${file}`);
+                    }
+                }
+            } catch (cacheErr) {
+                console.warn('⚠️ Failed to clear lyric cache:', cacheErr.message);
+            }
+
+            console.log(`✅ Lyrics manually updated for student ${studentId}`);
+            res.json({
+                success: true,
+                message: 'Lyrics updated successfully',
+                data: {
+                    studentId,
+                    lyricsUpdatedAt: database.students[studentIndex].lyricsUpdatedAt
+                }
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: 'Failed to update lyrics in database'
+            });
+        }
+    } catch (error) {
+        console.error('❌ Lyrics update error:', error);
+        res.status(500).json({
+            success: false,
+            error: `Failed to update lyrics: ${error.message}`
         });
     }
 });
@@ -614,6 +696,20 @@ app.delete('/api/student/lyrics/:studentId', async (req, res) => {
         const success = await writeJSON(DB_PATH, database);
 
         if (success) {
+            // Hapus lyric_cache terkait studentId jika ada
+            try {
+                const lyricsDir = path.join(__dirname, 'profile_lyrics');
+                const cacheFiles = await fs.readdir(lyricsDir).catch(() => []);
+                for (const file of cacheFiles) {
+                    if (file.startsWith(studentId) && file.endsWith('_lyrics.json')) {
+                        await fs.unlink(path.join(lyricsDir, file));
+                        console.log(`🗑️ Lyric cache deleted on student delete: ${file}`);
+                    }
+                }
+            } catch (cacheErr) {
+                console.warn('⚠️ Failed to clear lyric cache on delete:', cacheErr.message);
+            }
+
             console.log(`✅ Lyrics deleted for student ${studentId}`);
             res.json({ 
                 success: true, 
@@ -2036,7 +2132,7 @@ app.post('/api/lyrics/save', async (req, res) => {
 
         await fs.writeFile(lyricsPath, JSON.stringify(lyricsData, null, 2));
 
-        console.log(`💾 Lyrics saved: ${lyricsPath}`);
+        console.log(`💾 Lyrics saved (standalone cache refreshed): ${lyricsPath}`);
 
         res.json({
             success: true,
@@ -2049,6 +2145,84 @@ app.post('/api/lyrics/save', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to save lyrics: ' + error.message
+        });
+    }
+});
+
+// GET /api/lyrics/standalone/:fileKey - Ambil lirik standalone berdasarkan fileKey
+app.get('/api/lyrics/standalone/:fileKey', async (req, res) => {
+    try {
+        const { fileKey } = req.params;
+        const lyricsDir = path.join(__dirname, 'profile_lyrics');
+
+        const allFiles = await fs.readdir(lyricsDir).catch(() => []);
+        const match = allFiles.find(f => f === `${fileKey}_lyrics.json`);
+
+        if (!match) {
+            return res.status(404).json({
+                success: false,
+                error: 'Standalone lyrics not found for this file'
+            });
+        }
+
+        const lyricsPath = path.join(lyricsDir, match);
+        const lyricsData = JSON.parse(await fs.readFile(lyricsPath, 'utf8'));
+
+        res.json({
+            success: true,
+            fileKey,
+            transcription: lyricsData.transcription || lyricsData,
+            savedAt: lyricsData.savedAt || null
+        });
+
+    } catch (error) {
+        console.error('❌ Standalone lyrics load error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load standalone lyrics: ' + error.message
+        });
+    }
+});
+
+// PUT /api/lyrics/standalone/:fileKey - Edit/update lirik standalone
+app.put('/api/lyrics/standalone/:fileKey', async (req, res) => {
+    try {
+        const { fileKey } = req.params;
+        const { transcription } = req.body;
+
+        if (!transcription) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required field: transcription'
+            });
+        }
+
+        const lyricsDir = path.join(__dirname, 'profile_lyrics');
+        await fs.mkdir(lyricsDir, { recursive: true });
+
+        const lyricsPath = path.join(lyricsDir, `${fileKey}_lyrics.json`);
+        const lyricsData = {
+            studentId: fileKey,
+            transcription,
+            savedAt: new Date().toISOString(),
+            editedAt: new Date().toISOString()
+        };
+
+        await fs.writeFile(lyricsPath, JSON.stringify(lyricsData, null, 2));
+        console.log(`✅ Standalone lyrics updated: ${fileKey}`);
+
+        res.json({
+            success: true,
+            message: 'Standalone lyrics updated successfully',
+            fileKey,
+            editedAt: lyricsData.editedAt
+        });
+
+    } catch (error) {
+        console.error('❌ Standalone lyrics update error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update standalone lyrics: ' + error.message
         });
     }
 });

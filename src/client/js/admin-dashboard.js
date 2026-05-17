@@ -1041,6 +1041,19 @@ async function loadMusicFiles() {
             usageMap[key].push(s);
         });
 
+        // Fetch standalone lyrics untuk setiap file (paralel)
+        const standaloneMap = {};
+        await Promise.all(files.map(async f => {
+            const fileKey = f.filename.replace(/\.mp3$/i, '');
+            try {
+                const r = await fetch(`${API_URL}/api/lyrics/standalone/${encodeURIComponent(fileKey)}`);
+                if (r.ok) {
+                    const d = await r.json();
+                    if (d.success) standaloneMap[f.filename] = d.transcription;
+                }
+            } catch (_) {}
+        }));
+
         const listHtml = files.map(f => {
             const sizeMB    = f.size ? (f.size / (1024*1024)).toFixed(1) + ' MB' : '';
             const thumbHtml = f.thumbnailUrl
@@ -1048,6 +1061,36 @@ async function loadMusicFiles() {
                 : `<div class="music-thumb"><i class="fas fa-music"></i></div>`;
             const usedBy    = usageMap[f.filename] || [];
             const safeId    = encodeFilename(f.filename);
+            const fileKey   = f.filename.replace(/\.mp3$/i, '');
+            const standaloneLyrics = standaloneMap[f.filename] || null;
+
+            // ── Lirik standalone (jika ada, tampilkan preview + edit) ──
+            const standalonePreviewHtml = standaloneLyrics ? `
+            <div class="music-standalone-lyrics" id="standalone-lyrics-${safeId}">
+                <div class="lyrics-view-header">
+                    <span><i class="fas fa-align-left"></i> Lirik Tersimpan (Standalone)</span>
+                    <button class="btn-lyrics-edit-toggle" id="standalone-edit-toggle-${safeId}"
+                        data-mode="view" data-safeid="${safeId}" data-type="standalone">
+                        <i class="fas fa-pencil-alt"></i> Edit
+                    </button>
+                </div>
+                <pre class="lyrics-preview-text" id="standalone-preview-${safeId}">${escapeHtml(standaloneLyrics)}</pre>
+                <div class="lyrics-edit-wrap" id="standalone-edit-wrap-${safeId}" style="display:none">
+                    <textarea class="lyrics-edit-textarea" id="standalone-textarea-${safeId}"
+                        >${escapeHtml(standaloneLyrics)}</textarea>
+                    <div class="lyrics-edit-actions">
+                        <button class="btn-lyrics btn-lyrics-save js-save-standalone-lyrics"
+                            data-safeid="${safeId}"
+                            data-filekey="${fileKey}">
+                            <i class="fas fa-save"></i> Simpan Lirik
+                        </button>
+                        <button class="btn-lyrics btn-lyrics-cancel btn-lyrics-edit-toggle"
+                            data-mode="edit" data-safeid="${safeId}" data-type="standalone">
+                            Batal
+                        </button>
+                    </div>
+                </div>
+            </div>` : '';
 
             // ── Inline generate form ──
             // SAFE: data dinamis disimpan di data-* attribute, bukan di onclick string
@@ -1072,7 +1115,8 @@ async function loadMusicFiles() {
                     </button>
                 </div>
                 <div class="music-gen-status" id="gen-status-${safeId}" style="display:none;"></div>
-            </div>`;
+            </div>
+            ${standalonePreviewHtml}`;
 
             // ── Baris per siswa yang memakai lagu ini ──
             // SAFE: semua data dinamis pakai data-* attribute
@@ -1082,25 +1126,52 @@ async function loadMusicFiles() {
                    </div>
                    ${usedBy.map(s => {
                     const hasLyrics = !!s.studentLyrics;
+                    const lyricsSafe = hasLyrics ? escapeHtml(s.studentLyrics) : '';
                     return `<div class="music-student-lyrics-row" id="mslr-${s.id}">
-                        <div class="mslr-name">${s.name}<small>${s.nickname || ''}</small></div>
-                        <span class="lyrics-pill ${hasLyrics ? 'has' : 'none'}" id="lpill-${s.id}">${hasLyrics ? '✓ Ada' : 'Belum'}</span>
-                        <div class="music-lyrics-btns">
-                            <button class="btn-lyrics ${hasLyrics ? 'btn-lyrics-regen' : 'btn-lyrics-gen'} js-gen-lyrics"
-                                id="glbtn-${s.id}"
-                                data-studentid="${s.id}"
-                                data-artist="${(f.artist || '').replace(/"/g,'&quot;')}"
-                                data-title="${(f.title || '').replace(/"/g,'&quot;')}"
-                                data-filename="${(f.filename || '').replace(/"/g,'&quot;')}">
-                                <i class="fas fa-${hasLyrics ? 'sync-alt' : 'magic'}"></i> ${hasLyrics ? 'Regen' : 'Generate'}
-                            </button>
-                            ${hasLyrics ? `<button class="btn-lyrics btn-lyrics-del js-del-lyrics"
-                                id="dlbtn-${s.id}"
-                                data-studentid="${s.id}">
-                                <i class="fas fa-trash"></i>
-                            </button>` : ''}
+                        <div class="mslr-header">
+                            <div class="mslr-name">${s.name}<small>${s.nickname || ''}</small></div>
+                            <span class="lyrics-pill ${hasLyrics ? 'has' : 'none'}" id="lpill-${s.id}">${hasLyrics ? '✓ Ada' : 'Belum'}</span>
+                            <div class="music-lyrics-btns">
+                                <button class="btn-lyrics ${hasLyrics ? 'btn-lyrics-regen' : 'btn-lyrics-gen'} js-gen-lyrics"
+                                    id="glbtn-${s.id}"
+                                    data-studentid="${s.id}"
+                                    data-artist="${(f.artist || '').replace(/"/g,'&quot;')}"
+                                    data-title="${(f.title || '').replace(/"/g,'&quot;')}"
+                                    data-filename="${(f.filename || '').replace(/"/g,'&quot;')}">
+                                    <i class="fas fa-${hasLyrics ? 'sync-alt' : 'magic'}"></i> ${hasLyrics ? 'Regen' : 'Generate'}
+                                </button>
+                                ${hasLyrics ? `
+                                <button class="btn-lyrics btn-lyrics-edit-toggle"
+                                    id="student-edit-toggle-${s.id}"
+                                    data-mode="view" data-safeid="${s.id}" data-type="student">
+                                    <i class="fas fa-pencil-alt"></i> Edit
+                                </button>
+                                <button class="btn-lyrics btn-lyrics-del js-del-lyrics"
+                                    id="dlbtn-${s.id}"
+                                    data-studentid="${s.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>` : ''}
+                            </div>
                         </div>
                         <span class="lyrics-gen-status" id="lgs-${s.id}" style="display:none;"></span>
+                        ${hasLyrics ? `
+                        <div class="student-lyrics-preview" id="student-lyrics-preview-${s.id}">
+                            <pre class="lyrics-preview-text" id="student-preview-${s.id}">${lyricsSafe}</pre>
+                            <div class="lyrics-edit-wrap" id="student-edit-wrap-${s.id}" style="display:none">
+                                <textarea class="lyrics-edit-textarea" id="student-textarea-${s.id}"
+                                    >${lyricsSafe}</textarea>
+                                <div class="lyrics-edit-actions">
+                                    <button class="btn-lyrics btn-lyrics-save js-save-student-lyrics"
+                                        data-studentid="${s.id}">
+                                        <i class="fas fa-save"></i> Simpan Lirik
+                                    </button>
+                                    <button class="btn-lyrics btn-lyrics-cancel btn-lyrics-edit-toggle"
+                                        data-mode="edit" data-safeid="${s.id}" data-type="student">
+                                        Batal
+                                    </button>
+                                </div>
+                            </div>
+                        </div>` : ''}
                     </div>`;
                    }).join('')}`
                 : `<p class="music-no-usage">Belum ada siswa yang memakai lagu ini.</p>`;
@@ -1245,6 +1316,44 @@ async function adminGenerateForFile(safeId, filename) {
 
 function encodeFilename(filename) {
     return filename.replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+// Escape HTML characters to prevent XSS
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Toggle antara mode view dan edit lirik
+function toggleLyricsEdit(type, safeId) {
+    if (type === 'standalone') {
+        const preview  = document.getElementById(`standalone-preview-${safeId}`);
+        const editWrap = document.getElementById(`standalone-edit-wrap-${safeId}`);
+        const toggle   = document.getElementById(`standalone-edit-toggle-${safeId}`);
+        if (!preview || !editWrap) return;
+        const isView = editWrap.style.display === 'none';
+        preview.style.display  = isView ? 'none' : '';
+        editWrap.style.display = isView ? '' : 'none';
+        if (toggle) toggle.innerHTML = isView
+            ? '<i class="fas fa-times"></i> Batal'
+            : '<i class="fas fa-pencil-alt"></i> Edit';
+    } else if (type === 'student') {
+        const preview  = document.getElementById(`student-preview-${safeId}`);
+        const editWrap = document.getElementById(`student-edit-wrap-${safeId}`);
+        const toggle   = document.getElementById(`student-edit-toggle-${safeId}`);
+        if (!preview || !editWrap) return;
+        const isView = editWrap.style.display === 'none';
+        preview.style.display  = isView ? 'none' : '';
+        editWrap.style.display = isView ? '' : 'none';
+        if (toggle) toggle.innerHTML = isView
+            ? '<i class="fas fa-times"></i> Batal'
+            : '<i class="fas fa-pencil-alt"></i> Edit';
+    }
 }
 
 // ── Preview / Play lagu di admin ────────────────────────────────
@@ -1508,6 +1617,109 @@ async function adminDeleteLyrics(studentId, btn) {
     }
 }
 
+// ── Simpan edit lirik siswa (manual edit tanpa generate ulang) ──
+async function adminSaveStudentLyrics(studentId, lyricsText, btn) {
+    if (!lyricsText || !lyricsText.trim()) {
+        showToast('Lirik tidak boleh kosong', 'error');
+        return;
+    }
+
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan…';
+    }
+
+    try {
+        const res  = await fetch(`${API_URL}/api/student/lyrics/${studentId}`, {
+            method : 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify({ lyricsText: lyricsText.trim() })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast('✅ Lirik siswa berhasil disimpan!');
+
+            // Update preview tanpa full reload
+            const previewEl = document.getElementById(`student-preview-${studentId}`);
+            const editWrap  = document.getElementById(`student-edit-wrap-${studentId}`);
+            const toggleBtn = document.getElementById(`student-edit-toggle-${studentId}`);
+
+            if (previewEl) {
+                previewEl.textContent  = lyricsText.trim();
+                previewEl.style.display = '';
+            }
+            if (editWrap)  editWrap.style.display = 'none';
+            if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
+
+            // Update pill status
+            const pill = document.getElementById(`lpill-${studentId}`);
+            if (pill) {
+                pill.className   = 'lyrics-pill has';
+                pill.textContent = '✓ Ada';
+            }
+        } else {
+            showToast(data.error || 'Gagal menyimpan lirik', 'error');
+        }
+    } catch (err) {
+        showToast('Network error: ' + err.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled  = false;
+            btn.innerHTML = origHtml;
+        }
+    }
+}
+
+// ── Simpan edit lirik standalone (file tanpa siswa) ─────────────
+async function adminSaveStandaloneLyrics(safeId, fileKey, transcription, btn) {
+    if (!transcription || !transcription.trim()) {
+        showToast('Lirik tidak boleh kosong', 'error');
+        return;
+    }
+
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan…';
+    }
+
+    try {
+        const res  = await fetch(`${API_URL}/api/lyrics/standalone/${encodeURIComponent(fileKey)}`, {
+            method : 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify({ transcription: transcription.trim() })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast('✅ Lirik standalone berhasil disimpan!');
+
+            // Update preview tanpa full reload
+            const previewEl = document.getElementById(`standalone-preview-${safeId}`);
+            const editWrap  = document.getElementById(`standalone-edit-wrap-${safeId}`);
+            const toggleBtn = document.getElementById(`standalone-edit-toggle-${safeId}`);
+
+            if (previewEl) {
+                previewEl.textContent   = transcription.trim();
+                previewEl.style.display = '';
+            }
+            if (editWrap)  editWrap.style.display = 'none';
+            if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
+        } else {
+            showToast(data.error || 'Gagal menyimpan lirik standalone', 'error');
+        }
+    } catch (err) {
+        showToast('Network error: ' + err.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled  = false;
+            btn.innerHTML = origHtml;
+        }
+    }
+}
+
 // ── Event listeners untuk music download form ───────────────────
 document.addEventListener('DOMContentLoaded', () => {
     const urlInput    = document.getElementById('musicUrlInput');
@@ -1601,6 +1813,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const delMusicBtn = e.target.closest('.js-del-music');
         if (delMusicBtn) {
             adminDeleteMusic(delMusicBtn.dataset.filename);
+            return;
+        }
+
+        // Toggle edit/view lirik (student & standalone)
+        const editToggleBtn = e.target.closest('.btn-lyrics-edit-toggle');
+        if (editToggleBtn) {
+            const type   = editToggleBtn.dataset.type;
+            const safeId = editToggleBtn.dataset.safeid;
+            if (type && safeId) {
+                toggleLyricsEdit(type, safeId);
+            }
+            return;
+        }
+
+        // Simpan lirik siswa (manual edit)
+        const saveStudentBtn = e.target.closest('.js-save-student-lyrics');
+        if (saveStudentBtn) {
+            const studentId = saveStudentBtn.dataset.studentid;
+            const textarea  = document.getElementById(`student-textarea-${studentId}`);
+            if (!textarea) return;
+            adminSaveStudentLyrics(studentId, textarea.value, saveStudentBtn);
+            return;
+        }
+
+        // Simpan lirik standalone (manual edit)
+        const saveStandaloneBtn = e.target.closest('.js-save-standalone-lyrics');
+        if (saveStandaloneBtn) {
+            const safeId  = saveStandaloneBtn.dataset.safeid;
+            const fileKey = saveStandaloneBtn.dataset.filekey;
+            const textarea = document.getElementById(`standalone-textarea-${safeId}`);
+            if (!textarea) return;
+            adminSaveStandaloneLyrics(safeId, fileKey, textarea.value, saveStandaloneBtn);
             return;
         }
     });

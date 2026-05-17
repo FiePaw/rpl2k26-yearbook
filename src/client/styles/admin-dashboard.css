@@ -885,15 +885,110 @@ html, body {
 /* Lyrics status per student inside card */
 .music-student-lyrics-row {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.45rem 0;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.55rem 0;
     border-bottom: 1px solid rgba(255,255,255,0.04);
-    flex-wrap: wrap;
 }
 .music-student-lyrics-row:last-child { border-bottom: none; }
+.mslr-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
 .mslr-name { flex: 1; font-size: 0.78rem; font-weight: 600; color: var(--text-color); min-width: 120px; }
 .mslr-name small { display: block; font-weight: 400; font-size: 0.68rem; color: var(--text-secondary); }
+
+/* ── Lyrics preview & edit shared styles ── */
+.lyrics-view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+}
+.lyrics-preview-text {
+    font-family: 'DM Mono', 'Fira Code', monospace, sans-serif;
+    font-size: 0.72rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 180px;
+    overflow-y: auto;
+    margin: 0;
+}
+.lyrics-edit-textarea {
+    width: 100%;
+    min-height: 160px;
+    font-family: 'DM Mono', 'Fira Code', monospace, sans-serif;
+    font-size: 0.72rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+.lyrics-edit-textarea:focus {
+    border-color: rgba(var(--primary-rgb, 99,102,241), 0.5);
+    background: rgba(255,255,255,0.06);
+}
+.lyrics-edit-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+.btn-lyrics-edit-toggle {
+    font-size: 0.68rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.btn-lyrics-edit-toggle:hover { background: rgba(255,255,255,0.1); color: var(--text-color); }
+.btn-lyrics-cancel {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-secondary);
+}
+.btn-lyrics-cancel:hover { background: rgba(255,255,255,0.1); color: var(--text-color); }
+.btn-lyrics-save {
+    background: rgba(29,185,84,0.12);
+    border: 1px solid rgba(29,185,84,0.25);
+    color: #1DB954;
+}
+.btn-lyrics-save:hover { background: rgba(29,185,84,0.22); }
+
+/* Standalone lyrics block */
+.music-standalone-lyrics {
+    margin-top: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 8px;
+}
+
+/* Student lyrics preview block */
+.student-lyrics-preview {
+    padding: 0.4rem 0 0 0;
+}
 
 .btn-preview-music {
     background: rgba(33,150,243,0.1);
