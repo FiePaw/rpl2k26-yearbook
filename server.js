@@ -157,7 +157,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// Serve static files dari root directory (untuk backward compatibility)
+// a
 app.use(express.static(__dirname));
 
 // Logging middleware
